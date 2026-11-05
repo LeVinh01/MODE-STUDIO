@@ -1,0 +1,81 @@
+@use '@/styles/abstracts' as *;
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  border-radius: var(--radius-sm);
+  font-family: $font-sans;
+  font-weight: $font-weight-medium;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  line-height: 1;
+  border: 1px solid transparent;
+}
+
+/* Sizes */
+.sizeSm {
+  padding: 0.2rem var(--space-2);
+  font-size: 0.6875rem;
+}
+
+.sizeMd {
+  padding: 0.25rem var(--space-2);
+  font-size: 0.75rem;
+}
+
+/* Variants */
+.variantDefault {
+  background-color: var(--color-gray-100);
+  color: var(--color-gray-800);
+  border-color: var(--color-border-subtle);
+}
+
+.variantSuccess {
+  background-color: rgba(53, 94, 59, 0.12);
+  color: var(--color-success);
+  border-color: rgba(53, 94, 59, 0.25);
+}
+
+.variantWarning {
+  background-color: rgba(181, 115, 36, 0.12);
+  color: var(--color-warning);
+  border-color: rgba(181, 115, 36, 0.25);
+}
+
+.variantError {
+  background-color: rgba(168, 50, 50, 0.12);
+  color: var(--color-error);
+  border-color: rgba(168, 50, 50, 0.25);
+}
+
+.variantInfo {
+  background-color: rgba(61, 90, 115, 0.12);
+  color: var(--color-info);
+  border-color: rgba(61, 90, 115, 0.25);
+}
+
+.variantLuxury {
+  background-color: rgba(153, 122, 68, 0.12);
+  color: var(--color-bronze);
+  border-color: rgba(153, 122, 68, 0.35);
+  font-weight: $font-weight-semibold;
+  letter-spacing: 0.08em;
+}
+
+.variantOutline {
+  background-color: transparent;
+  color: var(--color-text-primary);
+  border-color: var(--color-border-strong);
+}
+
+/* Dot */
+.dot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: var(--radius-full);
+  background-color: currentColor;
+  flex-shrink: 0;
+}
+

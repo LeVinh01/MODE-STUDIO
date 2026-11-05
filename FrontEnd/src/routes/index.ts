@@ -1,6 +1,20 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, type RouteObject } from 'react-router-dom'
 import { storefrontRoutes } from './storefrontRoutes'
 import { adminRoutes } from './adminRoutes'
+
+const devRoutes: RouteObject[] = import.meta.env.DEV
+  ? [
+      {
+        path: 'design-system',
+        lazy: async () => {
+          const { DesignSystemShowcasePage } = await import(
+            '@/pages/dev/DesignSystemShowcasePage'
+          )
+          return { Component: DesignSystemShowcasePage }
+        },
+      },
+    ]
+  : []
 
 export const router = createBrowserRouter([
   {
@@ -9,7 +23,7 @@ export const router = createBrowserRouter([
       const { MainLayout } = await import('@/layouts/MainLayout/MainLayout')
       return { Component: MainLayout }
     },
-    children: storefrontRoutes,
+    children: [...storefrontRoutes, ...devRoutes],
   },
   {
     path: '/admin',
@@ -29,4 +43,3 @@ export const router = createBrowserRouter([
 ])
 
 export default router
-

@@ -1,0 +1,139 @@
+@use '@/styles/abstracts' as *;
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(17, 17, 17, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: $z-modal-backdrop;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  animation: fadeIn $transition-fast ease-out;
+}
+
+.modalDialog {
+  position: relative;
+  width: 100%;
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  z-index: $z-modal;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 2 * var(--space-4));
+  overflow: hidden;
+  animation: scaleUp $transition-fast ease-out;
+
+  &:focus-visible {
+    outline: none;
+  }
+}
+
+/* Sizes */
+.sizeSm {
+  max-width: 420px;
+}
+
+.sizeMd {
+  max-width: 560px;
+}
+
+.sizeLg {
+  max-width: 720px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--color-border-subtle);
+  gap: var(--space-4);
+}
+
+.headerContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.title {
+  font-family: $font-serif;
+  font-size: 1.375rem;
+  font-weight: $font-weight-regular;
+  letter-spacing: -0.01em;
+  color: var(--color-black);
+  margin: 0;
+}
+
+.description {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.closeButton {
+  @include unstyled-button;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  transition: all $transition-fast;
+  margin-top: -0.25rem;
+  margin-right: -0.25rem;
+
+  &:hover {
+    color: var(--color-text-primary);
+    background-color: var(--color-gray-100);
+  }
+
+  &:focus-visible {
+    box-shadow: var(--focus-ring);
+  }
+}
+
+.body {
+  padding: var(--space-6);
+  overflow-y: auto;
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--color-border-subtle);
+  background-color: var(--color-gray-50);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+

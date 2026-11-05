@@ -31,6 +31,11 @@ export const MainLayout = () => {
           <Link to="/admin" className={styles.adminLink}>
             Admin
           </Link>
+          {import.meta.env.DEV && (
+            <Link to="/design-system" className={styles.adminLink} title="Design System Showcase (Dev Only)">
+              DS
+            </Link>
+          )}
           <button
             type="button"
             onClick={() => dispatch(toggleCartDrawer())}
