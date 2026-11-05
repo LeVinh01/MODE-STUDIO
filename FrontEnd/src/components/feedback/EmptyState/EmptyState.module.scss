@@ -1,0 +1,59 @@
+@use '@/styles/abstracts' as *;
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-8) var(--space-4);
+  max-width: 480px;
+  margin: 0 auto;
+
+  @include respond-to('md') {
+    padding: var(--space-12) var(--space-6);
+  }
+}
+
+.iconWrapper {
+  width: 4rem;
+  height: 4rem;
+  border-radius: var(--radius-full);
+  background-color: var(--color-gray-100);
+  border: 1px solid var(--color-border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-gray-500);
+  margin-bottom: var(--space-5);
+  transition: all $transition-fast;
+
+  svg {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+}
+
+.title {
+  font-family: $font-serif;
+  font-size: 1.5rem;
+  font-weight: $font-weight-regular;
+  letter-spacing: -0.01em;
+  color: var(--color-black);
+  margin-bottom: var(--space-2);
+}
+
+.description {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin-bottom: var(--space-6);
+}
+
+.action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+}
+

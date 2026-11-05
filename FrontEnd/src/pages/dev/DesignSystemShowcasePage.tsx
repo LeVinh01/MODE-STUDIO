@@ -1,5 +1,11 @@
 import { useState } from 'react'
-import { ArrowRight, Mail, Search, ShoppingBag } from 'lucide-react'
+import {
+  ArrowRight,
+  FolderOpen,
+  Mail,
+  Search,
+  ShoppingBag,
+} from 'lucide-react'
 import {
   Button,
   Input,
@@ -8,12 +14,15 @@ import {
   Checkbox,
   Badge,
 } from '@/components/common'
-import { Spinner, Skeleton } from '@/components/feedback'
+import { Spinner, Skeleton, Modal, EmptyState } from '@/components/feedback'
+import { Pagination, Breadcrumbs } from '@/components/navigation'
 import styles from './DesignSystemShowcasePage.module.scss'
 
 export const DesignSystemShowcasePage = () => {
   const [btnLoading, setBtnLoading] = useState(false)
   const [checkedBox, setCheckedBox] = useState(true)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [currentPage, setCurrentPage] = useState(3)
 
   const sizeOptions = [
     { label: 'Chọn kích thước (Size)', value: '', disabled: true },
@@ -22,6 +31,19 @@ export const DesignSystemShowcasePage = () => {
     { label: 'Medium (M)', value: 'm' },
     { label: 'Large (L)', value: 'l' },
     { label: 'Extra Large (XL)', value: 'xl' },
+  ]
+
+  const storefrontBreadcrumbs = [
+    { label: 'Trang Chủ', to: '/' },
+    { label: 'Bộ Sưu Tập Nữ', to: '/products' },
+    { label: 'Áo Sơ Mi & Lụa', to: '/products' },
+    { label: 'Áo Lụa Satin Cổ Chữ V' },
+  ]
+
+  const adminBreadcrumbs = [
+    { label: 'Bảng Quản Trị', to: '/admin' },
+    { label: 'Quản Lý Sản Phẩm', to: '/admin/products' },
+    { label: 'Cấu Hình Biến Thể & Tồn Kho (SKU)' },
   ]
 
   return (
@@ -258,6 +280,144 @@ export const DesignSystemShowcasePage = () => {
               <Skeleton variant="text" width="85%" height={20} />
               <Skeleton variant="text" width="60%" height={16} />
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. MODAL (PORTAL & FOCUS TRAP) */}
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>5. Hộp Thoại / Modal (Portal &amp; Focus Trap)</h2>
+        <p className={styles.sectionDesc}>
+          Hộp thoại render qua React Portal, tự động khóa cuộn trang, bắt phím Esc, click backdrop và bẫy phím Tab (Focus Trap) chuẩn WCAG 2.1.
+        </p>
+
+        <div className={styles.row}>
+          <Button variant="primary" onClick={() => setIsModalOpen(true)}>
+            Mở Hộp Thoại Xác Nhận / Open Modal
+          </Button>
+        </div>
+
+        <Modal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          title="Xác Nhận Hủy Đơn Hàng"
+          description="Hành động này sẽ cập nhật trạng thái đơn hàng #MODE-9842 sang Đã Hủy."
+          footer={
+            <>
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={() => setIsModalOpen(false)}
+              >
+                Giữ Lại Đơn Hàng
+              </Button>
+              <Button
+                variant="primary"
+                size="md"
+                onClick={() => setIsModalOpen(false)}
+              >
+                Xác Nhận Hủy Đơn
+              </Button>
+            </>
+          }
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            <p style={{ margin: 0, color: 'var(--color-text-secondary)' }}>
+              Sau khi hủy, số tiền thanh toán (nếu có) sẽ được hoàn trả về tài khoản gốc của khách hàng trong vòng 3 - 5 ngày làm việc.
+            </p>
+            <Textarea
+              label="Lý Do Hủy Đơn (Bắt buộc)"
+              placeholder="Nhập lý do chi tiết từ khách hàng hoặc hệ thống vận chuyển..."
+              rows={3}
+            />
+          </div>
+        </Modal>
+      </section>
+
+      {/* 6. EMPTY STATE */}
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>6. Trạng Thái Trống / EmptyState</h2>
+        <p className={styles.sectionDesc}>
+          Trình bày trực quan khi chưa có dữ liệu: giỏ hàng trống, không tìm thấy kết quả hoặc danh mục chưa có sản phẩm.
+        </p>
+
+        <div className={styles.grid}>
+          <div className={styles.componentCard}>
+            <EmptyState
+              icon={<ShoppingBag />}
+              title="Giỏ Hàng Đang Trống"
+              description="Bạn chưa chọn sản phẩm nào. Hãy khám phá các thiết kế thời trang may đo tinh xảo mới nhất từ MODE STUDIO."
+              action={
+                <Button to="/products" variant="primary" size="md">
+                  Khám Phá Bộ Sưu Tập
+                </Button>
+              }
+            />
+          </div>
+
+          <div className={styles.componentCard}>
+            <EmptyState
+              icon={<Search />}
+              title="Không Tìm Thấy Kết Quả"
+              description="Không có thiết kế nào phù hợp với bộ lọc hiện tại. Vui lòng thử tìm kiếm với từ khóa khác."
+              action={
+                <Button variant="secondary" size="md">
+                  Đặt Lại Bộ Lọc
+                </Button>
+              }
+            />
+          </div>
+
+          <div className={styles.componentCard}>
+            <EmptyState
+              icon={<FolderOpen />}
+              title="Chưa Có Đơn Hàng Nào"
+              description="Hệ thống quản trị chưa ghi nhận đơn đặt hàng nào trong kỳ báo cáo này."
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* 7. PAGINATION */}
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>7. Phân Trang / Pagination</h2>
+        <p className={styles.sectionDesc}>
+          Điều khiển từ ngoài với nút trước/sau, tự động rút gọn bằng dấu &quot;…&quot;, nút trang hiện tại gắn aria-current=&quot;page&quot;.
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', alignItems: 'center' }}>
+          <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+            Đang xem trang: <strong>{currentPage}</strong> trên tổng số <strong>12</strong> trang
+          </p>
+
+          <Pagination
+            page={currentPage}
+            totalPages={12}
+            onChange={(newPage) => setCurrentPage(newPage)}
+          />
+        </div>
+      </section>
+
+      {/* 8. BREADCRUMBS */}
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>8. Đường Dẫn Điều Hướng / Breadcrumbs</h2>
+        <p className={styles.sectionDesc}>
+          Thẻ nav chuẩn hỗ trợ tiếp cận, mục cuối cùng là trang hiện tại (không gắn thẻ liên kết) có aria-current=&quot;page&quot;.
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
+          <div>
+            <span className={styles.cardLabel} style={{ marginBottom: 'var(--space-2)', display: 'block' }}>
+              Breadcrumbs Phân Hệ Khách Hàng (Storefront):
+            </span>
+            <Breadcrumbs items={storefrontBreadcrumbs} />
+          </div>
+
+          <div>
+            <span className={styles.cardLabel} style={{ marginBottom: 'var(--space-2)', display: 'block' }}>
+              Breadcrumbs Phân Hệ Quản Trị (Admin Workspace):
+            </span>
+            <Breadcrumbs items={adminBreadcrumbs} />
           </div>
         </div>
       </section>
