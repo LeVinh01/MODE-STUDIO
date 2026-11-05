@@ -1,7 +1,7 @@
 import { Outlet } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { toggleCartDrawer } from '@/store/slices/uiSlice'
-import { AnnouncementBar, Header, MobileMenu, SearchModal } from '@/components/storefront'
+import { AnnouncementBar, Header, MobileMenu, SearchModal, Footer } from '@/components/storefront'
 import styles from './MainLayout.module.scss'
 
 export const MainLayout = () => {
@@ -52,10 +52,8 @@ export const MainLayout = () => {
         </aside>
       )}
 
-      {/* 8. Chân trang tạm thời (Sẽ thay bằng Footer đa cột chính thức ở Giai đoạn 3) */}
-      <footer className={styles.footer} role="contentinfo">
-        <p>© {new Date().getFullYear()} MODE STUDIO. Curated Luxury &amp; Editorial Fashion.</p>
-      </footer>
+      {/* 8. Chân trang đa cột chính thức */}
+      <Footer />
     </div>
   )
 }

@@ -30,7 +30,8 @@ export const AnnouncementBar = () => {
   return (
     <aside className={styles.announcementBar} aria-label="Thông báo ưu đãi">
       <div className={styles.contentWrapper}>
-        <span className={styles.text}>{ANNOUNCEMENT_CONFIG.text}</span>
+        <span className={styles.textFull}>{ANNOUNCEMENT_CONFIG.text}</span>
+        <span className={styles.textShort}>{ANNOUNCEMENT_CONFIG.shortText}</span>
         {ANNOUNCEMENT_CONFIG.linkTo && (
           <Link to={ANNOUNCEMENT_CONFIG.linkTo} className={styles.link}>
             {ANNOUNCEMENT_CONFIG.linkText}

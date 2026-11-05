@@ -486,6 +486,23 @@ export const DesignSystemShowcasePage = () => {
           </div>
         </div>
       </section>
+
+      {/* 9. STOREFRONT SHELL OVERVIEW */}
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>9. Khung Giao Diện Storefront (Header &amp; Footer Shell)</h2>
+        <p className={styles.sectionDesc}>
+          Trang showcase này đang được nhúng trực tiếp trong khung Storefront (MainLayout) hoàn chỉnh. Bạn có thể cuộn trang để thấy hiệu ứng Header mờ dính trên cùng, nhấp nút kính lúp để mở SearchModal, hoặc co nhỏ trình duyệt để thử Menu Drawer trên thiết bị di động.
+        </p>
+
+        <div className={styles.row}>
+          <Button to="/" variant="primary">
+            Xem Thử Tại Trang Chủ
+          </Button>
+          <Button to="/products" variant="secondary">
+            Xem Thử Tại Trang Danh Mục
+          </Button>
+        </div>
+      </section>
     </div>
   )
 }
