@@ -1,0 +1,70 @@
+:root {
+  /* ==========================================================================
+     MODE STUDIO DESIGN TOKENS (Modern Luxury & Editorial Fashion)
+     ========================================================================== */
+
+  /* Primary Editorial Neutrals */
+  --color-black: #111111;
+  --color-white: #ffffff;
+  --color-cream: #fbf9f5;
+  --color-sand: #efece6;
+  --color-taupe: #d8d1c5;
+
+  /* Warm Grays (Beige-tinted neutral scale - harmonized with cream/sand/taupe) */
+  --color-gray-50: #faf9f6;
+  --color-gray-100: #f5f3ef;
+  --color-gray-200: #e8e4dd;
+  --color-gray-300: #d6d0c7;
+  --color-gray-400: #a8a196;
+  --color-gray-500: #7d766c;
+  --color-gray-600: #5c564e;
+  --color-gray-700: #443f38;
+  --color-gray-800: #2c2824;
+  --color-gray-900: #1a1816;
+
+  /* Accent & Status */
+  --color-bronze: #997a44;
+  --color-success: #355e3b;
+  --color-error: #a83232;
+  --color-warning: #b57324;
+  --color-info: #3d5a73;
+
+  /* Semantic Surface Tokens */
+  --color-bg-primary: var(--color-white);
+  --color-bg-secondary: var(--color-cream);
+  --color-bg-tertiary: var(--color-sand);
+  --color-text-primary: var(--color-black);
+  --color-text-secondary: var(--color-gray-600);
+  --color-text-muted: var(--color-gray-400);
+  --color-border-subtle: var(--color-gray-200);
+  --color-border-strong: var(--color-gray-400);
+
+  /* Spacing Scale (4px / 8px rhythm) */
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.5rem;   /* 8px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-5: 1.25rem;  /* 20px */
+  --space-6: 1.5rem;   /* 24px */
+  --space-8: 2rem;     /* 32px */
+  --space-10: 2.5rem;  /* 40px */
+  --space-12: 3rem;    /* 48px */
+  --space-16: 4rem;    /* 64px */
+  --space-20: 5rem;    /* 80px */
+  --space-24: 6rem;    /* 96px */
+  --space-32: 8rem;    /* 128px */
+
+  /* Shadows (Soft, warm, editorial) */
+  --shadow-sm: 0 1px 2px rgba(26, 24, 22, 0.04);
+  --shadow-md: 0 4px 12px rgba(26, 24, 22, 0.06);
+  --shadow-lg: 0 12px 24px rgba(26, 24, 22, 0.08);
+  --shadow-drawer: -4px 0 24px rgba(26, 24, 22, 0.08);
+
+  /* Border Radii (Minimalist, sharp or slightly softened) */
+  --radius-none: 0;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-full: 9999px;
+}
+

@@ -1,0 +1,88 @@
+@use '../abstracts' as *;
+
+body {
+  font-family: $font-sans;
+  font-size: 1rem;
+  line-height: 1.6;
+  font-weight: $font-weight-regular;
+  color: var(--color-text-primary);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: $font-serif;
+  font-weight: $font-weight-regular;
+  line-height: 1.2;
+  color: var(--color-black);
+}
+
+h1 {
+  font-size: 2.125rem;
+  letter-spacing: -0.02em;
+
+  @include respond-to('md') {
+    font-size: 2.75rem;
+  }
+
+  @include respond-to('lg') {
+    font-size: 3.25rem;
+  }
+}
+
+h2 {
+  font-size: 1.625rem;
+  letter-spacing: -0.01em;
+
+  @include respond-to('md') {
+    font-size: 2rem;
+  }
+
+  @include respond-to('lg') {
+    font-size: 2.25rem;
+  }
+}
+
+h3 {
+  font-family: $font-sans;
+  font-size: 1.25rem;
+  font-weight: $font-weight-medium;
+  letter-spacing: 0;
+
+  @include respond-to('md') {
+    font-size: 1.5rem;
+  }
+}
+
+h4 {
+  font-family: $font-sans;
+  font-size: 1.125rem;
+  font-weight: $font-weight-medium;
+  letter-spacing: 0.01em;
+}
+
+.editorial-display {
+  font-family: $font-serif;
+  font-size: 2.75rem;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+
+  @include respond-to('md') {
+    font-size: 3.75rem;
+  }
+
+  @include respond-to('lg') {
+    font-size: 4.5rem;
+  }
+}
+
+.caption {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+

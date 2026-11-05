@@ -1,0 +1,41 @@
+@use '../abstracts' as *;
+
+.container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--space-4);
+  padding-right: var(--space-4);
+
+  @include respond-to('sm') {
+    padding-left: var(--space-6);
+    padding-right: var(--space-6);
+  }
+
+  @include respond-to('lg') {
+    max-width: 1280px;
+    padding-left: var(--space-8);
+    padding-right: var(--space-8);
+  }
+
+  @include respond-to('2xl') {
+    max-width: 1440px;
+  }
+}
+
+.container-fluid {
+  width: 100%;
+  padding-left: var(--space-4);
+  padding-right: var(--space-4);
+
+  @include respond-to('sm') {
+    padding-left: var(--space-6);
+    padding-right: var(--space-6);
+  }
+
+  @include respond-to('lg') {
+    padding-left: var(--space-8);
+    padding-right: var(--space-8);
+  }
+}
+
