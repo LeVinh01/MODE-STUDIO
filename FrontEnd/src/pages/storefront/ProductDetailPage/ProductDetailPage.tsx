@@ -5,13 +5,12 @@ export const ProductDetailPage = () => {
 
   return (
     <section>
-      <h2 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Product Detail</h2>
-      <p style={{ color: '#52525b' }}>
-        Viewing product: <strong>{slug || 'placeholder-item'}</strong>. Ready for variant selector and gallery.
+      <h2>Chi Tiết Sản Phẩm / Product Detail</h2>
+      <p style={{ marginTop: 'var(--space-2)', color: 'var(--color-text-secondary)' }}>
+        Đang xem sản phẩm: <strong>{slug || 'san-pham-mau'}</strong>. Sẵn sàng tích hợp chọn biến thể (màu sắc, size, SKU) và hình ảnh phóng to.
       </p>
     </section>
   )
 }
 
 export default ProductDetailPage
-

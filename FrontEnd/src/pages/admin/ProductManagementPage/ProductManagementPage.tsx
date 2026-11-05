@@ -1,11 +1,12 @@
 export const ProductManagementPage = () => {
   return (
     <section>
-      <h2 style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>Product Management</h2>
-      <p style={{ color: '#52525b' }}>Catalog management, SKU variants, inventory adjustments, and pricing.</p>
+      <h2>Quản Lý Sản Phẩm &amp; Danh Mục</h2>
+      <p style={{ marginTop: 'var(--space-2)', color: 'var(--color-text-secondary)' }}>
+        Quản lý danh mục, thiết lập các biến thể (màu sắc, kích thước, SKU) và kiểm soát lượng hàng tồn kho.
+      </p>
     </section>
   )
 }
 
 export default ProductManagementPage
-

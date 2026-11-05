@@ -2,98 +2,37 @@ import { Link, Outlet } from 'react-router-dom'
 import { LayoutDashboard, Package, ShoppingCart, Store } from 'lucide-react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { toggleAdminSidebar } from '@/store/slices/uiSlice'
+import styles from './AdminLayout.module.scss'
 
 export const AdminLayout = () => {
   const dispatch = useAppDispatch()
   const isAdminSidebarOpen = useAppSelector((state) => state.ui.isAdminSidebarOpen)
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#fafafa' }}>
+    <div className={styles.layoutAdmin}>
       {isAdminSidebarOpen && (
-        <aside
-          style={{
-            width: '240px',
-            background: '#111111',
-            color: '#ffffff',
-            padding: '1.5rem 1rem',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '1.5rem',
-          }}
-        >
-          <div style={{ padding: '0 0.5rem' }}>
-            <span
-              style={{
-                fontSize: '1rem',
-                fontWeight: 600,
-                letterSpacing: '0.08em',
-              }}
-            >
-              MODE ADMIN
-            </span>
+        <aside className={styles.sidebar}>
+          <div className={styles.brand}>
+            <span className={styles.brandText}>MODE ADMIN</span>
           </div>
 
-          <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <Link
-              to="/admin"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                color: '#ece7df',
-                textDecoration: 'none',
-                padding: '0.5rem 0.75rem',
-                borderRadius: '4px',
-              }}
-            >
+          <nav className={styles.nav}>
+            <Link to="/admin" className={styles.navItem}>
               <LayoutDashboard size={18} />
               <span>Dashboard</span>
             </Link>
-            <Link
-              to="/admin/products"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                color: '#ece7df',
-                textDecoration: 'none',
-                padding: '0.5rem 0.75rem',
-                borderRadius: '4px',
-              }}
-            >
+            <Link to="/admin/products" className={styles.navItem}>
               <Package size={18} />
               <span>Products</span>
             </Link>
-            <Link
-              to="/admin/orders"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                color: '#ece7df',
-                textDecoration: 'none',
-                padding: '0.5rem 0.75rem',
-                borderRadius: '4px',
-              }}
-            >
+            <Link to="/admin/orders" className={styles.navItem}>
               <ShoppingCart size={18} />
               <span>Orders</span>
             </Link>
           </nav>
 
-          <div style={{ marginTop: 'auto', borderTop: '1px solid #333', paddingTop: '1rem' }}>
-            <Link
-              to="/"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                color: '#a1a1aa',
-                textDecoration: 'none',
-                padding: '0.5rem 0.75rem',
-                fontSize: '0.875rem',
-              }}
-            >
+          <div className={styles.sidebarFooter}>
+            <Link to="/" className={styles.backLink}>
               <Store size={18} />
               <span>Back to Store</span>
             </Link>
@@ -101,35 +40,19 @@ export const AdminLayout = () => {
         </aside>
       )}
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <header
-          style={{
-            background: '#ffffff',
-            borderBottom: '1px solid #e4e4e7',
-            padding: '1rem 2rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
+      <div className={styles.contentWrapper}>
+        <header className={styles.header}>
           <button
             type="button"
             onClick={() => dispatch(toggleAdminSidebar())}
-            style={{
-              background: '#f4f4f5',
-              border: '1px solid #e4e4e7',
-              padding: '0.4rem 0.8rem',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-            }}
+            className={styles.toggleButton}
           >
             {isAdminSidebarOpen ? 'Hide Menu' : 'Show Menu'}
           </button>
-          <span style={{ fontSize: '0.875rem', color: '#52525b' }}>Operations & Management</span>
+          <span className={styles.headerSubtitle}>Operations &amp; Management</span>
         </header>
 
-        <main style={{ padding: '2rem', flex: 1 }}>
+        <main className={styles.mainBody}>
           <Outlet />
         </main>
       </div>
@@ -138,4 +61,3 @@ export const AdminLayout = () => {
 }
 
 export default AdminLayout
-

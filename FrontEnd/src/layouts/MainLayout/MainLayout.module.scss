@@ -1,0 +1,159 @@
+@use '../../styles/abstracts' as *;
+
+.layoutStorefront {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-4) var(--space-4);
+  border-bottom: 1px solid var(--color-border-subtle);
+  background-color: var(--color-bg-primary);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+
+  @include respond-to('md') {
+    padding: var(--space-5) var(--space-8);
+  }
+}
+
+.logo {
+  font-family: $font-serif;
+  font-size: 1.375rem;
+  font-weight: $font-weight-regular;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-primary);
+  transition: opacity $transition-fast;
+
+  &:hover {
+    opacity: 0.7;
+  }
+}
+
+.nav {
+  display: flex;
+  gap: var(--space-4);
+  align-items: center;
+
+  @include respond-to('md') {
+    gap: var(--space-6);
+  }
+}
+
+.navLink {
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-primary);
+  transition: color $transition-fast;
+
+  &:hover {
+    color: var(--color-text-muted);
+  }
+}
+
+.adminLink {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  transition: all $transition-fast;
+
+  &:hover {
+    color: var(--color-text-primary);
+    border-color: var(--color-border-strong);
+  }
+}
+
+.cartButton {
+  @include unstyled-button;
+  display: flex;
+  align-items: center;
+  color: var(--color-text-primary);
+  transition: opacity $transition-fast;
+
+  &:hover {
+    opacity: 0.6;
+  }
+}
+
+.cartDrawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 100%;
+  max-width: 360px;
+  height: 100%;
+  background-color: var(--color-bg-primary);
+  border-left: 1px solid var(--color-border-subtle);
+  padding: var(--space-6);
+  z-index: 200;
+  box-shadow: var(--shadow-drawer);
+  display: flex;
+  flex-direction: column;
+}
+
+.drawerHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.drawerTitle {
+  font-family: $font-serif;
+  font-size: 1.25rem;
+  font-weight: $font-weight-regular;
+  letter-spacing: -0.01em;
+}
+
+.closeButton {
+  @include unstyled-button;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--color-text-muted);
+  transition: color $transition-fast;
+
+  &:hover {
+    color: var(--color-text-primary);
+  }
+}
+
+.drawerEmpty {
+  margin-top: var(--space-8);
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+.mainContent {
+  flex: 1;
+  padding: var(--space-6) var(--space-4);
+
+  @include respond-to('md') {
+    padding: var(--space-12) var(--space-8);
+  }
+}
+
+.footer {
+  border-top: 1px solid var(--color-border-subtle);
+  padding: var(--space-8) var(--space-4);
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+  letter-spacing: 0.03em;
+  background-color: var(--color-bg-secondary);
+}
+
