@@ -1,0 +1,89 @@
+@use '@/styles/abstracts' as *;
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-4) 0;
+}
+
+.navLink {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--color-border-subtle);
+  font-family: $font-serif;
+  font-size: 1.25rem;
+  letter-spacing: 0.02em;
+  color: var(--color-text-primary);
+  text-decoration: none;
+  transition: color $transition-fast, transform $transition-fast;
+
+  &:hover {
+    color: var(--color-text-secondary);
+    transform: translateX(4px);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+    border-radius: var(--radius-sm);
+  }
+
+  &.active {
+    font-weight: $font-weight-semibold;
+    color: var(--color-black);
+  }
+}
+
+.footerActions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.accountButton {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-gray-100);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: $font-weight-medium;
+  letter-spacing: 0.02em;
+  transition: all $transition-fast;
+
+  &:hover {
+    background-color: var(--color-gray-200);
+  }
+}
+
+.devRow {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.devLink {
+  flex: 1;
+  text-align: center;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  padding: var(--space-2);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  transition: all $transition-fast;
+
+  &:hover {
+    color: var(--color-text-primary);
+    border-color: var(--color-border-strong);
+  }
+}
+
