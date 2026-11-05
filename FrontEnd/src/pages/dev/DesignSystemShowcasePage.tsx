@@ -16,6 +16,8 @@ import {
 } from '@/components/common'
 import { Spinner, Skeleton, Modal, EmptyState, Drawer } from '@/components/feedback'
 import { Pagination, Breadcrumbs } from '@/components/navigation'
+import { ProductCard, ProductCardSkeleton } from '@/components/storefront'
+import { MOCK_PRODUCTS } from '@/mocks/products'
 import styles from './DesignSystemShowcasePage.module.scss'
 
 export const DesignSystemShowcasePage = () => {
@@ -25,6 +27,16 @@ export const DesignSystemShowcasePage = () => {
   const [isLeftDrawerOpen, setIsLeftDrawerOpen] = useState(false)
   const [isRightDrawerOpen, setIsRightDrawerOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(3)
+  const [wishlist, setWishlist] = useState<Record<string, boolean>>({
+    'prod-001': true,
+  })
+
+  const toggleWishlist = (id: string) => {
+    setWishlist((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }))
+  }
 
   const sizeOptions = [
     { label: 'Chọn kích thước (Size)', value: '', disabled: true },
@@ -501,6 +513,40 @@ export const DesignSystemShowcasePage = () => {
           <Button to="/products" variant="secondary">
             Xem Thử Tại Trang Danh Mục
           </Button>
+        </div>
+      </section>
+
+      {/* 10. PRODUCT CARD (EDITORIAL BOUTIQUE) */}
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>10. Thẻ Sản Phẩm / ProductCard (Editorial Boutique)</h2>
+        <p className={styles.sectionDesc}>
+          Thẻ sản phẩm chuẩn may đo: dùng &lt;article&gt;, tỷ lệ ảnh cố định 3:4, khối placeholder dự phòng khi chưa có URL ảnh thật, chỉ tên sản phẩm là liên kết (vùng bấm mở rộng bằng ::after), nút yêu thích riêng biệt chồng lên ảnh, huy hiệu (MỚI, SALE -%, HẾT HÀNG), và trạng thái Skeleton tải trang.
+        </p>
+
+        <div className={styles.productGrid}>
+          {/* Card 1: Sale product with discount badge & wishlist active */}
+          <ProductCard
+            product={MOCK_PRODUCTS[0]}
+            isWishlisted={Boolean(wishlist[MOCK_PRODUCTS[0].id])}
+            onWishlistToggle={toggleWishlist}
+          />
+
+          {/* Card 2: New arrival product */}
+          <ProductCard
+            product={MOCK_PRODUCTS[1]}
+            isWishlisted={Boolean(wishlist[MOCK_PRODUCTS[1].id])}
+            onWishlistToggle={toggleWishlist}
+          />
+
+          {/* Card 3: Out of stock product */}
+          <ProductCard
+            product={MOCK_PRODUCTS[7]}
+            isWishlisted={Boolean(wishlist[MOCK_PRODUCTS[7].id])}
+            onWishlistToggle={toggleWishlist}
+          />
+
+          {/* Card 4: ProductCardSkeleton loading state */}
+          <ProductCardSkeleton />
         </div>
       </section>
     </div>

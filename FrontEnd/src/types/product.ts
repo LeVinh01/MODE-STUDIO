@@ -28,6 +28,8 @@ export interface Product {
   variants: ProductVariant[]
   isPublished: boolean
   featuredImage?: string
+  isNew?: boolean
+  isOutOfStock?: boolean
   createdAt?: string
   updatedAt?: string
 }
