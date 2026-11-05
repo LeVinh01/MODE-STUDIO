@@ -84,6 +84,13 @@
   --color-disabled: var(--color-gray-200);
   --color-text-disabled: var(--color-gray-400);
 
+  /* Transparent Glass & Overlay Tokens */
+  --color-surface-glass: rgba(255, 255, 255, 0.85);
+  --color-surface-glass-hover: rgba(255, 255, 255, 0.98);
+  --color-surface-overlay: rgba(17, 17, 17, 0.04);
+  --color-surface-overlay-hover: rgba(17, 17, 17, 0.08);
+  --color-wishlist-active: var(--color-error);
+
   /* Skeleton Shimmer Tokens */
   --color-skeleton-base: var(--color-gray-100);
   --color-skeleton-highlight: var(--color-gray-50);

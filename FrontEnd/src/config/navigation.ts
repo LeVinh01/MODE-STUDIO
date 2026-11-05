@@ -1,3 +1,5 @@
+import { STORE_POLICIES } from './store'
+
 export interface NavItem {
   label: string
   to: string
@@ -18,8 +20,12 @@ export interface SocialLink {
 
 export const ANNOUNCEMENT_CONFIG = {
   storageKey: 'mode_studio_announcement_dismissed',
-  text: 'MIỄN PHÍ VẬN CHUYỂN TOÀN QUỐC CHO ĐƠN TỪ 2.000.000 Đ • KHÁM PHÁ BỘ SƯU TẬP MỚI',
-  shortText: 'MIỄN PHÍ VẬN CHUYỂN TỪ 2 TRIỆU',
+  text: `MIỄN PHÍ VẬN CHUYỂN TOÀN QUỐC CHO ĐƠN TỪ ${(
+    STORE_POLICIES.freeShippingThreshold
+  ).toLocaleString('vi-VN')} Đ • KHÁM PHÁ BỘ SƯU TẬP MỚI`,
+  shortText: `MIỄN PHÍ VẬN CHUYỂN TỪ ${(
+    STORE_POLICIES.freeShippingThreshold / 1000000
+  ).toLocaleString('vi-VN')} TRIỆU`,
   linkText: 'XEM NGAY',
   linkTo: '/products',
 }
