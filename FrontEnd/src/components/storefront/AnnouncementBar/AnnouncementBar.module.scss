@@ -1,0 +1,80 @@
+@use '@/styles/abstracts' as *;
+
+.announcementBar {
+  background-color: var(--color-sand);
+  color: var(--color-text-primary);
+  border-bottom: 1px solid var(--color-border-subtle);
+  font-family: $font-sans;
+  font-size: 0.75rem;
+  font-weight: $font-weight-medium;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+  position: relative;
+  z-index: 90;
+  transition: all $transition-fast;
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+.contentWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2) var(--space-10);
+  min-height: 2.25rem;
+  text-align: center;
+}
+
+.text {
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.link {
+  color: var(--color-text-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: $font-weight-semibold;
+  margin-left: var(--space-2);
+  transition: opacity $transition-fast;
+
+  &:hover {
+    opacity: 0.7;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+    border-radius: var(--radius-sm);
+  }
+}
+
+.dismissButton {
+  @include unstyled-button;
+  position: absolute;
+  right: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  transition: all $transition-fast;
+
+  &:hover {
+    color: var(--color-text-primary);
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+
+  &:focus-visible {
+    box-shadow: var(--focus-ring);
+  }
+}
+

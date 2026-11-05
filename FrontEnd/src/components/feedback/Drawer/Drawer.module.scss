@@ -1,0 +1,174 @@
+@use '@/styles/abstracts' as *;
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(17, 17, 17, 0.5);
+  backdrop-filter: blur(2px);
+  z-index: $z-drawer-backdrop;
+  animation: fadeIn $transition-fast ease-out;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    backdrop-filter: none;
+  }
+}
+
+.drawerDialog {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  height: 100vh;
+  width: 85%;
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border-subtle);
+  box-shadow: var(--shadow-drawer);
+  z-index: $z-drawer;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: transform $transition-base cubic-bezier(0.16, 1, 0.3, 1);
+
+  &:focus-visible {
+    outline: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+/* Positions */
+.positionLeft {
+  left: 0;
+  border-left: none;
+  border-right: 1px solid var(--color-border-subtle);
+  animation: slideInLeft $transition-base cubic-bezier(0.16, 1, 0.3, 1);
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+.positionRight {
+  right: 0;
+  border-right: none;
+  border-left: 1px solid var(--color-border-subtle);
+  animation: slideInRight $transition-base cubic-bezier(0.16, 1, 0.3, 1);
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/* Sizes */
+.sizeSm {
+  max-width: 320px;
+}
+
+.sizeMd {
+  max-width: 380px;
+}
+
+.sizeLg {
+  max-width: 480px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--color-border-subtle);
+  gap: var(--space-4);
+  background-color: var(--color-bg-primary);
+}
+
+.headerContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.title {
+  font-family: $font-serif;
+  font-size: 1.25rem;
+  font-weight: $font-weight-regular;
+  letter-spacing: -0.01em;
+  color: var(--color-black);
+  margin: 0;
+}
+
+.description {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.closeButton {
+  @include unstyled-button;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  transition: all $transition-fast;
+
+  &:hover {
+    color: var(--color-text-primary);
+    background-color: var(--color-gray-100);
+  }
+
+  &:focus-visible {
+    box-shadow: var(--focus-ring);
+  }
+}
+
+.body {
+  flex: 1;
+  padding: var(--space-6);
+  overflow-y: auto;
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--color-border-subtle);
+  background-color: var(--color-gray-50);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+

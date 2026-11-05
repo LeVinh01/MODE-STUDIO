@@ -14,7 +14,7 @@ import {
   Checkbox,
   Badge,
 } from '@/components/common'
-import { Spinner, Skeleton, Modal, EmptyState } from '@/components/feedback'
+import { Spinner, Skeleton, Modal, EmptyState, Drawer } from '@/components/feedback'
 import { Pagination, Breadcrumbs } from '@/components/navigation'
 import styles from './DesignSystemShowcasePage.module.scss'
 
@@ -22,6 +22,8 @@ export const DesignSystemShowcasePage = () => {
   const [btnLoading, setBtnLoading] = useState(false)
   const [checkedBox, setCheckedBox] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isLeftDrawerOpen, setIsLeftDrawerOpen] = useState(false)
+  const [isRightDrawerOpen, setIsRightDrawerOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(3)
 
   const sizeOptions = [
@@ -332,6 +334,69 @@ export const DesignSystemShowcasePage = () => {
             />
           </div>
         </Modal>
+      </section>
+
+      {/* 5.1. DRAWER (LEFT & RIGHT SLIDE-IN) */}
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>5.1. Bảng Trượt / Drawer (Trái &amp; Phải)</h2>
+        <p className={styles.sectionDesc}>
+          Drawer toàn màn hình trượt từ cạnh trái (cho Mobile Navigation) hoặc cạnh phải (cho Giỏ hàng nhanh). Tái sử dụng hook a11y chung: tự động khóa cuộn, bẫy Tab và hỗ trợ phím Esc.
+        </p>
+
+        <div className={styles.row}>
+          <Button variant="secondary" onClick={() => setIsLeftDrawerOpen(true)}>
+            Mở Drawer Trái (Left - Mobile Menu)
+          </Button>
+          <Button variant="secondary" onClick={() => setIsRightDrawerOpen(true)}>
+            Mở Drawer Phải (Right - Cart Drawer)
+          </Button>
+        </div>
+
+        <Drawer
+          isOpen={isLeftDrawerOpen}
+          onClose={() => setIsLeftDrawerOpen(false)}
+          position="left"
+          title="Menu Điều Hướng"
+          description="Demo trượt từ cạnh trái."
+          footer={
+            <Button
+              variant="secondary"
+              fullWidth
+              onClick={() => setIsLeftDrawerOpen(false)}
+            >
+              Đóng Drawer
+            </Button>
+          }
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+            <p style={{ margin: 0, color: 'var(--color-text-secondary)' }}>
+              Nội dung demo drawer bên trái với khả năng cuộn độc lập và giữ focus bàn phím.
+            </p>
+          </div>
+        </Drawer>
+
+        <Drawer
+          isOpen={isRightDrawerOpen}
+          onClose={() => setIsRightDrawerOpen(false)}
+          position="right"
+          title="Túi Mua Sắm / Cart Preview"
+          description="Demo trượt từ cạnh phải."
+          footer={
+            <Button
+              variant="primary"
+              fullWidth
+              onClick={() => setIsRightDrawerOpen(false)}
+            >
+              Xem Giỏ Hàng Chi Tiết
+            </Button>
+          }
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+            <p style={{ margin: 0, color: 'var(--color-text-secondary)' }}>
+              Nội dung demo giỏ hàng trượt từ cạnh phải, sẵn sàng tích hợp giỏ hàng thật.
+            </p>
+          </div>
+        </Drawer>
       </section>
 
       {/* 6. EMPTY STATE */}

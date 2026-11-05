@@ -6,88 +6,48 @@
   min-height: 100vh;
   background-color: var(--color-bg-primary);
   color: var(--color-text-primary);
+  position: relative;
 }
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--space-4) var(--space-4);
-  border-bottom: 1px solid var(--color-border-subtle);
-  background-color: var(--color-bg-primary);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-
-  @include respond-to('md') {
-    padding: var(--space-5) var(--space-8);
-  }
-}
-
-.logo {
-  font-family: $font-serif;
-  font-size: 1.375rem;
-  font-weight: $font-weight-regular;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--color-text-primary);
-  transition: opacity $transition-fast;
-
-  &:hover {
-    opacity: 0.7;
-  }
-}
-
-.nav {
-  display: flex;
-  gap: var(--space-4);
-  align-items: center;
-
-  @include respond-to('md') {
-    gap: var(--space-6);
-  }
-}
-
-.navLink {
-  font-size: 0.875rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--color-text-primary);
-  transition: color $transition-fast;
-
-  &:hover {
-    color: var(--color-text-muted);
-  }
-}
-
-.adminLink {
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-  padding: var(--space-1) var(--space-2);
-  border: 1px solid var(--color-border-subtle);
+.skipToContent {
+  position: absolute;
+  top: -100px;
+  left: var(--space-4);
+  background-color: var(--color-black);
+  color: var(--color-white);
+  padding: var(--space-2) var(--space-4);
+  z-index: 9999;
+  font-family: $font-sans;
+  font-size: 0.8125rem;
+  font-weight: $font-weight-medium;
+  text-decoration: none;
   border-radius: var(--radius-sm);
-  transition: all $transition-fast;
+  transition: top $transition-fast;
 
-  &:hover {
-    color: var(--color-text-primary);
-    border-color: var(--color-border-strong);
+  &:focus {
+    top: var(--space-2);
+    outline: none;
+    box-shadow: var(--focus-ring);
   }
 }
 
-.cartButton {
-  @include unstyled-button;
-  display: flex;
-  align-items: center;
-  color: var(--color-text-primary);
-  transition: opacity $transition-fast;
+.mainContent {
+  flex: 1;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4);
 
-  &:hover {
-    opacity: 0.6;
+  &:focus-visible {
+    outline: none;
+  }
+
+  @include respond-to('md') {
+    padding: var(--space-10) var(--space-8);
   }
 }
 
+/* Temporary Cart Drawer (giữ lại và sẽ thay bằng <Drawer position="right"> ở bước giỏ hàng sau) */
 .cartDrawer {
   position: fixed;
   top: 0;
@@ -98,7 +58,7 @@
   background-color: var(--color-bg-primary);
   border-left: 1px solid var(--color-border-subtle);
   padding: var(--space-6);
-  z-index: 200;
+  z-index: $z-drawer;
   box-shadow: var(--shadow-drawer);
   display: flex;
   flex-direction: column;
@@ -129,6 +89,10 @@
   &:hover {
     color: var(--color-text-primary);
   }
+
+  &:focus-visible {
+    box-shadow: var(--focus-ring);
+  }
 }
 
 .drawerEmpty {
@@ -138,15 +102,7 @@
   font-size: 0.875rem;
 }
 
-.mainContent {
-  flex: 1;
-  padding: var(--space-6) var(--space-4);
-
-  @include respond-to('md') {
-    padding: var(--space-12) var(--space-8);
-  }
-}
-
+/* Placeholder Footer (sẽ thay bằng Storefront Footer chính thức ở Giai đoạn 3) */
 .footer {
   border-top: 1px solid var(--color-border-subtle);
   padding: var(--space-8) var(--space-4);
@@ -156,4 +112,3 @@
   letter-spacing: 0.03em;
   background-color: var(--color-bg-secondary);
 }
-
