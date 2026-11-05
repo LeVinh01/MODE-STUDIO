@@ -1,0 +1,101 @@
+@use '@/styles/abstracts' as *;
+
+.checkboxContainer {
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.labelWrapper {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  cursor: pointer;
+  user-select: none;
+}
+
+.disabledWrapper {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.nativeCheckbox {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+  pointer-events: none;
+}
+
+.customControl {
+  position: relative;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin-top: 0.125rem;
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all $transition-fast;
+
+  .nativeCheckbox:focus-visible + & {
+    box-shadow: var(--focus-ring);
+    border-color: var(--color-black);
+  }
+
+  .nativeCheckbox:checked + &,
+  &.indeterminate {
+    background-color: var(--color-black);
+    border-color: var(--color-black);
+    color: var(--color-white);
+  }
+
+  .nativeCheckbox:disabled + & {
+    background-color: var(--color-gray-100);
+    border-color: var(--color-border-subtle);
+    cursor: not-allowed;
+  }
+}
+
+.hasError .customControl {
+  border-color: var(--color-error);
+
+  .nativeCheckbox:focus-visible + & {
+    box-shadow: var(--focus-ring-error);
+  }
+}
+
+.checkIcon,
+.minusIcon {
+  width: 0.75rem;
+  height: 0.75rem;
+  stroke: var(--color-white);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.labelText {
+  font-family: $font-sans;
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+  line-height: 1.4;
+}
+
+.helperText {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  padding-left: calc(1.125rem + var(--space-2));
+}
+
+.errorMessage {
+  font-size: 0.75rem;
+  color: var(--color-error);
+  padding-left: calc(1.125rem + var(--space-2));
+}
+

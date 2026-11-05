@@ -2,6 +2,7 @@ import { Link, Outlet } from 'react-router-dom'
 import { LayoutDashboard, Package, ShoppingCart, Store } from 'lucide-react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { toggleAdminSidebar } from '@/store/slices/uiSlice'
+import { Button } from '@/components/common/Button'
 import styles from './AdminLayout.module.scss'
 
 export const AdminLayout = () => {
@@ -42,13 +43,13 @@ export const AdminLayout = () => {
 
       <div className={styles.contentWrapper}>
         <header className={styles.header}>
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => dispatch(toggleAdminSidebar())}
-            className={styles.toggleButton}
           >
             {isAdminSidebarOpen ? 'Hide Menu' : 'Show Menu'}
-          </button>
+          </Button>
           <span className={styles.headerSubtitle}>Operations &amp; Management</span>
         </header>
 

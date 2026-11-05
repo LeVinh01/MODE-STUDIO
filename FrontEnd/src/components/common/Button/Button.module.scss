@@ -1,0 +1,134 @@
+@use '@/styles/abstracts' as *;
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border-radius: var(--radius-sm);
+  font-family: $font-sans;
+  font-weight: $font-weight-medium;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  transition: all $transition-fast;
+  position: relative;
+  border: 1px solid transparent;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+
+  &:disabled,
+  &.disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    pointer-events: none;
+  }
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+/* Sizes */
+.sizeSm {
+  height: var(--control-height-sm);
+  padding: 0 var(--space-3);
+  font-size: 0.75rem;
+}
+
+.sizeMd {
+  height: var(--control-height-md);
+  padding: 0 var(--space-4);
+  font-size: 0.8125rem;
+}
+
+.sizeLg {
+  height: var(--control-height-lg);
+  padding: 0 var(--space-6);
+  font-size: 0.875rem;
+  letter-spacing: 0.06em;
+}
+
+/* Variants */
+.variantPrimary {
+  background-color: var(--color-black);
+  color: var(--color-white);
+  border-color: var(--color-black);
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-gray-800);
+    border-color: var(--color-gray-800);
+  }
+
+  &:active:not(:disabled) {
+    background-color: var(--color-gray-900);
+  }
+}
+
+.variantSecondary {
+  background-color: transparent;
+  color: var(--color-black);
+  border-color: var(--color-border-strong);
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-bg-hover);
+    border-color: var(--color-black);
+  }
+
+  &:active:not(:disabled) {
+    background-color: var(--color-bg-active);
+  }
+}
+
+.variantGhost {
+  background-color: transparent;
+  color: var(--color-black);
+  border-color: transparent;
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-bg-hover);
+  }
+
+  &:active:not(:disabled) {
+    background-color: var(--color-bg-active);
+  }
+}
+
+.variantLink {
+  background-color: transparent;
+  color: var(--color-black);
+  border-color: transparent;
+  height: auto;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+
+  &:hover:not(:disabled) {
+    color: var(--color-gray-600);
+  }
+}
+
+/* Loading state */
+.loading {
+  position: relative;
+  cursor: wait;
+}
+
+.contentWrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+

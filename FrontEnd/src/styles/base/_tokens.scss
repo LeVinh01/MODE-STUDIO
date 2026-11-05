@@ -66,5 +66,24 @@
   --radius-md: 4px;
   --radius-lg: 8px;
   --radius-full: 9999px;
+
+  /* Form & Interactive Component Tokens */
+  --control-height-sm: 2rem;     /* 32px */
+  --control-height-md: 2.5rem;   /* 40px */
+  --control-height-lg: 3rem;     /* 48px */
+
+  /* Focus Ring (Chuẩn A11y & Minimalist Luxury) */
+  --focus-ring: 0 0 0 2px var(--color-bg-primary), 0 0 0 4px var(--color-black);
+  --focus-ring-error: 0 0 0 2px var(--color-bg-primary), 0 0 0 4px var(--color-error);
+
+  /* Interaction Surface Tokens */
+  --color-bg-hover: var(--color-gray-100);
+  --color-bg-active: var(--color-gray-200);
+  --color-disabled: var(--color-gray-200);
+  --color-text-disabled: var(--color-gray-400);
+
+  /* Skeleton Shimmer Tokens */
+  --color-skeleton-base: var(--color-gray-100);
+  --color-skeleton-highlight: var(--color-gray-50);
 }
 
