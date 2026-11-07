@@ -1,58 +1,131 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# MODE STUDIO - Backend API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Hệ thống Backend API cho dự án thương mại điện tử thời trang **MODE STUDIO**.  
+Xây dựng trên nền tảng **Laravel 13**, **PHP 8.4+**, **MySQL 8.0** và triển khai qua **Docker Compose**.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 1. Yêu Cầu Môi Trường
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **Docker Desktop** (hỗ trợ Docker Compose v2+ / docker-compose).
+- Cổng khả dụng trên máy host:
+  - `8000`: Web Server (Nginx) phục vụ API.
+  - `3306`: MySQL Database Server.
+  - `8080`: Giao diện phpMyAdmin.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## 2. Hướng Dẫn Khởi Động Dự Án
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+### Bước 1: Khởi động hệ thống Docker Containers
+Chạy lệnh sau tại thư mục `BackEnd/`:
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+docker compose up -d --build
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### Bước 2: Cài đặt thư viện phụ thuộc (Composer)
+Chạy Composer install trực tiếp bên trong container `app`:
 
-## Contributing
+```bash
+docker compose exec app composer install
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Bước 3: Tạo khóa ứng dụng (Application Key)
+Nếu file `.env` chưa có `APP_KEY` hoặc muốn tạo mới:
 
-## Code of Conduct
+```bash
+docker compose exec app php artisan key:generate
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+---
 
-## Security Vulnerabilities
+## 3. LƯU Ý QUAN TRỌNG VỀ LỆNH ARTISAN
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+> **QUAN TRỌNG**: Do cấu hình cơ sở dữ liệu sử dụng mạng nội bộ Docker (`DB_HOST=mysql`), **MỌI lệnh `artisan` hoặc CLI PHẢI được thực thi thông qua container `app`**:
+>
+> ```bash
+> docker compose exec app php artisan <tên_lệnh>
+> ```
+>
+> **Ví dụ**:
+> - Chạy migration: `docker compose exec app php artisan migrate`
+> - Chạy seeder: `docker compose exec app php artisan db:seed`
+> - Làm mới CSDL: `docker compose exec app php artisan migrate:fresh`
+> - Xóa cache cấu hình: `docker compose exec app php artisan config:clear`
+> - Chạy test: `docker compose exec app php artisan test`
 
-## License
+---
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## 4. Danh Sách Cổng & Địa Chỉ Dịch Vụ
+
+| Dịch vụ | Địa chỉ truy cập | Ghi chú |
+| :--- | :--- | :--- |
+| **API Backend (Nginx)** | `http://localhost:8000` | Cổng chính cho frontend kết nối |
+| **Kiểm tra sức khỏe (Health Check)** | `http://localhost:8000/api/health` | Trả về JSON `{"status": "ok"}` |
+| **phpMyAdmin** | `http://localhost:8080` | Quản trị CSDL giao diện Web |
+| **MySQL Database** | `localhost:3306` | Kết nối từ DBeaver / Datagrip / Workbench |
+
+### Thông tin đăng nhập CSDL mặc định (theo `.env`):
+- **Server / Host**: `mysql` (từ trong container) hoặc `127.0.0.1` (từ ngoài máy host).
+- **Database**: `mode_studio`
+- **Username**: `mode_user`
+- **Password**: `secret_password`
+- **Root Password**: `root_secret`
+
+---
+
+## 5. Seed Dữ Liệu Mẫu (Development)
+
+### Bước 1: Cấu hình mật khẩu seed trong `.env`
+
+> ⚠️ **Mật khẩu này CHỈ dùng cho môi trường dev. BẮT BUỘC phải đổi trước khi triển khai lên staging/production.**
+
+Mở file `.env` và điền giá trị cho 3 biến sau (không để trống):
+
+```dotenv
+SEED_ADMIN_PASSWORD=<mật_khẩu_mạnh>
+SEED_OPERATOR_PASSWORD=<mật_khẩu_mạnh>
+SEED_CUSTOMER_PASSWORD=<mật_khẩu_mạnh>
+```
+
+Nếu bất kỳ biến nào bị bỏ trống, seeder sẽ báo lỗi rõ ràng và dừng lại.
+
+### Bước 2: Chạy migration và seed
+
+```bash
+# Xóa toàn bộ dữ liệu và tạo lại từ đầu (dev)
+docker compose exec app php artisan migrate:fresh --seed
+
+# Hoặc chỉ seed mà không xóa dữ liệu
+docker compose exec app php artisan db:seed
+```
+
+### Tài khoản mẫu sau khi seed
+
+| Vai trò | Email | Mật khẩu |
+|---|---|---|
+| Admin | `admin@mode-studio.test` | Giá trị `SEED_ADMIN_PASSWORD` trong `.env` |
+| Operator | `operator@mode-studio.test` | Giá trị `SEED_OPERATOR_PASSWORD` trong `.env` |
+| Khách hàng | `customer@mode-studio.test` | Giá trị `SEED_CUSTOMER_PASSWORD` trong `.env` |
+
+---
+
+## 6. Lưu Ý Triển Khai Thực Tế (Production)
+
+> ⚠️ **QUAN TRỌNG**:
+> - Biến `APP_DEBUG` trong file `.env` **BẮT BUỘC phải được đặt là `false`** khi triển khai thật (staging/production) để tránh lộ thông tin nhạy cảm của hệ thống.
+> - Các biến `SEED_*_PASSWORD` chỉ phục vụ mục đích seeding môi trường dev, phải xóa hoặc thay đổi mật khẩu quản trị thật sau khi khởi tạo.
+
+---
+
+## 7. Dừng Hệ Thống Docker
+
+- Dừng containers:
+  ```bash
+  docker compose down
+  ```
+- Dừng containers và xóa volumes (chú ý: dữ liệu CSDL trong volume `mysql_data` sẽ bị xóa):
+  ```bash
+  docker compose down -v
+  ```
