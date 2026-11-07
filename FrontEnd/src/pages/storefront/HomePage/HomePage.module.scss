@@ -425,6 +425,27 @@
   }
 }
 
+.errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-10) var(--space-4);
+  background-color: var(--color-cream);
+  border: 1px dashed var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  text-align: center;
+  margin: var(--space-4) 0;
+}
+
+.errorMessage {
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+  max-width: 480px;
+}
+
 /* ==========================================================================
    4. LOOKBOOK / EDITORIAL BANNER SECTION
    ========================================================================== */

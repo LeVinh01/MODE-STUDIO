@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import {
   ArrowRight,
@@ -6,18 +6,28 @@ import {
   Truck,
   RefreshCw,
   ShieldCheck,
+  AlertCircle,
 } from 'lucide-react'
 import { Button } from '@/components/common/Button'
 import { Badge } from '@/components/common/Badge'
-import { ProductCard } from '@/components/storefront/ProductCard'
-import { MOCK_PRODUCTS } from '@/mocks/products'
+import { Skeleton, EmptyState } from '@/components/feedback'
+import { ProductCard, ProductCardSkeleton } from '@/components/storefront/ProductCard'
 import { STORE_SERVICE_HIGHLIGHTS } from '@/config/store'
 import { formatCurrency } from '@/utils/formatters'
+import { productService } from '@/services/api/productService'
+import type { Product } from '@/types/product'
 import styles from './HomePage.module.scss'
 
+interface CategoryCounts {
+  women: number | null
+  men: number | null
+  accessories: number | null
+}
+
 export const HomePage = () => {
+  // Wishlist state (local storage / in-memory mockup)
   const [wishlist, setWishlist] = useState<Record<string, boolean>>({
-    'prod-001': true,
+    '1': true,
   })
 
   const handleToggleWishlist = (productId: string) => {
@@ -27,24 +37,111 @@ export const HomePage = () => {
     }))
   }
 
-  // 1. Calculate dynamic category counts from mock data
-  const womenCount = MOCK_PRODUCTS.filter(
-    (p) => p.category.slug === 'women',
-  ).length
-  const menCount = MOCK_PRODUCTS.filter((p) => p.category.slug === 'men').length
-  const accessoriesCount = MOCK_PRODUCTS.filter(
-    (p) => p.category.slug === 'accessories',
-  ).length
+  // 1. Data states
+  const [newArrivals, setNewArrivals] = useState<Product[]>([])
+  const [isLoadingNewArrivals, setIsLoadingNewArrivals] = useState<boolean>(true)
+  const [newArrivalsError, setNewArrivalsError] = useState<string | null>(null)
 
-  // 2. Featured new arrivals (first 4 items)
-  const newArrivals = MOCK_PRODUCTS.slice(0, 4)
+  const [categoryCounts, setCategoryCounts] = useState<CategoryCounts>({
+    women: null,
+    men: null,
+    accessories: null,
+  })
+  const [isLoadingCounts, setIsLoadingCounts] = useState<boolean>(true)
 
-  // 3. AI Styling mockup items (3 complementary items from mock products)
-  const aiMockupItems = [
-    MOCK_PRODUCTS[0], // Blazer Len Cashmere
-    MOCK_PRODUCTS[4], // Quần Tây Xếp Ly
-    MOCK_PRODUCTS[5], // Túi Da Bò Ý
-  ]
+  const [aiOutfitItems, setAiOutfitItems] = useState<Product[]>([])
+  const [isLoadingAiOutfits, setIsLoadingAiOutfits] = useState<boolean>(true)
+
+  // 2. Retry trigger
+  const [retryTrigger, setRetryTrigger] = useState<number>(0)
+  const handleRetry = useCallback(() => {
+    setRetryTrigger((prev) => prev + 1)
+  }, [])
+
+  // 3. Fetch data with AbortController
+  useEffect(() => {
+    const controller = new AbortController()
+    const { signal } = controller
+
+    const loadHomePageData = async () => {
+      // A. Fetch "Hàng Mới Về" (4 sản phẩm mới nhất)
+      setIsLoadingNewArrivals(true)
+      setNewArrivalsError(null)
+      try {
+        const res = await productService.getProducts(
+          { sort: 'newest', perPage: 4 },
+          signal,
+        )
+        setNewArrivals(res.items)
+      } catch (err: unknown) {
+        if (!signal.aborted) {
+          const message =
+            err instanceof Error
+              ? err.message
+              : 'Không thể tải danh sách hàng mới về.'
+          setNewArrivalsError(message)
+        }
+      } finally {
+        if (!signal.aborted) {
+          setIsLoadingNewArrivals(false)
+        }
+      }
+
+      // B. Fetch số lượng thiết kế trên các thẻ danh mục (chạy song song)
+      setIsLoadingCounts(true)
+      try {
+        const [womenRes, menRes, accRes] = await Promise.all([
+          productService.getProducts({ category: 'women', perPage: 1 }, signal),
+          productService.getProducts({ category: 'men', perPage: 1 }, signal),
+          productService.getProducts({ category: 'accessories', perPage: 1 }, signal),
+        ])
+
+        if (!signal.aborted) {
+          setCategoryCounts({
+            women: womenRes.meta.total,
+            men: menRes.meta.total,
+            accessories: accRes.meta.total,
+          })
+        }
+      } catch {
+        if (!signal.aborted) {
+          // Khi lỗi không chặn UI mà hiển thị fallback
+          setCategoryCounts({ women: null, men: null, accessories: null })
+        }
+      } finally {
+        if (!signal.aborted) {
+          setIsLoadingCounts(false)
+        }
+      }
+
+      // C. Fetch 3 sản phẩm nổi bật (featured=true) cho khối Gợi ý phối đồ AI
+      setIsLoadingAiOutfits(true)
+      try {
+        const featuredRes = await productService.getProducts(
+          { featured: true, perPage: 3 },
+          signal,
+        )
+        if (!signal.aborted) {
+          setAiOutfitItems(featuredRes.items)
+        }
+      } catch {
+        if (!signal.aborted) {
+          setAiOutfitItems([])
+        }
+      } finally {
+        if (!signal.aborted) {
+          setIsLoadingAiOutfits(false)
+        }
+      }
+    }
+
+    loadHomePageData()
+
+    return () => {
+      // Hủy request khi component unmount hoặc khi retryTrigger thay đổi
+      controller.abort()
+    }
+  }, [retryTrigger])
 
   // Icon mapping for service highlights
   const serviceIcons = {
@@ -119,7 +216,13 @@ export const HomePage = () => {
                 <span className={styles.categoryPlaceholderIcon}>WOMEN</span>
               </div>
               <div className={styles.categoryContent}>
-                <span className={styles.categoryCount}>{womenCount} Thiết Kế</span>
+                <span className={styles.categoryCount}>
+                  {isLoadingCounts ? (
+                    <Skeleton width={70} height={14} />
+                  ) : (
+                    `${categoryCounts.women ?? '—'} Thiết Kế`
+                  )}
+                </span>
                 <h3 className={styles.categoryName}>Thời Trang Nữ</h3>
                 <span className={styles.categoryCta}>
                   Khám Phá Ngay <ArrowRight size={14} aria-hidden="true" />
@@ -133,7 +236,13 @@ export const HomePage = () => {
                 <span className={styles.categoryPlaceholderIcon}>MEN</span>
               </div>
               <div className={styles.categoryContent}>
-                <span className={styles.categoryCount}>{menCount} Thiết Kế</span>
+                <span className={styles.categoryCount}>
+                  {isLoadingCounts ? (
+                    <Skeleton width={70} height={14} />
+                  ) : (
+                    `${categoryCounts.men ?? '—'} Thiết Kế`
+                  )}
+                </span>
                 <h3 className={styles.categoryName}>Thời Trang Nam</h3>
                 <span className={styles.categoryCta}>
                   Khám Phá Ngay <ArrowRight size={14} aria-hidden="true" />
@@ -148,7 +257,11 @@ export const HomePage = () => {
               </div>
               <div className={styles.categoryContent}>
                 <span className={styles.categoryCount}>
-                  {accessoriesCount} Thiết Kế
+                  {isLoadingCounts ? (
+                    <Skeleton width={70} height={14} />
+                  ) : (
+                    `${categoryCounts.accessories ?? '—'} Thiết Kế`
+                  )}
                 </span>
                 <h3 className={styles.categoryName}>Phụ Kiện Tinh Tuyển</h3>
                 <span className={styles.categoryCta}>
@@ -180,16 +293,54 @@ export const HomePage = () => {
             </Link>
           </div>
 
-          <div className={styles.productsGrid}>
-            {newArrivals.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                isWishlisted={Boolean(wishlist[product.id])}
-                onWishlistToggle={handleToggleWishlist}
-              />
-            ))}
-          </div>
+          {/* Loading State */}
+          {isLoadingNewArrivals && (
+            <div className={styles.productsGrid}>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <ProductCardSkeleton key={i} />
+              ))}
+            </div>
+          )}
+
+          {/* Error State */}
+          {!isLoadingNewArrivals && newArrivalsError && (
+            <div className={styles.errorState} role="alert">
+              <AlertCircle size={28} color="var(--color-error)" aria-hidden="true" />
+              <p className={styles.errorMessage}>
+                Đã xảy ra lỗi khi tải danh sách sản phẩm mới: {newArrivalsError}
+              </p>
+              <Button variant="secondary" size="sm" onClick={handleRetry}>
+                Thử lại
+              </Button>
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!isLoadingNewArrivals && !newArrivalsError && newArrivals.length === 0 && (
+            <EmptyState
+              title="Chưa Có Sản Phẩm Mới"
+              description="Bộ sưu tập đang được cập nhật thiết kế mới. Quý khách vui lòng quay lại sau."
+              action={
+                <Button to="/products" variant="primary" size="md">
+                  Xem Tất Cả Sản Phẩm
+                </Button>
+              }
+            />
+          )}
+
+          {/* Success State */}
+          {!isLoadingNewArrivals && !newArrivalsError && newArrivals.length > 0 && (
+            <div className={styles.productsGrid}>
+              {newArrivals.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  isWishlisted={Boolean(wishlist[product.id])}
+                  onWishlistToggle={handleToggleWishlist}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -221,9 +372,8 @@ export const HomePage = () => {
       </section>
 
       {/* ====================================================================
-          5. AI STYLING RECOMMENDATION (STATIC PLACEHOLDER)
+          5. AI STYLING RECOMMENDATION (DYNAMIC PLACEHOLDER DÙNG FEATURED PRODUCTS)
           ==================================================================== */}
-      {/* AI Styling & Recommendation Area: Static placeholder reserved for future Machine Learning integration */}
       <section
         className={styles.aiStylingSection}
         aria-labelledby="ai-styling-heading"
@@ -288,22 +438,53 @@ export const HomePage = () => {
               </h3>
 
               <div className={styles.aiItemsList}>
-                {aiMockupItems.map((item) => (
-                  <div key={item.id} className={styles.aiItemRow}>
-                    <div className={styles.aiItemThumb} aria-hidden="true">
-                      <span>{item.category.name.slice(0, 3).toUpperCase()}</span>
-                    </div>
-                    <div className={styles.aiItemInfo}>
-                      <span className={styles.aiItemCategory}>
-                        {item.category.name}
-                      </span>
-                      <span className={styles.aiItemName}>{item.name}</span>
-                      <span className={styles.aiItemPrice}>
-                        {formatCurrency(item.basePrice)}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                {isLoadingAiOutfits && (
+                  <>
+                    <Skeleton variant="rectangular" width="100%" height={70} />
+                    <Skeleton variant="rectangular" width="100%" height={70} />
+                    <Skeleton variant="rectangular" width="100%" height={70} />
+                  </>
+                )}
+
+                {!isLoadingAiOutfits &&
+                  aiOutfitItems.map((item) => {
+                    const thumbUrl = item.mainImage?.url || item.featuredImage
+                    return (
+                      <div key={item.id} className={styles.aiItemRow}>
+                        <div className={styles.aiItemThumb} aria-hidden="true">
+                          {thumbUrl ? (
+                            <img
+                              src={thumbUrl}
+                              alt=""
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                                borderRadius: 'var(--radius-sm)',
+                              }}
+                            />
+                          ) : (
+                            <span>{item.category.name.slice(0, 3).toUpperCase()}</span>
+                          )}
+                        </div>
+                        <div className={styles.aiItemInfo}>
+                          <span className={styles.aiItemCategory}>
+                            {item.category.name}
+                          </span>
+                          <span className={styles.aiItemName}>{item.name}</span>
+                          <span className={styles.aiItemPrice}>
+                            {formatCurrency(item.basePrice)}
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  })}
+
+                {!isLoadingAiOutfits && aiOutfitItems.length === 0 && (
+                  <p className={styles.aiFootnote}>
+                    Chưa có thiết kế phù hợp cho set phối đồ này.
+                  </p>
+                )}
               </div>
 
               <div className={styles.aiActionBox}>
