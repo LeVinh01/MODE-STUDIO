@@ -84,10 +84,14 @@ export const mapProductDetailItemToProduct = (item: ApiProductDetailItem): Produ
     sku: v.sku,
     color: v.color.name,
     colorHex: v.color.hex_code ?? undefined,
+    colorId: v.color.id,
     size: v.size.name,
+    sizeId: v.size.id,
+    sizeSortOrder: v.size.sort_order,
     price: item.base_price,
     originalPrice: item.compare_at_price ?? undefined,
     stock: v.stock_quantity,
+    isActive: v.is_active,
     images: [],
   }))
 

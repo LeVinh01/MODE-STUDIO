@@ -37,10 +37,14 @@ export interface ProductVariant {
   sku: string
   color: string
   colorHex?: string
+  colorId?: number
   size: string
+  sizeId?: number
+  sizeSortOrder?: number
   price: number
   originalPrice?: number
   stock: number
+  isActive?: boolean
   images?: string[]
 }
 
