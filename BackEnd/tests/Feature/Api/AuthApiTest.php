@@ -362,4 +362,142 @@ class AuthApiTest extends TestCase
                 'message' => 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.',
             ]);
     }
+
+    // =========================================================================
+    // 4. KIỂM THỬ BỔ SUNG: RATE LIMITING, EMAIL 150 KÝ TỰ, TOKEN HẾT HẠN
+    // =========================================================================
+
+    public function test_login_rate_limiting_returns_429_with_vietnamese_message_and_retry_after_header(): void
+    {
+        $payload = [
+            'email'    => 'throttled@example.com',
+            'password' => 'WrongPassword!',
+        ];
+
+        // Gửi 5 request đăng nhập thất bại
+        for ($i = 0; $i < 5; $i++) {
+            $this->postJson('/api/auth/login', $payload)->assertStatus(401);
+        }
+
+        // Request thứ 6 vượt ngưỡng 5 lần/phút -> phải nhận 429
+        $response429 = $this->postJson('/api/auth/login', $payload);
+
+        $response429->assertStatus(429)
+            ->assertJson([
+                'message' => 'Bạn đã thực hiện quá nhiều lần đăng nhập. Vui lòng thử lại sau 1 phút.',
+            ])
+            ->assertHeader('Retry-After');
+
+        $this->assertNotEmpty($response429->headers->get('Retry-After'));
+    }
+
+    public function test_login_normalizes_email_with_spaces_and_uppercase(): void
+    {
+        $this->createTestUser([
+            'email'    => 'case_test@example.com',
+            'password' => Hash::make('MyPassword123!'),
+        ]);
+
+        $response = $this->postJson('/api/auth/login', [
+            'email'    => '   CASE_TEST@EXAMPLE.COM   ',
+            'password' => 'MyPassword123!',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('user.email', 'case_test@example.com');
+    }
+
+    public function test_register_and_login_return_422_when_email_exceeds_150_characters(): void
+    {
+        // 140 ký tự 'a' + '@example.com' (12 ký tự) = 152 ký tự (> 150)
+        $longEmail = str_repeat('a', 140) . '@example.com';
+
+        // Đăng ký email > 150 ký tự -> 422
+        $regResponse = $this->postJson('/api/auth/register', [
+            'full_name'             => 'Long Email User',
+            'email'                 => $longEmail,
+            'password'              => 'Password123!',
+            'password_confirmation' => 'Password123!',
+        ]);
+
+        $regResponse->assertStatus(422)
+            ->assertJsonValidationErrors(['email'])
+            ->assertJsonFragment([
+                'email' => ['Email không được vượt quá 150 ký tự.'],
+            ]);
+
+        // Đăng nhập email > 150 ký tự -> 422
+        $loginResponse = $this->postJson('/api/auth/login', [
+            'email'    => $longEmail,
+            'password' => 'Password123!',
+        ]);
+
+        $loginResponse->assertStatus(422)
+            ->assertJsonValidationErrors(['email'])
+            ->assertJsonFragment([
+                'email' => ['Email không được vượt quá 150 ký tự.'],
+            ]);
+    }
+
+    public function test_token_expiration_allows_29_days_and_rejects_31_days(): void
+    {
+        $user = $this->createTestUser(['email' => 'expiry_test@example.com']);
+
+        // 1. Token tạo cách đây 29 ngày (vẫn trong hạn 30 ngày / 43200 phút)
+        $validNewToken = $user->createToken('valid_29_days');
+        $validNewToken->accessToken->forceFill([
+            'created_at' => now()->subDays(29),
+        ])->save();
+
+        $response29Days = $this->withHeader('Authorization', 'Bearer ' . $validNewToken->plainTextToken)
+            ->getJson('/api/auth/me');
+
+        $response29Days->assertStatus(200)
+            ->assertJsonPath('user.email', 'expiry_test@example.com');
+
+        $this->app['auth']->forgetGuards();
+
+        // 2. Token tạo cách đây 31 ngày (đã quá hạn 30 ngày)
+        $expiredToken = $user->createToken('expired_31_days');
+        $expiredToken->accessToken->forceFill([
+            'created_at' => now()->subDays(31),
+        ])->save();
+
+        $response31Days = $this->withHeader('Authorization', 'Bearer ' . $expiredToken->plainTextToken)
+            ->getJson('/api/auth/me');
+
+        $response31Days->assertStatus(401)
+            ->assertJson([
+                'message' => 'Chưa xác thực hoặc phiên đăng nhập đã hết hạn.',
+            ]);
+    }
+
+    public function test_password_is_never_returned_in_any_auth_response(): void
+    {
+        // A. Register
+        $regResponse = $this->postJson('/api/auth/register', [
+            'full_name'             => 'No Pass Test',
+            'email'                 => 'nopass@example.com',
+            'password'              => 'SecretPassword123!',
+            'password_confirmation' => 'SecretPassword123!',
+        ]);
+        $regResponse->assertStatus(201)
+            ->assertJsonMissing(['password']);
+
+        // B. Login
+        $loginResponse = $this->postJson('/api/auth/login', [
+            'email'    => 'nopass@example.com',
+            'password' => 'SecretPassword123!',
+        ]);
+        $loginResponse->assertStatus(200)
+            ->assertJsonMissing(['password']);
+
+        $token = $loginResponse->json('token');
+
+        // C. Me
+        $meResponse = $this->withHeader('Authorization', 'Bearer ' . $token)
+            ->getJson('/api/auth/me');
+        $meResponse->assertStatus(200)
+            ->assertJsonMissing(['password']);
+    }
 }

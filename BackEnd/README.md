@@ -119,7 +119,115 @@ docker compose exec app php artisan db:seed
 
 ---
 
-## 7. Dừng Hệ Thống Docker
+## 8. API Xác Thực & Phân Quyền (Authentication & Authorization)
+
+Hệ thống sử dụng **Laravel Sanctum** với cơ chế Personal Access Token. Token được cấp khi đăng ký hoặc đăng nhập thành công và gửi kèm trong các request tiếp theo qua header:
+```http
+Authorization: Bearer <TOKEN_CỦA_BẠN>
+Accept: application/json
+```
+
+### Thời hạn Token (Token Expiration)
+- Mặc định: **43200 phút (30 ngày)**, cấu hình linh hoạt qua biến môi trường `SANCTUM_EXPIRATION` trong file `.env`.
+- Khi token hết hạn, Sanctum sẽ tự động từ chối và trả về mã lỗi HTTP `401 Unauthorized` dạng JSON.
+
+### Danh sách Endpoint Xác Thực
+
+#### 1. Đăng ký tài khoản (`POST /api/auth/register`)
+- **Giới hạn tốc độ (Rate Limit)**: Tối đa 5 lần / phút theo địa chỉ IP.
+- **Request Body (JSON)**:
+  ```json
+  {
+    "full_name": "Nguyễn Văn A",
+    "email": "user@example.com",
+    "phone": "0901234567",
+    "password": "Password123!",
+    "password_confirmation": "Password123!"
+  }
+  ```
+- **Response (HTTP 201)**:
+  ```json
+  {
+    "user": {
+      "id": 4,
+      "full_name": "Nguyễn Văn A",
+      "email": "user@example.com",
+      "phone": "0901234567",
+      "role": "customer",
+      "status": "active",
+      "email_verified_at": null,
+      "last_login_at": null
+    },
+    "token": "..."
+  }
+  ```
+
+#### 2. Đăng nhập (`POST /api/auth/login`)
+- **Giới hạn tốc độ (Rate Limit)**: Tối đa 5 lần / phút theo cặp Email + IP (chống dò mật khẩu brute-force).
+- **Request Body (JSON)**:
+  ```json
+  {
+    "email": "customer@mode-studio.test",
+    "password": "Password123!"
+  }
+  ```
+- **Response (HTTP 200)**:
+  ```json
+  {
+    "user": {
+      "id": 3,
+      "full_name": "Khách Hàng Mẫu",
+      "email": "customer@mode-studio.test",
+      "phone": null,
+      "role": "customer",
+      "status": "active",
+      "email_verified_at": null,
+      "last_login_at": "..."
+    },
+    "token": "..."
+  }
+  ```
+
+#### 3. Lấy thông tin tài khoản (`GET /api/auth/me`)
+- **Yêu cầu**: Cần gửi kèm Bearer token hợp lệ.
+- **Header**:
+  ```http
+  Authorization: Bearer <TOKEN_CỦA_BẠN>
+  Accept: application/json
+  ```
+- **Response (HTTP 200)**:
+  ```json
+  {
+    "user": {
+      "id": 3,
+      "full_name": "Khách Hàng Mẫu",
+      "email": "customer@mode-studio.test",
+      "phone": null,
+      "role": "customer",
+      "status": "active",
+      "email_verified_at": null,
+      "last_login_at": "..."
+    }
+  }
+  ```
+
+#### 4. Đăng xuất (`POST /api/auth/logout`)
+- **Yêu cầu**: Cần gửi kèm Bearer token hợp lệ.
+- **Xử lý**: Xóa đúng token hiện đang dùng khỏi cơ sở dữ liệu.
+- **Response (HTTP 200)**:
+  ```json
+  {
+    "message": "Đăng xuất thành công."
+  }
+  ```
+
+### Middleware Phân Quyền (Role-based Authorization)
+- Đăng ký alias `role` trong `bootstrap/app.php`: `role:admin`, `role:operator,admin`, `role:customer`.
+- Khi người dùng không đủ quyền hoặc tài khoản bị khóa (`status=locked`), API luôn trả về HTTP 403 Forbidden JSON kèm thông điệp tiếng Việt.
+
+---
+
+## 9. Dừng Hệ Thống Docker
 
 - Dừng containers:
   ```bash
@@ -129,3 +237,4 @@ docker compose exec app php artisan db:seed
   ```bash
   docker compose down -v
   ```
+
