@@ -4,4 +4,7 @@ export * from './MobileMenu'
 export * from './SearchModal'
 export * from './Footer'
 export * from './ProductCard'
+export * from './ProductFilter'
+export * from './ProductGallery'
+export * from './VariantSelector'
 

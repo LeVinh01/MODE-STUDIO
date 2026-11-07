@@ -5,6 +5,7 @@ import type { Product } from '@/types/product'
 import { Badge } from '@/components/common/Badge'
 import { formatCurrency } from '@/utils/formatters'
 import { cn } from '@/utils/cn'
+import { isProductNew } from '@/services/api/mappers'
 import styles from './ProductCard.module.scss'
 
 export interface ProductCardProps extends HTMLAttributes<HTMLElement> {
@@ -22,34 +23,54 @@ export const ProductCard = ({
   className,
   ...props
 }: ProductCardProps) => {
+  // Giữ nguyên thứ tự lấy giá cũ: giá của biến thể (nếu có) rồi mới tới basePrice
   const primaryVariant = product.variants?.[0]
   const currentPrice = primaryVariant?.price ?? product.basePrice
-  const originalPrice = primaryVariant?.originalPrice
+  const originalPrice = primaryVariant?.originalPrice ?? product.compareAtPrice
 
   const discountPercent =
     originalPrice && originalPrice > currentPrice
       ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
       : 0
 
+  // Xác định trạng thái hết hàng: ưu tiên cờ inStock từ API, fallback về mock variants/isOutOfStock
   const isOutOfStock =
-    Boolean(product.isOutOfStock) ||
-    (Boolean(product.variants?.length) &&
-      product.variants.every((v) => v.stock <= 0))
+    product.inStock !== undefined
+      ? !product.inStock
+      : Boolean(product.isOutOfStock) ||
+        (Boolean(product.variants?.length) &&
+          product.variants!.every((v) => v.stock <= 0))
 
-  const isNewProduct = isNew !== undefined ? isNew : Boolean(product.isNew)
+  // Xác định badge MỚI: ưu tiên prop isNew, sau đó là tính theo publishedAt, fallback về product.isNew
+  const isNewProduct =
+    isNew !== undefined
+      ? isNew
+      : product.publishedAt !== undefined
+        ? isProductNew(product.publishedAt)
+        : Boolean(product.isNew)
 
-  // Prioritize featuredImage, then variant image
-  const imageSrc = product.featuredImage || primaryVariant?.images?.[0]
+  // Nguồn ảnh: ưu tiên mainImage, sau đó featuredImage, sau đó biến thể đầu tiên
+  const imageSrc =
+    product.mainImage?.url ||
+    product.featuredImage ||
+    primaryVariant?.images?.[0]
 
-  // Deduplicate colors for swatches
-  const uniqueColors = product.variants?.reduce<
-    Array<{ color: string; colorHex?: string }>
-  >((acc, variant) => {
-    if (!acc.some((c) => c.color === variant.color)) {
-      acc.push({ color: variant.color, colorHex: variant.colorHex })
-    }
-    return acc
-  }, []) ?? []
+  // Danh sách chấm màu (Color swatches): ưu tiên availableColors từ API, fallback deduplicate variants
+  const uniqueColors: Array<{ color: string; colorHex?: string }> =
+    product.availableColors && product.availableColors.length > 0
+      ? product.availableColors.map((c) => ({
+          color: c.name,
+          colorHex: c.hexCode,
+        }))
+      : product.variants?.reduce<Array<{ color: string; colorHex?: string }>>(
+          (acc, variant) => {
+            if (!acc.some((c) => c.color === variant.color)) {
+              acc.push({ color: variant.color, colorHex: variant.colorHex })
+            }
+            return acc
+          },
+          [],
+        ) ?? []
 
   return (
     <article className={cn(styles.card, className)} {...props}>
@@ -58,7 +79,7 @@ export const ProductCard = ({
         {imageSrc ? (
           <img
             src={imageSrc}
-            alt={product.name}
+            alt={product.mainImage?.altText || product.name}
             className={styles.image}
             loading="lazy"
             width={300}
@@ -151,4 +172,3 @@ export const ProductCard = ({
 }
 
 export default ProductCard
-
