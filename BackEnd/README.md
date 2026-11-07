@@ -25,11 +25,24 @@ docker compose up -d --build
 ```
 
 ### Bước 2: Cài đặt thư viện phụ thuộc (Composer)
-Chạy Composer install trực tiếp bên trong container `app`:
+
+> ⚡ **LƯU Ý VỀ HIỆU NĂNG**: Để tránh hiện tượng I/O chậm khi bind mount từ ổ đĩa host Windows, thư mục `vendor/` được lưu trong **Docker Named Volume (`app_vendor`)** nội bộ của Linux.  
+> Do đó, **MỌI lệnh `composer` BẮT BUỘC phải chạy bên trong container `app`**, không chạy trực tiếp ngoài máy host:
 
 ```bash
 docker compose exec app composer install
 ```
+
+> **Khi clone dự án mới về máy:**
+> 1. Chạy `docker compose up -d` để Docker tự động tạo volume `app_vendor`.
+> 2. Chạy `docker compose exec app composer install` để nạp các thư viện từ `composer.lock` vào volume.
+> 3. Nếu muốn cài lại từ đầu toàn bộ thư mục `vendor`:
+>    ```bash
+>    docker compose down
+>    docker volume rm backend_app_vendor
+>    docker compose up -d
+>    docker compose exec app composer install
+>    ```
 
 ### Bước 3: Tạo khóa ứng dụng (Application Key)
 Nếu file `.env` chưa có `APP_KEY` hoặc muốn tạo mới:
@@ -40,15 +53,21 @@ docker compose exec app php artisan key:generate
 
 ---
 
-## 3. LƯU Ý QUAN TRỌNG VỀ LỆNH ARTISAN
+## 3. LƯU Ý QUAN TRỌNG VỀ LỆNH ARTISAN & COMPOSER
 
-> **QUAN TRỌNG**: Do cấu hình cơ sở dữ liệu sử dụng mạng nội bộ Docker (`DB_HOST=mysql`), **MỌI lệnh `artisan` hoặc CLI PHẢI được thực thi thông qua container `app`**:
+> **QUAN TRỌNG**: Do cơ sở dữ liệu dùng mạng nội bộ Docker (`DB_HOST=mysql`) và `vendor/` nằm trong Docker named volume, **MỌI lệnh `artisan` và `composer` PHẢI được thực thi thông qua container `app`**:
 >
 > ```bash
+> # Chạy lệnh artisan
 > docker compose exec app php artisan <tên_lệnh>
+>
+> # Chạy lệnh composer (thêm package, cập nhật autoload...)
+> docker compose exec app composer <tên_lệnh>
 > ```
 >
 > **Ví dụ**:
+> - Cài thêm package mới: `docker compose exec app composer require <package_name>`
+> - Dump lại autoload: `docker compose exec app composer dump-autoload -o`
 > - Chạy migration: `docker compose exec app php artisan migrate`
 > - Chạy seeder: `docker compose exec app php artisan db:seed`
 > - Làm mới CSDL: `docker compose exec app php artisan migrate:fresh`
