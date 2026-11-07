@@ -1,0 +1,274 @@
+@use '@/styles/abstracts' as *;
+
+.filterContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  color: var(--color-text-primary);
+}
+
+.section {
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid var(--color-border-subtle);
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.sectionTitle {
+  font-family: $font-sans;
+  font-size: 0.8125rem;
+  font-weight: $font-weight-semibold;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-black);
+  margin: 0;
+}
+
+/* Category list */
+.categoryList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.categoryItem {
+  font-size: 0.875rem;
+}
+
+.categoryBtn {
+  background: none;
+  border: none;
+  padding: var(--space-1) 0;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.875rem;
+  transition: color $transition-fast;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+
+  &:hover {
+    color: var(--color-black);
+  }
+
+  &.active {
+    color: var(--color-black);
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.subCategoryList {
+  list-style: none;
+  padding-left: var(--space-4);
+  margin: var(--space-1) 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  border-left: 1px solid var(--color-border-subtle);
+}
+
+.subCategoryBtn {
+  background: none;
+  border: none;
+  padding: var(--space-1) 0;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.8125rem;
+  transition: color $transition-fast;
+
+  &:hover {
+    color: var(--color-black);
+  }
+
+  &.active {
+    color: var(--color-black);
+    font-weight: $font-weight-semibold;
+  }
+}
+
+/* Gender selector (single choice) */
+.genderGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.genderOption {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    color: var(--color-black);
+  }
+
+  &.active {
+    color: var(--color-black);
+    font-weight: $font-weight-medium;
+  }
+}
+
+.radioCircle {
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 50%;
+  border: 1px solid var(--color-border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color $transition-fast;
+
+  .active & {
+    border-color: var(--color-black);
+  }
+}
+
+.radioDot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background-color: var(--color-black);
+}
+
+/* Price Range options */
+.priceRangeList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.priceRangeBtn {
+  background: none;
+  border: none;
+  padding: var(--space-1) 0;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.8125rem;
+  transition: color $transition-fast;
+
+  &:hover {
+    color: var(--color-black);
+  }
+
+  &.active {
+    color: var(--color-black);
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.customPriceInputs {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.priceDash {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.priceHelper {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-top: var(--space-1);
+}
+
+/* Color swatches */
+.colorGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-2);
+}
+
+.colorItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: none;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  transition: border-color $transition-fast, color $transition-fast;
+  text-align: left;
+
+  &:hover {
+    border-color: var(--color-border-strong);
+    color: var(--color-black);
+  }
+
+  &.active {
+    border-color: var(--color-black);
+    color: var(--color-black);
+    font-weight: $font-weight-medium;
+    background-color: var(--color-cream);
+  }
+}
+
+.colorDot {
+  width: 0.875rem;
+  height: 0.875rem;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+
+/* Size options */
+.sizeGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.sizeBtn {
+  min-width: 2.75rem;
+  height: 2.25rem;
+  padding: 0 var(--space-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    border-color: var(--color-border-strong);
+  }
+
+  &.active {
+    background-color: var(--color-black);
+    color: var(--color-white);
+    border-color: var(--color-black);
+    font-weight: $font-weight-semibold;
+  }
+}
