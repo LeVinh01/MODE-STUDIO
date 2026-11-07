@@ -1,0 +1,51 @@
+<?php
+
+namespace App\Http\Requests;
+
+use App\Enums\ProductGender;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+
+class ProductIndexRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        // Chuyển chuỗi comma-separated color/size thành mảng số nguyên để validate
+        if ($this->has('color') && is_string($this->color)) {
+            $colors = array_filter(array_map('trim', explode(',', $this->color)), fn($val) => $val !== '');
+            $this->merge(['color_ids' => $colors]);
+        }
+
+        if ($this->has('size') && is_string($this->size)) {
+            $sizes = array_filter(array_map('trim', explode(',', $this->size)), fn($val) => $val !== '');
+            $this->merge(['size_ids' => $sizes]);
+        }
+    }
+
+    public function rules(): array
+    {
+        return [
+            'category'   => ['sometimes', 'string', 'max:150'],
+            'brand'      => ['sometimes', 'string', 'max:150'],
+            'color'      => ['sometimes', 'string'],
+            'color_ids'  => ['sometimes', 'array'],
+            'color_ids.*'=> ['integer', 'min:1'],
+            'size'       => ['sometimes', 'string'],
+            'size_ids'   => ['sometimes', 'array'],
+            'size_ids.*' => ['integer', 'min:1'],
+            'min_price'  => ['sometimes', 'integer', 'min:0'],
+            'max_price'  => ['sometimes', 'integer', 'min:0', 'gte:min_price'],
+            'gender'     => ['sometimes', 'string', Rule::enum(ProductGender::class)],
+            'q'          => ['sometimes', 'string', 'max:100'],
+            'featured'   => ['sometimes', 'boolean'],
+            'sort'       => ['sometimes', 'string', Rule::in(['newest', 'price_asc', 'price_desc'])],
+            'per_page'   => ['sometimes', 'integer', 'min:1', 'max:48'],
+            'page'       => ['sometimes', 'integer', 'min:1'],
+        ];
+    }
+}

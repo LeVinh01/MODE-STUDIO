@@ -35,6 +35,11 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # Thiết lập thư mục làm việc trong container
 WORKDIR /var/www/html
 
+# Copy entrypoint script và phân quyền
+COPY docker/php/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 EXPOSE 9000
 
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["php-fpm"]

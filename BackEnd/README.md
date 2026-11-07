@@ -75,7 +75,51 @@ docker compose exec app php artisan key:generate
 
 ---
 
-## 5. Dừng Hệ Thống Docker
+## 5. Seed Dữ Liệu Mẫu (Development)
+
+### Bước 1: Cấu hình mật khẩu seed trong `.env`
+
+> ⚠️ **Mật khẩu này CHỈ dùng cho môi trường dev. BẮT BUỘC phải đổi trước khi triển khai lên staging/production.**
+
+Mở file `.env` và điền giá trị cho 3 biến sau (không để trống):
+
+```dotenv
+SEED_ADMIN_PASSWORD=<mật_khẩu_mạnh>
+SEED_OPERATOR_PASSWORD=<mật_khẩu_mạnh>
+SEED_CUSTOMER_PASSWORD=<mật_khẩu_mạnh>
+```
+
+Nếu bất kỳ biến nào bị bỏ trống, seeder sẽ báo lỗi rõ ràng và dừng lại.
+
+### Bước 2: Chạy migration và seed
+
+```bash
+# Xóa toàn bộ dữ liệu và tạo lại từ đầu (dev)
+docker compose exec app php artisan migrate:fresh --seed
+
+# Hoặc chỉ seed mà không xóa dữ liệu
+docker compose exec app php artisan db:seed
+```
+
+### Tài khoản mẫu sau khi seed
+
+| Vai trò | Email | Mật khẩu |
+|---|---|---|
+| Admin | `admin@mode-studio.test` | Giá trị `SEED_ADMIN_PASSWORD` trong `.env` |
+| Operator | `operator@mode-studio.test` | Giá trị `SEED_OPERATOR_PASSWORD` trong `.env` |
+| Khách hàng | `customer@mode-studio.test` | Giá trị `SEED_CUSTOMER_PASSWORD` trong `.env` |
+
+---
+
+## 6. Lưu Ý Triển Khai Thực Tế (Production)
+
+> ⚠️ **QUAN TRỌNG**:
+> - Biến `APP_DEBUG` trong file `.env` **BẮT BUỘC phải được đặt là `false`** khi triển khai thật (staging/production) để tránh lộ thông tin nhạy cảm của hệ thống.
+> - Các biến `SEED_*_PASSWORD` chỉ phục vụ mục đích seeding môi trường dev, phải xóa hoặc thay đổi mật khẩu quản trị thật sau khi khởi tạo.
+
+---
+
+## 7. Dừng Hệ Thống Docker
 
 - Dừng containers:
   ```bash
