@@ -1,18 +1,50 @@
-import type { ProductVariant } from './product'
+export interface CartVariantColor {
+  id: string
+  name: string
+  hexCode?: string | null
+}
+
+export interface CartVariantSize {
+  id: string
+  name: string
+}
+
+export interface CartItemVariant {
+  id: string
+  sku: string
+  color: CartVariantColor
+  size: CartVariantSize
+  stockQuantity: number
+  isActive: boolean
+}
+
+export interface CartItemProduct {
+  id: string
+  name: string
+  slug: string
+  status: string
+  mainImage?: {
+    url: string
+    altText?: string | null
+  } | null
+}
 
 export interface CartItem {
   id: string
-  productId: string
   variantId: string
-  name: string
-  variant: Pick<ProductVariant, 'sku' | 'color' | 'size' | 'price' | 'images'>
-  price: number
+  variant: CartItemVariant
+  product: CartItemProduct
+  unitPrice: number
   quantity: number
+  lineTotal: number
+  isPurchasable: boolean
+  unpurchasableReason?: string | null
 }
 
 export interface Cart {
   items: CartItem[]
-  totalQuantity: number
   subtotal: number
+  totalQuantity: number
+  itemsCount: number
+  hasUnpurchasableItems: boolean
 }
-

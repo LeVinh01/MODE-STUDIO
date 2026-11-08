@@ -199,6 +199,32 @@
   animation: fadeIn 0.3s ease;
 }
 
+.errorAlert {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-danger-bg, #fef2f2);
+  border: 1px solid var(--color-danger-border, #fecaca);
+  color: var(--color-danger, #b91c1c);
+  border-radius: var(--radius-sm, 2px);
+  font-size: var(--font-size-sm);
+  animation: fadeIn 0.3s ease;
+}
+
+.successAlert {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-success-bg, #f0fdf4);
+  border: 1px solid var(--color-success-border, #bbf7d0);
+  color: var(--color-success, #15803d);
+  border-radius: var(--radius-sm, 2px);
+  font-size: var(--font-size-sm);
+  animation: fadeIn 0.3s ease;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

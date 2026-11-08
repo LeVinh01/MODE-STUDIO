@@ -1,8 +1,15 @@
 import type { ReactNode } from 'react'
 import { Outlet } from 'react-router-dom'
-import { useAppDispatch, useAppSelector } from '@/store/hooks'
-import { toggleCartDrawer } from '@/store/slices/uiSlice'
-import { AnnouncementBar, Header, MobileMenu, SearchModal, Footer } from '@/components/storefront'
+import { useAppSelector } from '@/store/hooks'
+import {
+  AnnouncementBar,
+  Header,
+  MobileMenu,
+  SearchModal,
+  Footer,
+  CartDrawer,
+} from '@/components/storefront'
+import { selectCartTotalQuantity } from '@/store/slices/cartSlice'
 import styles from './MainLayout.module.scss'
 
 export interface MainLayoutProps {
@@ -10,8 +17,7 @@ export interface MainLayoutProps {
 }
 
 export const MainLayout = ({ children }: MainLayoutProps = {}) => {
-  const dispatch = useAppDispatch()
-  const isCartDrawerOpen = useAppSelector((state) => state.ui.isCartDrawerOpen)
+  const totalQuantity = useAppSelector(selectCartTotalQuantity)
 
   return (
     <div className={styles.layoutStorefront}>
@@ -24,7 +30,7 @@ export const MainLayout = ({ children }: MainLayoutProps = {}) => {
       <AnnouncementBar />
 
       {/* 3. Sticky Editorial Header */}
-      <Header cartCount={0} />
+      <Header cartCount={totalQuantity} />
 
       {/* 4. Mobile Drawer Navigation */}
       <MobileMenu />
@@ -37,25 +43,8 @@ export const MainLayout = ({ children }: MainLayoutProps = {}) => {
         {children ?? <Outlet />}
       </main>
 
-      {/* 7. Khung aside giỏ hàng tạm thời (Sẽ thay thế bằng <Drawer position="right"> ở bước giỏ hàng sau) */}
-      {isCartDrawerOpen && (
-        <aside className={styles.cartDrawer} aria-label="Giỏ hàng tạm thời">
-          <div className={styles.drawerHeader}>
-            <h3 className={styles.drawerTitle}>Túi Mua Sắm / Shopping Bag</h3>
-            <button
-              type="button"
-              onClick={() => dispatch(toggleCartDrawer())}
-              aria-label="Đóng giỏ hàng"
-              className={styles.closeButton}
-            >
-              ✕
-            </button>
-          </div>
-          <p className={styles.drawerEmpty}>
-            Giỏ hàng của bạn đang trống.
-          </p>
-        </aside>
-      )}
+      {/* 7. Ngăn kéo giỏ hàng (CartDrawer) */}
+      <CartDrawer />
 
       {/* 8. Chân trang đa cột chính thức */}
       <Footer />

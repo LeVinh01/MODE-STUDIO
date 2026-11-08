@@ -1,10 +1,13 @@
 import type {
+  ApiCartItem,
+  ApiCartResponse,
   ApiCategoryItem,
   ApiPaginationMeta,
   ApiProductDetailItem,
   ApiProductListItem,
 } from '@/types/api'
 import type { ApiUser, User } from '@/types/auth'
+import type { Cart, CartItem } from '@/types/cart'
 import type { PaginationMeta } from '@/types/common'
 import type {
   Product,
@@ -198,4 +201,60 @@ export const mapApiUserToUser = (apiUser: ApiUser): User => {
     lastLoginAt: apiUser.last_login_at,
   }
 }
+
+/**
+ * Chuyển đổi ApiCartItem sang CartItem (chuẩn hóa camelCase, id là string)
+ */
+export const mapApiCartItemToCartItem = (item: ApiCartItem): CartItem => {
+  return {
+    id: String(item.id),
+    variantId: String(item.variant.id),
+    variant: {
+      id: String(item.variant.id),
+      sku: item.variant.sku,
+      color: {
+        id: String(item.variant.color.id),
+        name: item.variant.color.name,
+        hexCode: item.variant.color.hex_code,
+      },
+      size: {
+        id: String(item.variant.size.id),
+        name: item.variant.size.name,
+      },
+      stockQuantity: item.variant.stock_quantity,
+      isActive: item.variant.is_active,
+    },
+    product: {
+      id: String(item.product.id),
+      name: item.product.name,
+      slug: item.product.slug,
+      status: item.product.status,
+      mainImage: item.product.main_image
+        ? {
+            url: item.product.main_image.url,
+            altText: item.product.main_image.alt_text,
+          }
+        : null,
+    },
+    unitPrice: item.unit_price,
+    quantity: item.quantity,
+    lineTotal: item.line_total,
+    isPurchasable: item.is_purchasable,
+    unpurchasableReason: item.unpurchasable_reason,
+  }
+}
+
+/**
+ * Chuyển đổi ApiCartResponse sang Cart
+ */
+export const mapApiCartToCart = (apiCart: ApiCartResponse): Cart => {
+  return {
+    items: (apiCart.items || []).map(mapApiCartItemToCartItem),
+    subtotal: apiCart.subtotal,
+    totalQuantity: apiCart.total_quantity,
+    itemsCount: apiCart.items_count,
+    hasUnpurchasableItems: apiCart.has_unpurchasable_items,
+  }
+}
+
 

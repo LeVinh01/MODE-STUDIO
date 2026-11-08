@@ -1,43 +1,56 @@
-import type { CartItem } from './cart'
-
 export type OrderStatus =
   | 'pending'
   | 'confirmed'
-  | 'processing'
-  | 'shipped'
+  | 'shipping'
   | 'delivered'
   | 'cancelled'
 
-export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded'
+export type PaymentStatus = 'unpaid' | 'paid' | 'failed' | 'refunded'
+export type PaymentMethod = 'cod' | 'vnpay'
 
 export interface ShippingAddress {
   fullName: string
   phone: string
   addressLine: string
-  city: string
+  city?: string
   district?: string
   ward?: string
   postalCode?: string
 }
 
-export interface OrderItem extends CartItem {
-  orderId: string
+export interface OrderItem {
+  id: string
+  orderId?: string
+  productId: string
+  variantId: string
+  productName: string
+  sku: string
+  colorName: string
+  sizeName: string
+  imageUrl?: string | null
+  unitPrice: number
+  quantity: number
+  lineTotal: number
 }
 
 export interface Order {
   id: string
-  orderNumber: string
-  customerId: string
-  items: OrderItem[]
+  orderCode: string
+  userId: string
   status: OrderStatus
-  paymentStatus: PaymentStatus
-  paymentMethod: string
-  shippingAddress: ShippingAddress
+  paymentMethod: PaymentMethod | string
+  paymentStatus: PaymentStatus | string
+  recipientName: string
+  recipientPhone: string
+  shippingAddress: string
+  note?: string | null
   subtotal: number
   shippingFee: number
+  discountAmount: number
   totalAmount: number
-  note?: string
+  cancelReason?: string | null
+  cancelledAt?: string | null
+  paidAt?: string | null
   createdAt: string
-  updatedAt: string
+  items: OrderItem[]
 }
-
