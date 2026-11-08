@@ -43,7 +43,10 @@ Route::middleware(['auth:sanctum', 'active'])->prefix('cart')->group(function ()
 
 // Orders API (yêu cầu đăng nhập)
 Route::middleware(['auth:sanctum', 'active'])->prefix('orders')->group(function () {
+    Route::get('/', [OrderController::class, 'index']);
     Route::post('/', [OrderController::class, 'store']);
+    Route::get('/{order_code}', [OrderController::class, 'show']);
+    Route::post('/{order_code}/cancel', [OrderController::class, 'cancel']);
 });
 
 // Public read-only API (không có prefix /v1)
