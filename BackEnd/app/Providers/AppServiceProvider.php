@@ -40,5 +40,15 @@ class AppServiceProvider extends ServiceProvider
                 ], 429, $headers);
             });
         });
+
+        // Rate limiter cho báo giá giỏ hàng khách (quote): cấu hình từ shop.cart.quote_throttle (mặc định 60/phút theo IP)
+        RateLimiter::for('cart-quote', function (Request $request) {
+            $maxAttempts = (int) config('shop.cart.quote_throttle', 60);
+            return Limit::perMinute($maxAttempts)->by($request->ip())->response(function (Request $request, array $headers) {
+                return response()->json([
+                    'message' => 'Bạn đã gửi quá nhiều yêu cầu tính giá giỏ hàng. Vui lòng thử lại sau 1 phút.',
+                ], 429, $headers);
+            });
+        });
     }
 }

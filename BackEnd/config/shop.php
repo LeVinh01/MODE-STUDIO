@@ -4,6 +4,9 @@ return [
     'cart' => [
         // Giới hạn số lượng tối đa cho mỗi dòng sản phẩm trong giỏ hàng
         'max_item_quantity' => (int) env('CART_MAX_ITEM_QUANTITY', 20),
+
+        // Giới hạn số lượt gọi báo giá giỏ hàng khách mỗi phút theo IP
+        'quote_throttle'    => (int) env('CART_QUOTE_THROTTLE', 60),
     ],
 
     'shipping' => [
