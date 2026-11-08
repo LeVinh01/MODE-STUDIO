@@ -42,5 +42,19 @@ export const storefrontRoutes: RouteObject[] = [
       return { Component: CheckoutPage }
     },
   },
+  {
+    path: 'login',
+    lazy: async () => {
+      const { LoginPage } = await import('@/pages/storefront/LoginPage')
+      return { Component: LoginPage }
+    },
+  },
+  {
+    path: 'register',
+    lazy: async () => {
+      const { RegisterPage } = await import('@/pages/storefront/RegisterPage')
+      return { Component: RegisterPage }
+    },
+  },
 ]
 

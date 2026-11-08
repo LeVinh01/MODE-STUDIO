@@ -4,6 +4,7 @@ import type {
   ApiProductDetailItem,
   ApiProductListItem,
 } from '@/types/api'
+import type { ApiUser, User } from '@/types/auth'
 import type { PaginationMeta } from '@/types/common'
 import type {
   Product,
@@ -181,3 +182,20 @@ export const mapApiPaginationMeta = (meta: ApiPaginationMeta): PaginationMeta =>
     total: meta.total,
   }
 }
+
+/**
+ * Chuyển đổi ApiUser (snake_case) sang User (camelCase)
+ */
+export const mapApiUserToUser = (apiUser: ApiUser): User => {
+  return {
+    id: String(apiUser.id),
+    fullName: apiUser.full_name,
+    email: apiUser.email,
+    phone: apiUser.phone,
+    role: apiUser.role,
+    status: apiUser.status,
+    emailVerifiedAt: apiUser.email_verified_at,
+    lastLoginAt: apiUser.last_login_at,
+  }
+}
+
