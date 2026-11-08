@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ProductController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Route;
@@ -38,6 +39,11 @@ Route::middleware(['auth:sanctum', 'active'])->prefix('cart')->group(function ()
     Route::patch('/items/{id}', [CartController::class, 'update'])->where('id', '[0-9]+');
     Route::delete('/items/{id}', [CartController::class, 'destroy'])->where('id', '[0-9]+');
     Route::delete('/', [CartController::class, 'clear']);
+});
+
+// Orders API (yêu cầu đăng nhập)
+Route::middleware(['auth:sanctum', 'active'])->prefix('orders')->group(function () {
+    Route::post('/', [OrderController::class, 'store']);
 });
 
 // Public read-only API (không có prefix /v1)
