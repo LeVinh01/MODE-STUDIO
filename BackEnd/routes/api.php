@@ -32,13 +32,20 @@ Route::prefix('auth')->group(function () {
     });
 });
 
-// Cart API (yêu cầu đăng nhập, mỗi người một giỏ)
+// Cart API
+// Báo giá giỏ hàng khách vãng lai (công khai, có rate limit)
+Route::post('/cart/quote', [CartController::class, 'quote'])
+    ->middleware('throttle:cart-quote')
+    ->name('cart.quote');
+
+// Giỏ hàng người dùng (yêu cầu đăng nhập, mỗi người một giỏ)
 Route::middleware(['auth:sanctum', 'active'])->prefix('cart')->group(function () {
     Route::get('/', [CartController::class, 'index']);
     Route::post('/items', [CartController::class, 'store']);
     Route::patch('/items/{id}', [CartController::class, 'update'])->where('id', '[0-9]+');
     Route::delete('/items/{id}', [CartController::class, 'destroy'])->where('id', '[0-9]+');
     Route::delete('/', [CartController::class, 'clear']);
+    Route::post('/merge', [CartController::class, 'merge'])->name('cart.merge');
 });
 
 // Orders API (yêu cầu đăng nhập)

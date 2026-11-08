@@ -20,7 +20,15 @@ class CartItemResource extends JsonResource
             ? $product->status->value
             : (string) ($product?->status ?? '');
 
-        if (!$product || $product->trashed() || $productStatus !== 'active') {
+        // Kiểm tra sản phẩm có đang mở bán công khai hay không
+        $isProductPublished = $product
+            && !$product->trashed()
+            && $productStatus === 'active'
+            && (!$product->published_at || $product->published_at <= now());
+
+        $isQuote = ($this->is_quote ?? false) || $request->is('api/cart/quote');
+
+        if (!$product || $product->trashed() || $productStatus !== 'active' || ($product->published_at && $product->published_at > now())) {
             $isPurchasable = false;
             $unpurchasableReason = 'Sản phẩm đã ngừng kinh doanh';
         } elseif (!$variant || !$variant->is_active) {
@@ -34,28 +42,16 @@ class CartItemResource extends JsonResource
             $unpurchasableReason = "Số lượng trong giỏ vượt quá tồn kho hiện tại (còn {$variant->stock_quantity})";
         }
 
-        $unitPrice = $product ? (int) $product->base_price : 0;
+        // Khi quote: không để lộ thông tin (tên, ảnh, giá) của sản phẩm nháp / ẩn / đã xóa mềm
+        $hideProductDetails = $isQuote && !$isProductPublished;
+
+        $unitPrice = ($hideProductDetails || !$product) ? 0 : (int) $product->base_price;
         $quantity = (int) $this->quantity;
         $lineTotal = $unitPrice * $quantity;
 
-        return [
-            'id'                   => $this->id,
-            'variant'              => $variant ? [
-                'id'             => $variant->id,
-                'sku'            => $variant->sku,
-                'color'          => $variant->color ? [
-                    'id'       => $variant->color->id,
-                    'name'     => $variant->color->name,
-                    'hex_code' => $variant->color->hex_code,
-                ] : null,
-                'size'           => $variant->size ? [
-                    'id'   => $variant->size->id,
-                    'name' => $variant->size->name,
-                ] : null,
-                'stock_quantity' => (int) $variant->stock_quantity,
-                'is_active'      => (bool) $variant->is_active,
-            ] : null,
-            'product'              => $product ? [
+        $productData = null;
+        if (!$hideProductDetails && $product) {
+            $productData = [
                 'id'         => $product->id,
                 'name'       => $product->name,
                 'slug'       => $product->slug,
@@ -64,7 +60,43 @@ class CartItemResource extends JsonResource
                     'url'      => $product->mainImage->image_url,
                     'alt_text' => $product->mainImage->alt_text,
                 ] : null,
-            ] : null,
+            ];
+        }
+
+        $variantData = null;
+        if ($variant) {
+            if ($hideProductDetails) {
+                $variantData = [
+                    'id'             => $variant->id,
+                    'sku'            => null,
+                    'color'          => null,
+                    'size'           => null,
+                    'stock_quantity' => 0,
+                    'is_active'      => false,
+                ];
+            } else {
+                $variantData = [
+                    'id'             => $variant->id,
+                    'sku'            => $variant->sku,
+                    'color'          => $variant->color ? [
+                        'id'       => $variant->color->id,
+                        'name'     => $variant->color->name,
+                        'hex_code' => $variant->color->hex_code,
+                    ] : null,
+                    'size'           => $variant->size ? [
+                        'id'   => $variant->size->id,
+                        'name' => $variant->size->name,
+                    ] : null,
+                    'stock_quantity' => (int) $variant->stock_quantity,
+                    'is_active'      => (bool) $variant->is_active,
+                ];
+            }
+        }
+
+        return [
+            'id'                   => $this->id ?? null,
+            'variant'              => $variantData,
+            'product'              => $productData,
             'unit_price'           => $unitPrice,
             'quantity'             => $quantity,
             'line_total'           => $lineTotal,
