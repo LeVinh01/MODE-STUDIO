@@ -5,9 +5,13 @@ import router from '@/routes'
 import { useAppDispatch } from '@/store/hooks'
 import { resetAuth, setInitialized, setUser } from '@/store/slices/authSlice'
 import { authService } from '@/services/api/authService'
+import { useCartSync } from '@/hooks/useCartSync'
 
 export function App() {
   const dispatch = useAppDispatch()
+
+  // Tự động đồng bộ giỏ hàng với máy chủ và giữa các tab
+  useCartSync()
 
   useEffect(() => {
     const controller = new AbortController()

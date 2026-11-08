@@ -1,0 +1,35 @@
+@charset "UTF-8";
+.skeleton {
+  display: block;
+  background-color: var(--color-skeleton-base);
+  background-image: linear-gradient(90deg, var(--color-skeleton-base) 0%, var(--color-skeleton-highlight) 50%, var(--color-skeleton-base) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+.variantText {
+  height: 1rem;
+  border-radius: var(--radius-sm);
+  margin-top: var(--space-1);
+  margin-bottom: var(--space-1);
+}
+.variantText:empty:before {
+  content: " ";
+}
+
+.variantRectangular {
+  border-radius: var(--radius-sm);
+}
+
+.variantCircular {
+  border-radius: var(--radius-full);
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}/*# sourceMappingURL=Skeleton.module.css.map */

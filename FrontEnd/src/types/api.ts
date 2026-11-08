@@ -139,3 +139,68 @@ export interface ProductQueryFilter {
   perPage?: number
   page?: number
 }
+
+/**
+ * Types cho API Giỏ hàng (Cart)
+ */
+export interface ApiCartItemVariant {
+  id: number
+  sku: string
+  color: {
+    id: number
+    name: string
+    hex_code: string | null
+  }
+  size: {
+    id: number
+    name: string
+  }
+  stock_quantity: number
+  is_active: boolean
+}
+
+export interface ApiCartItemProduct {
+  id: number
+  name: string
+  slug: string
+  status: string
+  main_image: {
+    url: string
+    alt_text: string | null
+  } | null
+}
+
+export interface ApiCartItem {
+  id: number
+  variant: ApiCartItemVariant
+  product: ApiCartItemProduct
+  unit_price: number
+  quantity: number
+  line_total: number
+  is_purchasable: boolean
+  unpurchasable_reason: string | null
+}
+
+export interface ApiCartResponse {
+  items: ApiCartItem[]
+  subtotal: number
+  total_quantity: number
+  items_count: number
+  has_unpurchasable_items: boolean
+}
+
+export interface ApiCartItemActionResponse {
+  message?: string
+  item: ApiCartItem
+}
+
+export interface ApiCartStockErrorResponse {
+  message: string
+  errors?: {
+    quantity?: string[]
+    variant_id?: string[]
+    cart?: string[]
+    [key: string]: string[] | undefined
+  }
+  available_stock?: number
+}

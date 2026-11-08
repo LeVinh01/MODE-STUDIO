@@ -7,4 +7,5 @@ export * from './ProductCard'
 export * from './ProductFilter'
 export * from './ProductGallery'
 export * from './VariantSelector'
+export * from './CartDrawer'
 

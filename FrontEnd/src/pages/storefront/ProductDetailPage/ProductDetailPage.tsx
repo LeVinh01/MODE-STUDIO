@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { AlertCircle, Info, Minus, Plus } from 'lucide-react'
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
+import { AlertCircle, CheckCircle2, Minus, Plus } from 'lucide-react'
 import { Breadcrumbs, type BreadcrumbItem } from '@/components/navigation/Breadcrumbs'
 import { Button } from '@/components/common/Button'
 import { ProductGallery } from '@/components/storefront/ProductGallery'
@@ -9,11 +9,19 @@ import { ProductCard } from '@/components/storefront/ProductCard'
 import { productService } from '@/services/api/productService'
 import type { Product } from '@/types/product'
 import { formatCurrency } from '@/utils/formatters'
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { selectIsAuthenticated } from '@/store/slices/authSlice'
+import { addToCart } from '@/store/slices/cartSlice'
+import { setCartDrawerOpen } from '@/store/slices/uiSlice'
 import { cn } from '@/utils/cn'
 import styles from './ProductDetailPage.module.scss'
 
 export const ProductDetailPage = () => {
   const { slug } = useParams<{ slug: string }>()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const dispatch = useAppDispatch()
+  const isAuthenticated = useAppSelector(selectIsAuthenticated)
 
   // 1. Data states
   const [product, setProduct] = useState<Product | null>(null)
@@ -28,7 +36,9 @@ export const ProductDetailPage = () => {
   const [selectedSizeId, setSelectedSizeId] = useState<number | null>(null)
   const [quantity, setQuantity] = useState<number>(1)
   const [sizeWarning, setSizeWarning] = useState<string | null>(null)
-  const [showCartNotice, setShowCartNotice] = useState<boolean>(false)
+  const [isAddingToCart, setIsAddingToCart] = useState<boolean>(false)
+  const [addToCartError, setAddToCartError] = useState<string | null>(null)
+  const [cartSuccessMessage, setCartSuccessMessage] = useState<string | null>(null)
 
   // Reset toàn bộ state lựa chọn khi slug đổi
   const [prevSlug, setPrevSlug] = useState(slug)
@@ -38,7 +48,9 @@ export const ProductDetailPage = () => {
     setSelectedSizeId(null)
     setQuantity(1)
     setSizeWarning(null)
-    setShowCartNotice(false)
+    setIsAddingToCart(false)
+    setAddToCartError(null)
+    setCartSuccessMessage(null)
     setErrorMessage(null)
     setIsNotFound(false)
     setIsLoading(true)
@@ -183,12 +195,13 @@ export const ProductDetailPage = () => {
         product.variants.every((v) => v.stock <= 0)))
 
   const isVariantOutOfStock = Boolean(activeVariant && activeVariant.stock <= 0)
-  const maxStock = activeVariant ? Math.min(activeVariant.stock, 10) : 1
+  const maxStock = activeVariant ? Math.min(activeVariant.stock, 20) : 1
 
   // 5. Handlers lựa chọn màu & size
   const handleSelectColor = (colorId: number) => {
     setSelectedColorId(colorId)
     setSizeWarning(null)
+    setAddToCartError(null)
 
     // Nếu size hiện tại đã chọn không còn hàng ở màu mới, reset size về null (trừ khi là One Size)
     if (selectedSizeId !== null && product?.variants) {
@@ -212,28 +225,55 @@ export const ProductDetailPage = () => {
   const handleSelectSize = (sizeId: number) => {
     setSelectedSizeId(sizeId)
     setSizeWarning(null)
+    setAddToCartError(null)
   }
 
   const handleQuantityChange = (delta: number) => {
-    setQuantity((prev) => {
-      const next = prev + delta
-      if (next < 1) return 1
-      if (next > maxStock) return maxStock
-      return next
-    })
+    const stock = activeVariant?.stock ?? 0
+    const maxAllowed = Math.min(Math.max(0, stock), 20)
+
+    if (maxAllowed <= 0) {
+      setAddToCartError('Sản phẩm đã hết hàng trong kho.')
+      return
+    }
+
+    const next = quantity + delta
+    if (next > maxAllowed) {
+      setQuantity(maxAllowed)
+      setAddToCartError(`Chỉ còn ${stock} sản phẩm`)
+      return
+    }
+
+    if (next < 1) {
+      setQuantity(1)
+      setAddToCartError(null)
+      return
+    }
+
+    setQuantity(next)
+    setAddToCartError(null)
   }
 
   // 6. Handler Thêm vào giỏ hàng
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!product) return
+    setAddToCartError(null)
+    setCartSuccessMessage(null)
 
-    // Kiểm tra xem đã chọn size chưa (nếu sản phẩm có nhiều size)
-    const hasMultipleSizes =
-      product.variants &&
-      new Set(product.variants.map((v) => v.sizeId).filter(Boolean)).size > 1
+    // Bắt buộc chọn màu sắc
+    if (selectedColorId === null) {
+      setSizeWarning('Vui lòng chọn màu sắc')
+      return
+    }
 
-    if (hasMultipleSizes && selectedSizeId === null) {
+    // Bắt buộc chọn kích cỡ
+    if (selectedSizeId === null) {
       setSizeWarning('Vui lòng chọn kích cỡ')
+      return
+    }
+
+    if (!activeVariant) {
+      setSizeWarning('Biến thể sản phẩm không khả dụng')
       return
     }
 
@@ -241,11 +281,73 @@ export const ProductDetailPage = () => {
       return
     }
 
-    // Hiển thị thông báo trung thực (cartSlice chưa có trong Redux store)
-    setShowCartNotice(true)
-    setTimeout(() => {
-      setShowCartNotice(false)
-    }, 4000)
+    const stock = activeVariant.stock ?? 0
+    const maxAllowed = Math.min(Math.max(0, stock), 20)
+
+    if (stock <= 0) {
+      setAddToCartError('Sản phẩm đã hết hàng trong kho.')
+      return
+    }
+
+    // Chặn sớm ở client dựa trên tồn kho đã biết
+    if (quantity > maxAllowed) {
+      setQuantity(maxAllowed)
+      setAddToCartError(`Chỉ còn ${stock} sản phẩm`)
+      return
+    }
+
+    // Chưa đăng nhập -> Chuyển hướng sang /login và nhớ trang định vào
+    if (!isAuthenticated) {
+      navigate('/login', {
+        state: {
+          from: {
+            pathname: location.pathname,
+            search: location.search,
+          },
+          message: 'Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.',
+        },
+      })
+      return
+    }
+
+    setIsAddingToCart(true)
+
+    try {
+      await dispatch(
+        addToCart({
+          variantId: Number(activeVariant.id),
+          quantity,
+        }),
+      ).unwrap()
+
+      setCartSuccessMessage(
+        `Đã thêm ${quantity} sản phẩm (${activeVariant.color} / Size ${activeVariant.size}) vào giỏ hàng.`,
+      )
+      dispatch(setCartDrawerOpen(true))
+    } catch (err: unknown) {
+      const apiError = err as {
+        message?: string
+        errors?: { quantity?: string[] }
+        available_stock?: number
+      }
+      if (apiError?.available_stock !== undefined) {
+        if (apiError.available_stock <= 0) {
+          setAddToCartError('Sản phẩm đã hết hàng trong kho.')
+        } else {
+          const serverMaxAllowed = Math.min(apiError.available_stock, 20)
+          setQuantity(serverMaxAllowed)
+          setAddToCartError(`Chỉ còn ${apiError.available_stock} sản phẩm`)
+        }
+      } else if (apiError?.errors?.quantity?.[0]) {
+        setAddToCartError(apiError.errors.quantity[0])
+      } else {
+        setAddToCartError(
+          apiError?.message || 'Không thể thêm sản phẩm vào giỏ hàng.',
+        )
+      }
+    } finally {
+      setIsAddingToCart(false)
+    }
   }
 
   // Breadcrumbs items
@@ -442,24 +544,38 @@ export const ProductDetailPage = () => {
                   variant="primary"
                   size="lg"
                   fullWidth
-                  disabled={Boolean(isOverallOutOfStock || isVariantOutOfStock)}
+                  disabled={Boolean(
+                    isOverallOutOfStock || isVariantOutOfStock || isAddingToCart,
+                  )}
                   onClick={handleAddToCart}
                 >
-                  {isOverallOutOfStock
-                    ? 'HẾT HÀNG'
-                    : isVariantOutOfStock
-                      ? 'BIẾN THỂ TẠM HẾT HÀNG'
-                      : 'THÊM VÀO GIỎ HÀNG'}
+                  {isAddingToCart
+                    ? 'ĐANG THÊM...'
+                    : isOverallOutOfStock
+                      ? 'HẾT HÀNG'
+                      : isVariantOutOfStock
+                        ? 'BIẾN THỂ TẠM HẾT HÀNG'
+                        : 'THÊM VÀO GIỎ HÀNG'}
                 </Button>
               </div>
 
-              {/* Thông báo trung thực về tính năng giỏ hàng */}
-              {showCartNotice && (
-                <div className={styles.noticeNotification} role="status">
-                  <Info size={18} />
-                  <span>
-                    Tính năng giỏ hàng sẽ được hoàn thiện ở bước sau.
-                  </span>
+              {/* Lỗi tồn kho hoặc lỗi 422 từ server */}
+              {addToCartError && (
+                <div className={styles.errorAlert} role="alert">
+                  <AlertCircle size={18} aria-hidden="true" />
+                  <span>{addToCartError}</span>
+                </div>
+              )}
+
+              {/* Phản hồi khi thêm vào giỏ thành công */}
+              {cartSuccessMessage && (
+                <div
+                  className={styles.successAlert}
+                  role="status"
+                  aria-live="polite"
+                >
+                  <CheckCircle2 size={18} aria-hidden="true" />
+                  <span>{cartSuccessMessage}</span>
                 </div>
               )}
             </div>
