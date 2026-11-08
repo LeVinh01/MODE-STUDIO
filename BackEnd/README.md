@@ -246,7 +246,105 @@ Accept: application/json
 
 ---
 
-## 9. Dừng Hệ Thống Docker
+## 9. API Giỏ Hàng (Cart API)
+
+Tất cả các endpoint giỏ hàng yêu cầu xác thực `auth:sanctum` và tài khoản hoạt động (`active`). Mỗi khách hàng sở hữu một giỏ hàng duy nhất lưu trữ trong bảng `cart_items`.
+
+### Chính sách và giới hạn:
+- **Số lượng tối đa mỗi sản phẩm trong giỏ**: 20 sản phẩm (`config('shop.cart.max_item_quantity')`).
+- **Kiểm tra khả dụng**: Khi lấy danh sách giỏ hàng (`GET /api/cart`), hệ thống tự động kiểm tra sản phẩm xóa mềm, trạng thái kích hoạt và số lượng tồn kho thực tế; đánh dấu `is_purchasable` (`true`/`false`) kèm `unpurchasable_reason`. Các sản phẩm không đủ điều kiện mua sẽ không được tính vào `subtotal`.
+
+### Danh sách Endpoint Giỏ Hàng:
+1. **Lấy thông tin giỏ hàng (`GET /api/cart`)**
+   - Header: `Authorization: Bearer <TOKEN>`
+   - Response (HTTP 200): Trả về danh sách món trong giỏ, `items_count`, `subtotal`, `estimated_shipping_fee`, `free_shipping_threshold` và cờ `is_purchasable` của từng sản phẩm.
+2. **Thêm sản phẩm vào giỏ (`POST /api/cart/items`)**
+   - Body: `{"variant_id": 1, "quantity": 2}`
+   - Xử lý: Cộng dồn số lượng nếu đã có trong giỏ; kiểm tra tồn kho và giới hạn tối đa 20. Bọc transaction và khóa dòng để xử lý tranh chấp khi có nhiều yêu cầu thêm cùng lúc.
+3. **Cập nhật số lượng (`PATCH /api/cart/items/{id}`)**
+   - Body: `{"quantity": 3}`
+   - Response (HTTP 200): Cập nhật số lượng món hàng, từ chối 422 nếu vượt tồn hoặc vượt 20.
+4. **Xóa một món khỏi giỏ (`DELETE /api/cart/items/{id}`)**
+   - Xóa đúng món hàng của user hiện tại, trả về 200 kèm thông báo thành công.
+5. **Xóa toàn bộ giỏ hàng (`DELETE /api/cart`)**
+   - Xóa tất cả các dòng giỏ hàng của user hiện tại.
+
+---
+
+## 10. API Đơn Hàng (Orders API)
+
+Quản lý chu trình đặt hàng COD, danh sách đơn hàng, chi tiết đơn hàng và hủy đơn phía khách hàng. Tất cả các endpoint yêu cầu xác thực `auth:sanctum` và tài khoản hoạt động (`active`).
+
+### Chính sách phí vận chuyển:
+- **Miễn phí vận chuyển**: Khi giá trị đơn hàng `subtotal >= 2.000.000 đ`.
+- **Phí tiêu chuẩn**: `30.000 đ` (đây là giả định thiết kế ban đầu trong cấu hình hệ thống, chờ xác nhận thêm từ nghiệp vụ).
+
+### Cơ chế chống đụng độ & chống đua (Concurrency Control):
+- **Tạo đơn hàng (`POST /api/orders`)**: 
+  - Đọc và khóa các dòng giỏ hàng của user (`lockForUpdate`) bên trong transaction để ngăn ngừa việc tạo trùng đơn khi người dùng thao tác bấm đặt hàng nhiều lần liên tiếp.
+  - Khóa các biến thể sản phẩm theo thứ tự `id` tăng dần (`orderBy('id', 'asc')`) nhằm tránh deadlock giữa các giao dịch đồng thời.
+  - Kiểm tra lại tính hợp lệ của sản phẩm (chưa bị xóa, đang active, đủ tồn kho) trước khi trừ tồn kho và tạo bản ghi chi tiết đơn hàng (snapshot: tên, sku, màu sắc, kích thước, ảnh đại diện, đơn giá tại thời điểm mua).
+  - Sinh mã đơn hàng duy nhất với tiền tố `MS` kèm ngày và chuỗi ngẫu nhiên, tự động thử lại tối đa 5 lần nếu phát hiện trùng mã.
+- **Hủy đơn hàng (`POST /api/orders/{order_code}/cancel`)**:
+  - Thực hiện trong transaction có khóa dòng đơn hàng (`lockForUpdate`).
+  - Chỉ cho phép hủy khi đơn hàng đang ở trạng thái chờ xử lý (`pending`). Nếu đơn đã xác nhận hoặc đã hủy trước đó, giao dịch trả về mã lỗi HTTP 422 và không cộng lại tồn kho.
+  - Khóa các biến thể theo thứ tự `id` tăng dần và hoàn lại tồn kho (`increment('stock_quantity')`) tương ứng số lượng đã đặt.
+  - Lưu thời điểm hủy (`cancelled_at`) và lý do hủy (`cancel_reason`), mặc định là "Khách hàng tự hủy đơn" nếu khách không nhập lý do.
+  - *Lưu ý*: Thiết kế khóa dòng bi quan này nhằm giảm thiểu rủi ro bán vượt tồn kho và hủy trùng trong các kịch bản tương tranh; các bài test đã được thiết lập để mô phỏng tuần tự các kịch bản cạnh tranh tài nguyên.
+
+### Danh sách Endpoint Đơn Hàng:
+
+#### 1. Đặt hàng COD (`POST /api/orders`)
+- **Body (JSON)**:
+  ```json
+  {
+    "recipient_name": "Nguyễn Văn A",
+    "recipient_phone": "0912345678",
+    "shipping_address": "Số 123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
+    "note": "Giao giờ hành chính",
+    "payment_method": "cod"
+  }
+  ```
+- **Phương thức thanh toán hỗ trợ**: Chỉ chấp nhận `cod`. Phương thức `vnpay` được từ chối tại tầng validation với mã lỗi 422 (thông báo đang phát triển).
+- **Response (HTTP 201)**: Trả về đơn hàng vừa tạo kèm snapshot items và xóa sạch giỏ hàng của khách.
+
+#### 2. Danh sách đơn hàng (`GET /api/orders`)
+- **Tham số truy vấn (Query Parameters)**:
+  - `status`: Lọc theo trạng thái đơn hàng (`pending`, `confirmed`, `shipping`, `delivered`, `cancelled`). Trả về 422 nếu trạng thái không hợp lệ.
+  - `per_page`: Số lượng đơn hàng mỗi trang, mặc định là `10`, tối đa là `50` (vượt quá 50 trả về 422).
+  - `page`: Số trang cần xem (số nguyên $\ge 1$).
+- **Đặc điểm**: Danh sách được cách ly chặt chẽ theo `user_id` (người dùng chỉ xem được đơn hàng của chính mình); nạp sẵn `items` để tối ưu truy vấn.
+- **Response (HTTP 200)**: Cấu trúc phân trang chuẩn của Resource Collection (`data`, `links`, `meta`).
+
+#### 3. Chi tiết đơn hàng (`GET /api/orders/{order_code}`)
+- **Đặc điểm**: Tra cứu theo mã đơn hàng `order_code`. Nếu đơn không tồn tại hoặc thuộc về người dùng khác, API trả về chung mã lỗi HTTP 404 với thông điệp `"Đơn hàng không tồn tại."` để bảo mật thông tin.
+- **Response (HTTP 200)**: Chứa toàn bộ thông tin đơn hàng và danh sách snapshot sản phẩm trong đơn.
+
+#### 4. Hủy đơn hàng (`POST /api/orders/{order_code}/cancel`)
+- **Body (JSON)**:
+  ```json
+  {
+    "reason": "Tôi muốn đổi địa chỉ giao hàng"
+  }
+  ```
+  *(Trường `reason` là tùy chọn, tối đa 500 ký tự. Nếu để trống, hệ thống tự động ghi nhận lý do là `"Khách hàng tự hủy đơn"`).*
+- **Response (HTTP 200)**:
+  ```json
+  {
+    "message": "Hủy đơn hàng thành công.",
+    "order": {
+      "order_code": "MS261108ABCD12",
+      "status": "cancelled",
+      "cancel_reason": "Tôi muốn đổi địa chỉ giao hàng",
+      "cancelled_at": "2026-11-08T10:30:00.000000Z",
+      ...
+    }
+  }
+  ```
+
+---
+
+## 11. Dừng Hệ Thống Docker
 
 - Dừng containers:
   ```bash

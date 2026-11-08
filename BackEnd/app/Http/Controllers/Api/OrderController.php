@@ -7,6 +7,8 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\ProductStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\OrderCancelRequest;
+use App\Http\Requests\OrderIndexRequest;
 use App\Http\Requests\OrderStoreRequest;
 use App\Http\Resources\OrderResource;
 use App\Models\CartItem;
@@ -16,11 +18,58 @@ use App\Models\ProductVariant;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class OrderController extends Controller
 {
+    /**
+     * Danh sách đơn hàng của người dùng hiện tại (kèm phân trang và lọc theo trạng thái)
+     */
+    public function index(OrderIndexRequest $request): AnonymousResourceCollection
+    {
+        $user = $request->user();
+
+        $query = Order::query()
+            ->where('user_id', $user->id)
+            ->with('items')
+            ->orderBy('id', 'desc');
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        $perPage = (int) $request->input('per_page', 10);
+        $orders = $query->paginate($perPage);
+
+        return OrderResource::collection($orders);
+    }
+
+    /**
+     * Chi tiết một đơn hàng theo order_code của người dùng hiện tại
+     */
+    public function show(Request $request, string $order_code): JsonResponse
+    {
+        $user = $request->user();
+
+        $order = Order::where('order_code', $order_code)
+            ->where('user_id', $user->id)
+            ->with('items')
+            ->first();
+
+        if (!$order) {
+            return response()->json([
+                'message' => 'Đơn hàng không tồn tại.',
+            ], 404);
+        }
+
+        return response()->json([
+            'order' => new OrderResource($order),
+        ], 200);
+    }
+
     /**
      * Tạo đơn hàng mới từ giỏ hàng của người dùng (Checkout COD)
      */
@@ -201,5 +250,75 @@ class OrderController extends Controller
             'message' => 'Đặt hàng thành công.',
             'order'   => new OrderResource($order),
         ], 201);
+    }
+
+    /**
+     * Hủy đơn hàng đang ở trạng thái pending và hoàn lại tồn kho cho các biến thể
+     */
+    public function cancel(OrderCancelRequest $request, string $order_code): JsonResponse
+    {
+        $user = $request->user();
+
+        $order = DB::transaction(function () use ($user, $request, $order_code) {
+            // 1. Khóa và lấy đơn hàng của người dùng
+            $order = Order::where('order_code', $order_code)
+                ->where('user_id', $user->id)
+                ->with('items')
+                ->lockForUpdate()
+                ->first();
+
+            // Nếu không tìm thấy (hoặc đơn thuộc user khác) -> 404 không lộ sự tồn tại của đơn
+            if (!$order) {
+                throw new HttpResponseException(response()->json([
+                    'message' => 'Đơn hàng không tồn tại.',
+                ], 404));
+            }
+
+            // 2. Kiểm tra trạng thái đơn sau khi khóa: chỉ cho phép hủy khi đang pending
+            if ($order->status !== OrderStatus::Pending) {
+                throw new HttpResponseException(response()->json([
+                    'message' => 'Chỉ có thể hủy đơn hàng khi đơn đang ở trạng thái chờ xử lý (pending).',
+                ], 422));
+            }
+
+            // 3. Khóa các biến thể theo thứ tự id tăng dần để chống deadlock khi nhiều đơn cùng hoàn
+            $items = $order->items;
+            $variantIds = $items->pluck('variant_id')->filter()->unique()->sort()->values()->all();
+
+            if (!empty($variantIds)) {
+                $variants = ProductVariant::whereIn('id', $variantIds)
+                    ->orderBy('id', 'asc')
+                    ->lockForUpdate()
+                    ->get()
+                    ->keyBy('id');
+
+                // 4. Hoàn lại tồn kho cho từng biến thể
+                foreach ($items as $item) {
+                    if ($item->variant_id && $variant = $variants->get($item->variant_id)) {
+                        $variant->increment('stock_quantity', (int) $item->quantity);
+                    }
+                }
+            }
+
+            // 5. Gán lý do hủy (mặc định nếu khách không nhập)
+            $reason = trim((string) $request->input('reason'));
+            if ($reason === '') {
+                $reason = 'Khách hàng tự hủy đơn';
+            }
+
+            // 6. Cập nhật trạng thái và thời gian hủy
+            $order->update([
+                'status'        => OrderStatus::Cancelled,
+                'cancelled_at'  => now(),
+                'cancel_reason' => $reason,
+            ]);
+
+            return $order;
+        }, attempts: 3);
+
+        return response()->json([
+            'message' => 'Hủy đơn hàng thành công.',
+            'order'   => new OrderResource($order->fresh(['items'])),
+        ], 200);
     }
 }
