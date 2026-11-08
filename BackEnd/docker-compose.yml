@@ -8,6 +8,7 @@ services:
     working_dir: /var/www/html
     volumes:
       - .:/var/www/html
+      - app_vendor:/var/www/html/vendor
       - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
     networks:
       - mode_network
@@ -76,4 +77,6 @@ networks:
 
 volumes:
   mysql_data:
+    driver: local
+  app_vendor:
     driver: local
