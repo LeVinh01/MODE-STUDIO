@@ -1,3 +1,6 @@
+export type UserRole = 'customer' | 'operator' | 'admin'
+export type UserStatus = 'active' | 'locked'
+
 /**
  * Types cho Authentication DTOs từ API backend (snake_case)
  */
@@ -6,8 +9,8 @@ export interface ApiUser {
   full_name: string
   email: string
   phone: string | null
-  role: 'customer' | 'operator' | 'admin'
-  status: 'active' | 'locked'
+  role: UserRole
+  status: UserStatus
   email_verified_at: string | null
   last_login_at: string | null
 }
@@ -25,8 +28,8 @@ export interface User {
   fullName: string
   email: string
   phone?: string | null
-  role: 'customer' | 'operator' | 'admin'
-  status: 'active' | 'locked'
+  role: UserRole
+  status: UserStatus
   emailVerifiedAt?: string | null
   lastLoginAt?: string | null
 }
