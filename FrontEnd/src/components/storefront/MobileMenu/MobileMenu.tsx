@@ -4,11 +4,13 @@ import { Drawer } from '@/components/feedback/Drawer'
 import { MAIN_NAVIGATION } from '@/config/navigation'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { setMobileMenuOpen } from '@/store/slices/uiSlice'
+import { selectCurrentUser } from '@/store/slices/authSlice'
 import { cn } from '@/utils/cn'
 import styles from './MobileMenu.module.scss'
 
 export const MobileMenu = () => {
   const dispatch = useAppDispatch()
+  const user = useAppSelector(selectCurrentUser)
   const isOpen = useAppSelector((state) => state.ui.isMobileMenuOpen)
 
   const handleClose = () => {
@@ -25,12 +27,12 @@ export const MobileMenu = () => {
       footer={
         <div className={styles.footerActions}>
           <Link
-            to="/account"
+            to={user ? '/account' : '/login'}
             onClick={handleClose}
             className={styles.accountButton}
           >
             <User size={18} />
-            <span>Tài Khoản Của Tôi</span>
+            <span>{user ? user.fullName : 'Đăng Nhập / Đăng Ký'}</span>
           </Link>
 
           {import.meta.env.DEV && (

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { Menu, Search, ShoppingBag, User } from 'lucide-react'
 import { MAIN_NAVIGATION } from '@/config/navigation'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
@@ -8,6 +8,9 @@ import {
   toggleSearch,
   toggleCartDrawer,
 } from '@/store/slices/uiSlice'
+import { selectCurrentUser, resetAuth } from '@/store/slices/authSlice'
+import { authService } from '@/services/api/authService'
+import { Badge } from '@/components/common/Badge'
 import { cn } from '@/utils/cn'
 import styles from './Header.module.scss'
 
@@ -17,8 +20,14 @@ export interface HeaderProps {
 
 export const Header = ({ cartCount = 0 }: HeaderProps) => {
   const dispatch = useAppDispatch()
+  const navigate = useNavigate()
+  const user = useAppSelector(selectCurrentUser)
   const isMobileMenuOpen = useAppSelector((state) => state.ui.isMobileMenuOpen)
   const [isScrolled, setIsScrolled] = useState(false)
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false)
+
+  const accountMenuRef = useRef<HTMLDivElement>(null)
+  const accountTriggerRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -32,6 +41,47 @@ export const Header = ({ cartCount = 0 }: HeaderProps) => {
       window.removeEventListener('scroll', handleScroll)
     }
   }, [])
+
+  useEffect(() => {
+    if (!isAccountMenuOpen) return
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        accountMenuRef.current &&
+        !accountMenuRef.current.contains(e.target as Node)
+      ) {
+        setIsAccountMenuOpen(false)
+      }
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        setIsAccountMenuOpen(false)
+        accountTriggerRef.current?.focus()
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isAccountMenuOpen])
+
+  const handleLogout = async () => {
+    setIsAccountMenuOpen(false)
+    try {
+      await authService.logout()
+    } catch {
+      // Ignored: Token is cleared in finally block of authService.logout
+    } finally {
+      dispatch(resetAuth())
+      navigate('/')
+    }
+  }
 
   return (
     <header
@@ -87,13 +137,84 @@ export const Header = ({ cartCount = 0 }: HeaderProps) => {
             <Search size={20} />
           </button>
 
-          <Link
-            to="/account"
-            aria-label="Tài khoản khách hàng"
-            className={styles.actionButton}
-          >
-            <User size={20} />
-          </Link>
+          {user ? (
+            <div className={styles.accountWrapper} ref={accountMenuRef}>
+              <button
+                ref={accountTriggerRef}
+                type="button"
+                onClick={() => setIsAccountMenuOpen((prev) => !prev)}
+                aria-label={`Tài khoản: ${user.fullName}`}
+                aria-expanded={isAccountMenuOpen}
+                aria-haspopup="menu"
+                className={cn(
+                  styles.actionButton,
+                  isAccountMenuOpen && styles.actionButtonActive,
+                )}
+              >
+                <User size={20} />
+              </button>
+
+              {isAccountMenuOpen && (
+                <div
+                  role="menu"
+                  aria-label="Tùy chọn tài khoản"
+                  className={styles.accountDropdown}
+                >
+                  <div className={styles.accountDropdownHeader}>
+                    <p className={styles.userName}>{user.fullName}</p>
+                    <p className={styles.userEmail}>{user.email}</p>
+                    <div className={styles.userRoleBadge}>
+                      {user.role === 'admin' && (
+                        <Badge variant="luxury" size="sm">
+                          Quản trị viên
+                        </Badge>
+                      )}
+                      {user.role === 'operator' && (
+                        <Badge variant="warning" size="sm">
+                          Vận hành viên
+                        </Badge>
+                      )}
+                      {user.role === 'customer' && (
+                        <Badge variant="outline" size="sm">
+                          Khách hàng
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className={styles.dropdownDivider} role="separator" />
+
+                  {(user.role === 'admin' || user.role === 'operator') && (
+                    <Link
+                      to="/admin"
+                      role="menuitem"
+                      className={styles.dropdownItem}
+                      onClick={() => setIsAccountMenuOpen(false)}
+                    >
+                      Trang quản trị
+                    </Link>
+                  )}
+
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className={cn(styles.dropdownItem, styles.logoutItem)}
+                    onClick={handleLogout}
+                  >
+                    Đăng xuất
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link
+              to="/login"
+              aria-label="Tài khoản khách hàng"
+              className={styles.actionButton}
+            >
+              <User size={20} />
+            </Link>
+          )}
 
           <button
             type="button"
