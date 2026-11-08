@@ -205,7 +205,11 @@ export const Header = ({ cartCount = 0 }: HeaderProps) => {
           <button
             type="button"
             onClick={() => dispatch(toggleCartDrawer())}
-            aria-label={`Giỏ hàng${cartCount > 0 ? ` (${cartCount} sản phẩm)` : ''}`}
+            aria-label={
+              cartCount > 0
+                ? `Giỏ hàng, ${cartCount} loại sản phẩm`
+                : 'Giỏ hàng'
+            }
             className={styles.actionButton}
           >
             <ShoppingBag size={20} />

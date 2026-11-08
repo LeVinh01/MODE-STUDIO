@@ -229,12 +229,28 @@ export const ProductDetailPage = () => {
   }
 
   const handleQuantityChange = (delta: number) => {
-    setQuantity((prev) => {
-      const next = prev + delta
-      if (next < 1) return 1
-      if (next > maxStock) return maxStock
-      return next
-    })
+    const stock = activeVariant?.stock ?? 0
+    const maxAllowed = Math.min(Math.max(0, stock), 20)
+
+    if (maxAllowed <= 0) {
+      setAddToCartError('Sản phẩm đã hết hàng trong kho.')
+      return
+    }
+
+    const next = quantity + delta
+    if (next > maxAllowed) {
+      setQuantity(maxAllowed)
+      setAddToCartError(`Chỉ còn ${stock} sản phẩm`)
+      return
+    }
+
+    if (next < 1) {
+      setQuantity(1)
+      setAddToCartError(null)
+      return
+    }
+
+    setQuantity(next)
     setAddToCartError(null)
   }
 
@@ -262,6 +278,21 @@ export const ProductDetailPage = () => {
     }
 
     if (isOverallOutOfStock || isVariantOutOfStock) {
+      return
+    }
+
+    const stock = activeVariant.stock ?? 0
+    const maxAllowed = Math.min(Math.max(0, stock), 20)
+
+    if (stock <= 0) {
+      setAddToCartError('Sản phẩm đã hết hàng trong kho.')
+      return
+    }
+
+    // Chặn sớm ở client dựa trên tồn kho đã biết
+    if (quantity > maxAllowed) {
+      setQuantity(maxAllowed)
+      setAddToCartError(`Chỉ còn ${stock} sản phẩm`)
       return
     }
 
@@ -300,9 +331,13 @@ export const ProductDetailPage = () => {
         available_stock?: number
       }
       if (apiError?.available_stock !== undefined) {
-        setAddToCartError(
-          `Sản phẩm chỉ còn ${apiError.available_stock} sản phẩm trong kho.`,
-        )
+        if (apiError.available_stock <= 0) {
+          setAddToCartError('Sản phẩm đã hết hàng trong kho.')
+        } else {
+          const serverMaxAllowed = Math.min(apiError.available_stock, 20)
+          setQuantity(serverMaxAllowed)
+          setAddToCartError(`Chỉ còn ${apiError.available_stock} sản phẩm`)
+        }
       } else if (apiError?.errors?.quantity?.[0]) {
         setAddToCartError(apiError.errors.quantity[0])
       } else {

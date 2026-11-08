@@ -9,12 +9,14 @@ import {
   selectCartItems,
   selectCartSubtotal,
   selectCartTotalQuantity,
+  selectCartItemsCount,
   selectCartHasUnpurchasableItems,
   selectCartLoading,
   selectCartUpdatingItemId,
   updateCartItemQuantity,
   removeCartItem,
   clearCart,
+  fetchCart,
 } from '@/store/slices/cartSlice'
 import { STORE_POLICIES } from '@/config/store'
 import { formatCurrency } from '@/utils/formatters'
@@ -27,6 +29,7 @@ export const CartPage = () => {
   const items = useAppSelector(selectCartItems)
   const subtotal = useAppSelector(selectCartSubtotal)
   const totalQuantity = useAppSelector(selectCartTotalQuantity)
+  const itemsCount = useAppSelector(selectCartItemsCount)
   const hasUnpurchasableItems = useAppSelector(selectCartHasUnpurchasableItems)
   const isLoading = useAppSelector(selectCartLoading)
   const updatingItemId = useAppSelector(selectCartUpdatingItemId)
@@ -50,12 +53,21 @@ export const CartPage = () => {
     Math.round((subtotal / freeThreshold) * 100),
   )
 
-  // 4. Xử lý thay đổi số lượng với cơ chế Rollback khi máy chủ từ chối
-  const handleQuantityChange = async (itemId: string, currentQty: number, delta: number, maxStock: number) => {
+  // 4. Xử lý thay đổi số lượng với cơ chế tự động đặt về mức tối đa = min(tồn kho, 20)
+  const handleQuantityChange = async (itemId: string, currentQty: number, delta: number, stock: number) => {
     if (updatingItemId === itemId) return
 
-    const newQty = currentQty + delta
-    if (newQty < 1 || newQty > 20) return
+    const maxAllowed = Math.min(Math.max(0, stock), 20)
+
+    // Nếu tồn kho bằng 0: không cho đặt số lượng dương, nạp lại giỏ để server đánh dấu không mua được
+    if (maxAllowed <= 0) {
+      setRowErrors((prev) => ({
+        ...prev,
+        [itemId]: 'Chỉ còn 0 sản phẩm. Sản phẩm đã hết hàng.',
+      }))
+      dispatch(fetchCart())
+      return
+    }
 
     // Xóa thông báo lỗi cũ của dòng này
     setRowErrors((prev) => {
@@ -64,36 +76,68 @@ export const CartPage = () => {
       return next
     })
 
-    if (newQty > maxStock) {
+    let targetQty = currentQty + delta
+
+    // Chặn sớm ở client dựa trên tồn kho đã biết
+    if (targetQty > maxAllowed) {
       setRowErrors((prev) => ({
         ...prev,
-        [itemId]: `Sản phẩm chỉ còn ${maxStock} sản phẩm trong kho.`,
+        [itemId]: `Chỉ còn ${stock} sản phẩm`,
       }))
-      return
+
+      if (currentQty >= maxAllowed) {
+        return
+      }
+
+      // TỰ ĐỘNG đặt số lượng về mức tối đa cho phép = min(tồn kho, 20) thay vì quay về giá trị cũ
+      targetQty = maxAllowed
     }
+
+    if (targetQty < 1) return
 
     try {
       await dispatch(
-        updateCartItemQuantity({ id: itemId, quantity: newQty }),
+        updateCartItemQuantity({ id: itemId, quantity: targetQty }),
       ).unwrap()
     } catch (err: unknown) {
       const apiError = (err as { data?: { message?: string; available_stock?: number; errors?: { quantity?: string[] } } })?.data
+      const availableStock = apiError?.available_stock
       const quantityError = apiError?.errors?.quantity?.[0]
-      if (apiError?.available_stock !== undefined) {
-        setRowErrors((prev) => ({
-          ...prev,
-          [itemId]: `Sản phẩm chỉ còn ${apiError.available_stock} sản phẩm trong kho.`,
-        }))
+
+      if (availableStock !== undefined) {
+        if (availableStock <= 0) {
+          setRowErrors((prev) => ({
+            ...prev,
+            [itemId]: 'Chỉ còn 0 sản phẩm. Sản phẩm đã hết hàng.',
+          }))
+          dispatch(fetchCart())
+        } else {
+          const serverMaxAllowed = Math.min(availableStock, 20)
+          setRowErrors((prev) => ({
+            ...prev,
+            [itemId]: `Chỉ còn ${availableStock} sản phẩm`,
+          }))
+          // Tự động đặt số lượng về mức tối đa cho phép trên server
+          try {
+            await dispatch(
+              updateCartItemQuantity({ id: itemId, quantity: serverMaxAllowed }),
+            ).unwrap()
+          } catch {
+            dispatch(fetchCart())
+          }
+        }
       } else if (quantityError) {
         setRowErrors((prev) => ({
           ...prev,
           [itemId]: quantityError,
         }))
+        dispatch(fetchCart())
       } else {
         setRowErrors((prev) => ({
           ...prev,
           [itemId]: apiError?.message || 'Không thể cập nhật số lượng.',
         }))
+        dispatch(fetchCart())
       }
     }
   }
@@ -129,7 +173,7 @@ export const CartPage = () => {
           <div className={styles.pageHeader}>
             <div className={styles.titleSection}>
               <h1 className={styles.pageTitle}>Túi Mua Sắm</h1>
-              <span className={styles.itemCountText}>0 sản phẩm</span>
+              <span className={styles.itemCountText}>0 loại sản phẩm</span>
             </div>
           </div>
 
@@ -156,7 +200,7 @@ export const CartPage = () => {
           <div className={styles.titleSection}>
             <h1 className={styles.pageTitle}>Túi Mua Sắm</h1>
             <span className={styles.itemCountText}>
-              {totalQuantity} sản phẩm trong túi
+              {itemsCount} loại sản phẩm, tổng {totalQuantity} sản phẩm
             </span>
           </div>
 
@@ -180,7 +224,8 @@ export const CartPage = () => {
               {items.map((item) => {
                 const maxStock = item.variant.stockQuantity
                 const isUpdating = updatingItemId === item.id
-                const isRowUnpurchasable = !item.isPurchasable
+                const isOutOfStock = maxStock <= 0
+                const isRowUnpurchasable = !item.isPurchasable || isOutOfStock
 
                 return (
                   <li
@@ -242,8 +287,10 @@ export const CartPage = () => {
                             Không thể mua sản phẩm này
                           </span>
                           <span className={styles.unpurchasableReason}>
-                            {item.unpurchasableReason ||
-                              'Sản phẩm tạm ngừng kinh doanh hoặc hết hàng. Món này không được tính vào tạm tính.'}
+                            {isOutOfStock
+                              ? 'Sản phẩm đã hết hàng. Món này không được tính vào tạm tính.'
+                              : (item.unpurchasableReason ||
+                                  'Sản phẩm tạm ngừng kinh doanh hoặc hết hàng. Món này không được tính vào tạm tính.')}
                           </span>
                         </div>
                       )}
@@ -267,7 +314,7 @@ export const CartPage = () => {
                               maxStock,
                             )
                           }
-                          disabled={item.quantity <= 1 || isUpdating}
+                          disabled={item.quantity <= 1 || isUpdating || isOutOfStock}
                           aria-label={`Giảm số lượng ${item.product.name}`}
                         >
                           <Minus size={14} />
@@ -278,7 +325,7 @@ export const CartPage = () => {
                           aria-live="polite"
                           aria-atomic="true"
                         >
-                          {item.quantity}
+                          {isOutOfStock ? 0 : item.quantity}
                         </span>
 
                         <button
@@ -295,7 +342,8 @@ export const CartPage = () => {
                           disabled={
                             item.quantity >= 20 ||
                             item.quantity >= maxStock ||
-                            isUpdating
+                            isUpdating ||
+                            isOutOfStock
                           }
                           aria-label={`Tăng số lượng ${item.product.name}`}
                         >
@@ -376,7 +424,7 @@ export const CartPage = () => {
             {/* Chi tiết các khoản tiền */}
             <div className={styles.summaryRows}>
               <div className={styles.summaryRow}>
-                <span>Tạm tính ({items.length} thiết kế)</span>
+                <span>Tạm tính ({itemsCount} sản phẩm)</span>
                 <span>{formatCurrency(subtotal)}</span>
               </div>
 
@@ -412,13 +460,18 @@ export const CartPage = () => {
                 variant="primary"
                 size="lg"
                 fullWidth
-                disabled={items.length === 0 || hasUnpurchasableItems}
+                disabled={
+                  items.length === 0 ||
+                  hasUnpurchasableItems ||
+                  items.some((it) => it.variant.stockQuantity <= 0)
+                }
                 onClick={() => navigate('/checkout')}
               >
                 Tiến Hành Đặt Hàng
               </Button>
 
-              {hasUnpurchasableItems && (
+              {(hasUnpurchasableItems ||
+                items.some((it) => it.variant.stockQuantity <= 0)) && (
                 <span className={styles.checkoutWarning} role="alert">
                   Vui lòng xóa các sản phẩm không còn khả dụng để tiếp tục đặt
                   hàng.

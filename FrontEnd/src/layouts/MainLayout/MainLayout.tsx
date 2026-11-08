@@ -9,7 +9,7 @@ import {
   Footer,
   CartDrawer,
 } from '@/components/storefront'
-import { selectCartTotalQuantity } from '@/store/slices/cartSlice'
+import { selectCartItemsCount } from '@/store/slices/cartSlice'
 import styles from './MainLayout.module.scss'
 
 export interface MainLayoutProps {
@@ -17,7 +17,7 @@ export interface MainLayoutProps {
 }
 
 export const MainLayout = ({ children }: MainLayoutProps = {}) => {
-  const totalQuantity = useAppSelector(selectCartTotalQuantity)
+  const itemsCount = useAppSelector(selectCartItemsCount)
 
   return (
     <div className={styles.layoutStorefront}>
@@ -30,7 +30,7 @@ export const MainLayout = ({ children }: MainLayoutProps = {}) => {
       <AnnouncementBar />
 
       {/* 3. Sticky Editorial Header */}
-      <Header cartCount={totalQuantity} />
+      <Header cartCount={itemsCount} />
 
       {/* 4. Mobile Drawer Navigation */}
       <MobileMenu />

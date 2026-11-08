@@ -7,7 +7,7 @@ import { setCartDrawerOpen } from '@/store/slices/uiSlice'
 import {
   selectCartItems,
   selectCartSubtotal,
-  selectCartTotalQuantity,
+  selectCartItemsCount,
   selectCartHasUnpurchasableItems,
   selectCartUpdatingItemId,
   removeCartItem,
@@ -22,7 +22,7 @@ export const CartDrawer = () => {
   const isOpen = useAppSelector((state) => state.ui.isCartDrawerOpen)
   const items = useAppSelector(selectCartItems)
   const subtotal = useAppSelector(selectCartSubtotal)
-  const totalQuantity = useAppSelector(selectCartTotalQuantity)
+  const itemsCount = useAppSelector(selectCartItemsCount)
   const hasUnpurchasableItems = useAppSelector(selectCartHasUnpurchasableItems)
   const updatingItemId = useAppSelector(selectCartUpdatingItemId)
 
@@ -52,7 +52,7 @@ export const CartDrawer = () => {
       size="md"
       title="Túi Mua Sắm"
       description={
-        totalQuantity > 0 ? `${totalQuantity} sản phẩm đã chọn` : undefined
+        itemsCount > 0 ? `${itemsCount} sản phẩm` : undefined
       }
       footer={
         items.length > 0 ? (

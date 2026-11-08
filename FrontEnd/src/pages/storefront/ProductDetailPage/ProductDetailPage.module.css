@@ -1,0 +1,380 @@
+@charset "UTF-8";
+.page {
+  min-height: 100vh;
+  background-color: var(--color-background, #ffffff);
+  padding-bottom: var(--space-16);
+}
+
+.container {
+  max-width: var(--container-max-width, 1280px);
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+}
+@media (min-width: 768px) {
+  .container {
+    padding: 0 var(--space-6);
+  }
+}
+@media (min-width: 1024px) {
+  .container {
+    padding: 0 var(--space-8);
+  }
+}
+
+.breadcrumbsWrapper {
+  padding: var(--space-4) 0 var(--space-6);
+}
+
+/* ==========================================================================
+   PRODUCT MAIN LAYOUT (2 CỘT DESKTOP)
+   ========================================================================== */
+.mainLayout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-8);
+}
+@media (min-width: 1024px) {
+  .mainLayout {
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: var(--space-12);
+    align-items: start;
+  }
+}
+
+.galleryColumn {
+  width: 100%;
+}
+
+.detailsColumn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+@media (min-width: 1024px) {
+  .detailsColumn {
+    position: sticky;
+    top: 96px;
+  }
+}
+
+/* HEADER INFO */
+.headerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.brandName {
+  font-size: var(--font-size-xs, 12px);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-text-secondary, #666666);
+  font-weight: 500;
+}
+
+.productTitle {
+  font-family: var(--font-family-serif, "Playfair Display", Georgia, serif);
+  font-size: clamp(1.5rem, 2.5vw, 2.25rem);
+  font-weight: 400;
+  color: var(--color-text-primary, #111111);
+  line-height: 1.25;
+  margin: 0;
+}
+
+.skuText {
+  font-size: var(--font-size-xs, 12px);
+  color: var(--color-text-tertiary, #888888);
+  letter-spacing: 0.05em;
+}
+
+/* PRICE & BADGES */
+.priceSection {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border-subtle, #f0f0f0);
+}
+
+.currentPrice {
+  font-size: var(--font-size-2xl, 1.75rem);
+  font-weight: 600;
+  color: var(--color-text-primary, #111111);
+  letter-spacing: -0.02em;
+}
+
+.originalPrice {
+  font-size: var(--font-size-base, 1rem);
+  color: var(--color-text-tertiary, #999999);
+  text-decoration: line-through;
+}
+
+.discountBadge {
+  background-color: var(--color-error-subtle, #fef2f2);
+  color: var(--color-error, #b91c1c);
+  border: 1px solid rgba(185, 28, 28, 0.2);
+  font-size: var(--font-size-xs, 12px);
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm, 2px);
+}
+
+/* QUANTITY & ACTIONS */
+.purchaseSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.quantityRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.quantityLabel {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary, #111111);
+  font-weight: 500;
+}
+
+.quantityControl {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--color-border, #d1d5db);
+  border-radius: var(--radius-sm, 2px);
+  background-color: #ffffff;
+}
+
+.qtyBtn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-primary, #111111);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.qtyBtn:hover:not(:disabled) {
+  background-color: var(--color-background-subtle, #f5f5f5);
+}
+.qtyBtn:disabled {
+  color: var(--color-text-tertiary, #cccccc);
+  cursor: not-allowed;
+}
+
+.qtyValue {
+  width: 44px;
+  text-align: center;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-primary, #111111);
+}
+
+.stockWarning {
+  font-size: var(--font-size-xs, 12px);
+  color: var(--color-text-secondary, #666666);
+  font-style: italic;
+}
+
+.actionButtons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+/* NOTICE / NOTIFICATION BANNER */
+.noticeNotification {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-background-subtle, #f5f5f5);
+  border: 1px solid var(--color-border, #e5e5e5);
+  color: var(--color-text-secondary, #4b5563);
+  border-radius: var(--radius-sm, 2px);
+  font-size: var(--font-size-sm);
+  animation: fadeIn 0.3s ease;
+}
+
+.errorAlert {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-danger-bg, #fef2f2);
+  border: 1px solid var(--color-danger-border, #fecaca);
+  color: var(--color-danger, #b91c1c);
+  border-radius: var(--radius-sm, 2px);
+  font-size: var(--font-size-sm);
+  animation: fadeIn 0.3s ease;
+}
+
+.successAlert {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-success-bg, #f0fdf4);
+  border: 1px solid var(--color-success-border, #bbf7d0);
+  color: var(--color-success, #15803d);
+  border-radius: var(--radius-sm, 2px);
+  font-size: var(--font-size-sm);
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+/* CONTENT TABS / INFO SECTIONS */
+.infoSection {
+  margin-top: var(--space-4);
+  border-top: 1px solid var(--color-border-subtle, #f0f0f0);
+  padding-top: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.infoBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.infoTitle {
+  font-size: var(--font-size-xs, 12px);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  color: var(--color-text-primary, #111111);
+  margin: 0;
+}
+
+.infoContent {
+  font-size: var(--font-size-sm);
+  line-height: 1.7;
+  color: var(--color-text-secondary, #4b5563);
+  margin: 0;
+  white-space: pre-line;
+}
+
+.policyNote {
+  font-size: var(--font-size-xs, 12px);
+  color: var(--color-text-tertiary, #9ca3af);
+  font-style: italic;
+  margin: 0;
+}
+
+/* ==========================================================================
+   RELATED PRODUCTS SECTION
+   ========================================================================== */
+.relatedSection {
+  margin-top: var(--space-16);
+  padding-top: var(--space-12);
+  border-top: 1px solid var(--color-border-subtle, #f0f0f0);
+}
+
+.relatedTitle {
+  font-family: var(--font-family-serif, "Playfair Display", Georgia, serif);
+  font-size: clamp(1.25rem, 2vw, 1.75rem);
+  font-weight: 400;
+  color: var(--color-text-primary, #111111);
+  text-align: center;
+  margin-bottom: var(--space-8);
+  letter-spacing: -0.01em;
+}
+
+.relatedGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4);
+}
+@media (min-width: 768px) {
+  .relatedGrid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-6);
+  }
+}
+
+/* ==========================================================================
+   NOT FOUND & ERROR STATES
+   ========================================================================== */
+.centeredBox {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-12) var(--space-4);
+  gap: var(--space-4);
+}
+
+.stateTitle {
+  font-family: var(--font-family-serif, "Playfair Display", Georgia, serif);
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  font-weight: 400;
+  color: var(--color-text-primary, #111111);
+  margin: 0;
+}
+
+.stateDescription {
+  max-width: 480px;
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary, #666666);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ==========================================================================
+   SKELETON LOADING
+   ========================================================================== */
+.skeletonGallery {
+  width: 100%;
+  aspect-ratio: 3/4;
+  background-color: var(--color-background-subtle, #f3f4f6);
+  border-radius: var(--radius-sm, 2px);
+  animation: pulse 1.5s infinite;
+}
+
+.skeletonLine {
+  height: 20px;
+  background-color: var(--color-background-subtle, #f3f4f6);
+  border-radius: var(--radius-sm, 2px);
+  animation: pulse 1.5s infinite;
+}
+.skeletonLine.lg {
+  height: 36px;
+  width: 80%;
+}
+.skeletonLine.md {
+  height: 24px;
+  width: 50%;
+}
+.skeletonLine.btn {
+  height: 48px;
+  width: 100%;
+  margin-top: var(--space-4);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}/*# sourceMappingURL=ProductDetailPage.module.css.map */
