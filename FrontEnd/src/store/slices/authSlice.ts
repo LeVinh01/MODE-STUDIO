@@ -9,9 +9,13 @@ export interface AuthState {
   error: string | null
 }
 
+const hasToken =
+  typeof window !== 'undefined' &&
+  Boolean(localStorage.getItem('mode_studio_token'))
+
 const initialState: AuthState = {
   user: null,
-  isInitialized: false,
+  isInitialized: !hasToken,
   isLoading: false,
   error: null,
 }

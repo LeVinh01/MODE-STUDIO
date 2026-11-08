@@ -1,0 +1,124 @@
+@use '@/styles/abstracts' as *;
+
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 4.25rem - 12rem);
+  padding: var(--space-8) var(--space-4);
+  background-color: var(--color-bg-primary);
+
+  @include respond-to('md') {
+    padding: var(--space-12) var(--space-6);
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  max-width: 32rem;
+  padding: var(--space-8);
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+
+  @include respond-to('sm') {
+    padding: var(--space-10);
+  }
+}
+
+.iconCircle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 50%;
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  margin-bottom: var(--space-4);
+}
+
+.icon {
+  color: var(--color-danger, #b91c1c);
+}
+
+.errorCode {
+  font-family: $font-sans;
+  font-size: 0.75rem;
+  font-weight: $font-weight-semibold;
+  letter-spacing: 0.14em;
+  color: var(--color-danger, #b91c1c);
+  margin-bottom: var(--space-2);
+}
+
+.title {
+  font-family: $font-serif;
+  font-size: 1.75rem;
+  font-weight: $font-weight-regular;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-4) 0;
+}
+
+.userInfoBox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-4);
+  background-color: var(--color-bg-secondary, #fafafa);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+  text-align: left;
+}
+
+.userRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-family: $font-sans;
+  font-size: 0.8125rem;
+}
+
+.userLabel {
+  color: var(--color-text-secondary);
+}
+
+.userName {
+  font-weight: $font-weight-semibold;
+  color: var(--color-text-primary);
+}
+
+.userEmail {
+  color: var(--color-text-muted);
+}
+
+.description {
+  font-family: $font-sans;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 0 0 var(--space-6) 0;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  width: 100%;
+
+  @include respond-below('sm') {
+    flex-direction: column;
+    button, a {
+      width: 100%;
+    }
+  }
+}

@@ -1,10 +1,15 @@
+import type { ReactNode } from 'react'
 import { Outlet } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { toggleCartDrawer } from '@/store/slices/uiSlice'
 import { AnnouncementBar, Header, MobileMenu, SearchModal, Footer } from '@/components/storefront'
 import styles from './MainLayout.module.scss'
 
-export const MainLayout = () => {
+export interface MainLayoutProps {
+  children?: ReactNode
+}
+
+export const MainLayout = ({ children }: MainLayoutProps = {}) => {
   const dispatch = useAppDispatch()
   const isCartDrawerOpen = useAppSelector((state) => state.ui.isCartDrawerOpen)
 
@@ -29,7 +34,7 @@ export const MainLayout = () => {
 
       {/* 6. Main Landmark Content */}
       <main id="main-content" tabIndex={-1} className={styles.mainContent}>
-        <Outlet />
+        {children ?? <Outlet />}
       </main>
 
       {/* 7. Khung aside giỏ hàng tạm thời (Sẽ thay thế bằng <Drawer position="right"> ở bước giỏ hàng sau) */}

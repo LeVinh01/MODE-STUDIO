@@ -10,7 +10,7 @@ import {
 } from '@/store/slices/uiSlice'
 import { selectCurrentUser, resetAuth } from '@/store/slices/authSlice'
 import { authService } from '@/services/api/authService'
-import { Badge } from '@/components/common/Badge'
+import { UserRoleBadge } from '@/components/auth/UserRoleBadge'
 import { cn } from '@/utils/cn'
 import styles from './Header.module.scss'
 
@@ -164,21 +164,7 @@ export const Header = ({ cartCount = 0 }: HeaderProps) => {
                     <p className={styles.userName}>{user.fullName}</p>
                     <p className={styles.userEmail}>{user.email}</p>
                     <div className={styles.userRoleBadge}>
-                      {user.role === 'admin' && (
-                        <Badge variant="luxury" size="sm">
-                          Quản trị viên
-                        </Badge>
-                      )}
-                      {user.role === 'operator' && (
-                        <Badge variant="warning" size="sm">
-                          Vận hành viên
-                        </Badge>
-                      )}
-                      {user.role === 'customer' && (
-                        <Badge variant="outline" size="sm">
-                          Khách hàng
-                        </Badge>
-                      )}
+                      <UserRoleBadge role={user.role} />
                     </div>
                   </div>
 

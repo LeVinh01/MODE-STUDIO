@@ -27,9 +27,16 @@ export const router = createBrowserRouter([
   },
   {
     path: '/admin',
+    /**
+     * LƯU Ý BẢO MẬT:
+     * Tuyến /admin được bảo vệ bởi ProtectedAdminLayout ở tầng FrontEnd để nâng cao trải nghiệm người dùng (UX).
+     * Quyền thực tế do backend quyết định (Laravel middleware: role:admin, role:operator).
+     */
     lazy: async () => {
-      const { AdminLayout } = await import('@/layouts/AdminLayout/AdminLayout')
-      return { Component: AdminLayout }
+      const { ProtectedAdminLayout } = await import(
+        '@/layouts/AdminLayout/ProtectedAdminLayout'
+      )
+      return { Component: ProtectedAdminLayout }
     },
     children: adminRoutes,
   },
