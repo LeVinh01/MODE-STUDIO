@@ -1,4 +1,5 @@
 export { apiClient } from './api/client'
 export { productService } from './api/productService'
 export { categoryService } from './api/categoryService'
+export { adminOrderService } from './api/adminOrderService'
 export * from './api/mappers'

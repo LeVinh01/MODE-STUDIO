@@ -1,0 +1,498 @@
+@use '@/styles/abstracts' as *;
+
+.pageContainer {
+  padding: var(--space-6);
+  max-width: 1400px;
+  margin: 0 auto;
+
+  @include respond-to('md') {
+    padding: var(--space-8);
+  }
+}
+
+.topNav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+
+  @include respond-to('sm') {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.875rem;
+  font-weight: $font-weight-medium;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: color $transition-fast;
+
+  &:hover {
+    color: var(--color-black);
+  }
+}
+
+/* THÔNG BÁO ALERT BANNER */
+.alertBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-6);
+  font-size: 0.875rem;
+
+  &.success {
+    background-color: var(--color-success-bg, #ecfdf5);
+    border: 1px solid var(--color-success-border, #a7f3d0);
+    color: var(--color-success-text, #065f46);
+  }
+
+  &.error {
+    background-color: var(--color-error-bg, #fef2f2);
+    border: 1px solid var(--color-error-border, #fecaca);
+    color: var(--color-error-text, #991b1b);
+  }
+}
+
+.alertText {
+  flex: 1;
+  font-weight: $font-weight-medium;
+}
+
+.alertCloseBtn {
+  @include unstyled-button;
+  color: currentColor;
+  opacity: 0.7;
+  padding: 2px;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+/* HEADER CARD */
+.headerCard {
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-5) var(--space-6);
+  margin-bottom: var(--space-6);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+
+  @include respond-to('lg') {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.headerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.codeBadgeGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.orderCode {
+  font-family: $font-serif;
+  font-size: 1.5rem;
+  font-weight: $font-weight-regular;
+  letter-spacing: -0.01em;
+  color: var(--color-black);
+  margin: 0;
+}
+
+.orderDate {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.actionsGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* BỐ CỤC LƯỚI CHI TIẾT */
+.detailGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6);
+
+  @include respond-to('lg') {
+    grid-template-columns: 1.6fr 1.1fr;
+  }
+}
+
+.mainColumn,
+.sideColumn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.card {
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-5) var(--space-6);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.cardTitle {
+  font-family: $font-serif;
+  font-size: 1.125rem;
+  font-weight: $font-weight-regular;
+  color: var(--color-black);
+  margin: 0 0 var(--space-4) 0;
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+/* DANH SÁCH SẢN PHẨM SNAPSHOT */
+.itemsTableWrapper {
+  overflow-x: auto;
+  margin-bottom: var(--space-4);
+}
+
+.itemsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  th {
+    padding: var(--space-2) var(--space-3);
+    font-size: 0.75rem;
+    font-weight: $font-weight-medium;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-secondary);
+    border-bottom: 1px solid var(--color-border-subtle);
+    text-align: left;
+    white-space: nowrap;
+
+    &:last-child,
+    &:nth-child(3),
+    &:nth-child(4) {
+      text-align: right;
+    }
+  }
+
+  td {
+    padding: var(--space-3);
+    border-bottom: 1px solid var(--color-border-subtle);
+    vertical-align: middle;
+
+    &:last-child,
+    &:nth-child(3),
+    &:nth-child(4) {
+      text-align: right;
+    }
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+.productCell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.productThumb {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-gray-100);
+  border: 1px solid var(--color-border-subtle);
+  flex-shrink: 0;
+}
+
+.productMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.productName {
+  font-weight: $font-weight-medium;
+  color: var(--color-text-primary);
+}
+
+.productVariant {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.productSku {
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
+  font-family: monospace;
+}
+
+/* BẢNG TỔNG KẾT TIỀN */
+.summaryTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  td {
+    padding: var(--space-2) 0;
+
+    &:last-child {
+      text-align: right;
+      font-weight: $font-weight-medium;
+    }
+  }
+
+  .totalRow td {
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-border-subtle);
+    font-size: 1.0625rem;
+    font-weight: $font-weight-semibold;
+    color: var(--color-black);
+  }
+}
+
+/* THẺ THÔNG TIN ĐƠN ĐÃ HỦY */
+.cancelAlertCard {
+  background-color: var(--color-error-bg, #fef2f2);
+  border: 1px solid var(--color-error-border, #fecaca);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.cancelAlertHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: $font-weight-semibold;
+  color: var(--color-error-text, #991b1b);
+  font-size: 0.9375rem;
+}
+
+.cancelReasonText {
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-primary);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-subtle);
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.cancelTimeText {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+/* THẺ THÔNG TIN KHÁCH HÀNG & GIAO HÀNG */
+.infoList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  font-size: 0.875rem;
+}
+
+.infoRow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.infoLabel {
+  font-size: 0.75rem;
+  font-weight: $font-weight-medium;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+}
+
+.infoValue {
+  color: var(--color-text-primary);
+  font-weight: $font-weight-regular;
+  word-break: break-word;
+}
+
+.orderNoteBox {
+  margin-top: var(--space-2);
+  padding: var(--space-3);
+  background-color: var(--color-gray-50);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--color-sand);
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+/* DÒNG THỜI GIAN LỊCH SỬ TRẠNG THÁI (TIMELINE) */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  padding-left: var(--space-6);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    bottom: 8px;
+    left: 8px;
+    width: 2px;
+    background-color: var(--color-border-subtle);
+  }
+}
+
+.timelineItem {
+  position: relative;
+  padding-bottom: var(--space-5);
+
+  &:last-child {
+    padding-bottom: 0;
+  }
+}
+
+.timelineDot {
+  position: absolute;
+  left: -20px;
+  top: 4px;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-black);
+  border: 2px solid var(--color-bg-primary);
+  box-shadow: 0 0 0 2px var(--color-border-subtle);
+}
+
+.timelineContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.timelineTitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.8125rem;
+  font-weight: $font-weight-medium;
+  color: var(--color-text-primary);
+}
+
+.timelineArrow {
+  color: var(--color-text-muted);
+}
+
+.timelineMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.timelineUser {
+  font-weight: $font-weight-medium;
+  color: var(--color-black);
+}
+
+.timelineReason {
+  margin-top: var(--space-1);
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  background-color: var(--color-gray-50);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border-left: 2px solid var(--color-black);
+  font-style: italic;
+}
+
+.emptyTimelineNote {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+  padding: var(--space-3) 0;
+}
+
+/* MODAL XÁC NHẬN ĐỔI TRẠNG THÁI */
+.modalBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-2) 0;
+}
+
+.modalNotice {
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+
+  &.info {
+    background-color: var(--color-info-bg, #eff6ff);
+    color: var(--color-info-text, #1e40af);
+    border: 1px solid var(--color-info-border, #bfdbfe);
+  }
+
+  &.warning {
+    background-color: var(--color-warning-bg, #fffbeb);
+    color: var(--color-warning-text, #92400e);
+    border: 1px solid var(--color-warning-border, #fde68a);
+  }
+}
+
+.modalErrorAlert {
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-error-bg, #fef2f2);
+  border: 1px solid var(--color-error-border, #fecaca);
+  color: var(--color-error-text, #991b1b);
+  font-size: 0.8125rem;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.charCounter {
+  display: flex;
+  justify-content: flex-end;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-top: -8px;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+}

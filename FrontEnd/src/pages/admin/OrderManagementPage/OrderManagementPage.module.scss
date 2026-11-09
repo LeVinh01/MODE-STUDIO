@@ -1,0 +1,399 @@
+@use '@/styles/abstracts' as *;
+
+.pageContainer {
+  padding: var(--space-6);
+  max-width: 1400px;
+  margin: 0 auto;
+
+  @include respond-to('md') {
+    padding: var(--space-8);
+  }
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+
+  @include respond-to('sm') {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.titleArea {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.pageTitle {
+  font-family: $font-serif;
+  font-size: 1.75rem;
+  font-weight: $font-weight-regular;
+  letter-spacing: -0.01em;
+  color: var(--color-black);
+  margin: 0;
+}
+
+.pageSubtitle {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.totalBadge {
+  font-size: 0.8125rem;
+  font-weight: $font-weight-medium;
+  color: var(--color-text-secondary);
+  background-color: var(--color-gray-100);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  align-self: flex-start;
+
+  @include respond-to('sm') {
+    align-self: center;
+  }
+}
+
+/* BỘ LỌC & TÌM KIẾM */
+.filterCard {
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-6);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.filterGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+
+  @include respond-to('sm') {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include respond-to('lg') {
+    grid-template-columns: 2fr 1.2fr 1.2fr 1fr 1fr auto;
+    align-items: flex-end;
+  }
+}
+
+.filterField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.filterLabel {
+  font-size: 0.75rem;
+  font-weight: $font-weight-medium;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+}
+
+.searchInputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  left: var(--space-3);
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.clearSearchBtn {
+  position: absolute;
+  right: var(--space-2);
+  @include unstyled-button;
+  padding: var(--space-1);
+  color: var(--color-text-muted);
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    color: var(--color-black);
+    background-color: var(--color-gray-100);
+  }
+}
+
+.filterInput,
+.filterSelect {
+  width: 100%;
+  height: 40px;
+  padding: 0 var(--space-3);
+  font-size: 0.875rem;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  transition: border-color $transition-fast, box-shadow $transition-fast;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-black);
+    box-shadow: 0 0 0 1px var(--color-black);
+  }
+}
+
+.searchInput {
+  padding-left: 2.25rem;
+  padding-right: 2rem;
+}
+
+.resetBtnWrapper {
+  display: flex;
+  align-items: flex-end;
+}
+
+.resetBtn {
+  height: 40px;
+  white-space: nowrap;
+}
+
+/* BẢNG DỮ LIỆU DESKTOP */
+.tableWrapper {
+  display: none;
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  margin-bottom: var(--space-6);
+
+  @include respond-to('md') {
+    display: block;
+    overflow-x: auto;
+  }
+}
+
+.orderTable {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.875rem;
+
+  th {
+    background-color: var(--color-gray-50);
+    padding: var(--space-3) var(--space-4);
+    font-size: 0.75rem;
+    font-weight: $font-weight-medium;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-secondary);
+    border-bottom: 1px solid var(--color-border-subtle);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--color-border-subtle);
+    vertical-align: middle;
+  }
+
+  tbody tr {
+    transition: background-color $transition-fast;
+
+    &:hover {
+      background-color: var(--color-gray-50);
+    }
+
+    &:last-child td {
+      border-bottom: none;
+    }
+  }
+}
+
+.orderCodeLink {
+  font-weight: $font-weight-semibold;
+  color: var(--color-black);
+  text-decoration: none;
+  letter-spacing: 0.02em;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.customerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.customerName {
+  font-weight: $font-weight-medium;
+  color: var(--color-text-primary);
+}
+
+.customerMeta {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.orderTotal {
+  font-weight: $font-weight-medium;
+  color: var(--color-black);
+  white-space: nowrap;
+}
+
+.viewDetailBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  font-size: 0.8125rem;
+  font-weight: $font-weight-medium;
+  color: var(--color-black);
+  background-color: var(--color-gray-100);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  transition: all $transition-fast;
+  white-space: nowrap;
+
+  &:hover {
+    background-color: var(--color-black);
+    color: var(--color-white);
+  }
+}
+
+/* THẺ DỮ LIỆU MOBILE */
+.cardsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+
+  @include respond-to('md') {
+    display: none;
+  }
+}
+
+.orderCard {
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.cardCodeGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cardDate {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.cardBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: 0.8125rem;
+}
+
+.cardRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cardLabel {
+  color: var(--color-text-secondary);
+}
+
+.cardValue {
+  font-weight: $font-weight-medium;
+  color: var(--color-text-primary);
+}
+
+.cardFooter {
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border-subtle);
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* SKELETON LOADERS */
+.skeletonTable {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.skeletonRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+/* LỖI VÀ THÔNG BÁO */
+.errorCard {
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-8);
+  text-align: center;
+  margin-bottom: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.errorIcon {
+  color: var(--color-error, #dc2626);
+}
+
+.errorTitle {
+  font-family: $font-serif;
+  font-size: 1.25rem;
+  color: var(--color-black);
+  margin: 0;
+}
+
+.errorMessage {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  max-width: 480px;
+  margin: 0;
+}
+
+.paginationWrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-6);
+}

@@ -47,9 +47,11 @@
   letter-spacing: 0.02em;
   transition: all $transition-fast;
 
+  &.active,
   &:hover {
-    background-color: rgba(255, 255, 255, 0.08);
+    background-color: rgba(255, 255, 255, 0.12);
     color: var(--color-white);
+    font-weight: $font-weight-medium;
   }
 }
 

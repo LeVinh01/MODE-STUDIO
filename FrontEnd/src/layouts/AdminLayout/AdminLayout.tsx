@@ -1,4 +1,4 @@
-import { Link, Outlet } from 'react-router-dom'
+import { Link, NavLink, Outlet } from 'react-router-dom'
 import { LayoutDashboard, Package, ShoppingCart, Store } from 'lucide-react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { toggleAdminSidebar } from '@/store/slices/uiSlice'
@@ -18,18 +18,34 @@ export const AdminLayout = () => {
           </div>
 
           <nav className={styles.nav}>
-            <Link to="/admin" className={styles.navItem}>
+            <NavLink
+              to="/admin"
+              end
+              className={({ isActive }) =>
+                isActive ? `${styles.navItem} ${styles.active}` : styles.navItem
+              }
+            >
               <LayoutDashboard size={18} />
               <span>Dashboard</span>
-            </Link>
-            <Link to="/admin/products" className={styles.navItem}>
+            </NavLink>
+            <NavLink
+              to="/admin/products"
+              className={({ isActive }) =>
+                isActive ? `${styles.navItem} ${styles.active}` : styles.navItem
+              }
+            >
               <Package size={18} />
-              <span>Products</span>
-            </Link>
-            <Link to="/admin/orders" className={styles.navItem}>
+              <span>Sản phẩm</span>
+            </NavLink>
+            <NavLink
+              to="/admin/orders"
+              className={({ isActive }) =>
+                isActive ? `${styles.navItem} ${styles.active}` : styles.navItem
+              }
+            >
               <ShoppingCart size={18} />
-              <span>Orders</span>
-            </Link>
+              <span>Đơn hàng</span>
+            </NavLink>
           </nav>
 
           <div className={styles.sidebarFooter}>
