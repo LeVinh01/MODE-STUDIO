@@ -260,6 +260,21 @@ export interface ApiOrderShowResponse {
   order: ApiOrder
 }
 
+export interface ApiOrderCancelPayload {
+  reason?: string | null
+}
+
+export interface ApiOrderCancelResponse {
+  message: string
+  order: ApiOrder
+}
+
+export interface ApiOrderIndexParams {
+  status?: string
+  page?: number
+  per_page?: number
+}
+
 export interface ApiInsufficientStockItem {
   variant_id: number
   product_name: string

@@ -559,6 +559,13 @@ export const CheckoutPage = () => {
                     {isPossibleDuplicateOrder && (
                       <div className={styles.duplicateActions}>
                         <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => navigate('/orders')}
+                        >
+                          Kiểm Tra Đơn Hàng Của Tôi
+                        </Button>
+                        <Button
                           variant="secondary"
                           size="sm"
                           onClick={() => navigate('/')}
