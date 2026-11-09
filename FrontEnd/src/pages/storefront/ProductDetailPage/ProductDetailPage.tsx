@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { AlertCircle, CheckCircle2, Minus, Plus } from 'lucide-react'
 import { Breadcrumbs, type BreadcrumbItem } from '@/components/navigation/Breadcrumbs'
 import { Button } from '@/components/common/Button'
@@ -9,8 +9,7 @@ import { ProductCard } from '@/components/storefront/ProductCard'
 import { productService } from '@/services/api/productService'
 import type { Product } from '@/types/product'
 import { formatCurrency } from '@/utils/formatters'
-import { useAppDispatch, useAppSelector } from '@/store/hooks'
-import { selectIsAuthenticated } from '@/store/slices/authSlice'
+import { useAppDispatch } from '@/store/hooks'
 import { addToCart } from '@/store/slices/cartSlice'
 import { setCartDrawerOpen } from '@/store/slices/uiSlice'
 import { cn } from '@/utils/cn'
@@ -18,10 +17,7 @@ import styles from './ProductDetailPage.module.scss'
 
 export const ProductDetailPage = () => {
   const { slug } = useParams<{ slug: string }>()
-  const navigate = useNavigate()
-  const location = useLocation()
   const dispatch = useAppDispatch()
-  const isAuthenticated = useAppSelector(selectIsAuthenticated)
 
   // 1. Data states
   const [product, setProduct] = useState<Product | null>(null)
@@ -296,29 +292,20 @@ export const ProductDetailPage = () => {
       return
     }
 
-    // Chưa đăng nhập -> Chuyển hướng sang /login và nhớ trang định vào
-    if (!isAuthenticated) {
-      navigate('/login', {
-        state: {
-          from: {
-            pathname: location.pathname,
-            search: location.search,
-          },
-          message: 'Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.',
-        },
-      })
-      return
-    }
-
     setIsAddingToCart(true)
 
     try {
-      await dispatch(
+      const result = await dispatch(
         addToCart({
           variantId: Number(activeVariant.id),
           quantity,
+          stockQuantity: activeVariant.stock,
         }),
       ).unwrap()
+
+      if (result?.clamped) {
+        setAddToCartError(`Chỉ còn ${activeVariant.stock} sản phẩm`)
+      }
 
       setCartSuccessMessage(
         `Đã thêm ${quantity} sản phẩm (${activeVariant.color} / Size ${activeVariant.size}) vào giỏ hàng.`,

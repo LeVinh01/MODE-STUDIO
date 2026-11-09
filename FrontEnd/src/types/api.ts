@@ -145,16 +145,16 @@ export interface ProductQueryFilter {
  */
 export interface ApiCartItemVariant {
   id: number
-  sku: string
-  color: {
+  sku?: string | null
+  color?: {
     id: number
     name: string
     hex_code: string | null
-  }
-  size: {
+  } | null
+  size?: {
     id: number
     name: string
-  }
+  } | null
   stock_quantity: number
   is_active: boolean
 }
@@ -171,9 +171,9 @@ export interface ApiCartItemProduct {
 }
 
 export interface ApiCartItem {
-  id: number
+  id: number | null
   variant: ApiCartItemVariant
-  product: ApiCartItemProduct
+  product?: ApiCartItemProduct | null
   unit_price: number
   quantity: number
   line_total: number
@@ -187,6 +187,18 @@ export interface ApiCartResponse {
   total_quantity: number
   items_count: number
   has_unpurchasable_items: boolean
+}
+
+export interface ApiCartQuoteResponse extends ApiCartResponse {
+  missing_variant_ids?: number[]
+}
+
+export interface ApiCartMergeResponse {
+  message: string
+  already_merged: boolean
+  cart: ApiCartResponse
+  skipped: Array<{ variant_id: number; reason: string }>
+  adjusted: Array<{ variant_id: number; requested: number; final: number; reason: string }>
 }
 
 export interface ApiCartItemActionResponse {

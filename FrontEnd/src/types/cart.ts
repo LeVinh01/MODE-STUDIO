@@ -11,9 +11,9 @@ export interface CartVariantSize {
 
 export interface CartItemVariant {
   id: string
-  sku: string
-  color: CartVariantColor
-  size: CartVariantSize
+  sku?: string | null
+  color?: CartVariantColor | null
+  size?: CartVariantSize | null
   stockQuantity: number
   isActive: boolean
 }
@@ -33,7 +33,7 @@ export interface CartItem {
   id: string
   variantId: string
   variant: CartItemVariant
-  product: CartItemProduct
+  product?: CartItemProduct | null
   unitPrice: number
   quantity: number
   lineTotal: number
