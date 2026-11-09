@@ -441,7 +441,60 @@ Quản lý chu trình đặt hàng COD, danh sách đơn hàng, chi tiết đơn
 
 ---
 
-## 11. Dừng Hệ Thống Docker
+## 11. API Quản Trị Đơn Hàng (Admin Orders API)
+
+Dành riêng cho người dùng có vai trò `admin` hoặc `operator`. Yêu cầu xác thực `auth:sanctum`, tài khoản `active` và vai trò phù hợp qua middleware `role:admin,operator`. Người dùng có vai trò `customer` bị từ chối với mã lỗi HTTP 403 Forbidden.
+
+### Máy trạng thái đơn hàng (Order State Machine):
+```
+[ pending ] ──(admin/operator xác nhận)──> [ confirmed ] ──(admin/operator giao)──> [ shipping ] ──(giao thành công)──> [ delivered ] (Kết thúc)
+     │                                           │
+     │ (admin/operator hủy)                      │ (admin/operator hủy)
+     ▼                                           ▼
+[ cancelled ] (Kết thúc)                   [ cancelled ] (Kết thúc)
+```
+
+- **Quy tắc chuyển trạng thái**:
+  - `pending` $\rightarrow$ `confirmed` hoặc `cancelled`.
+  - `confirmed` $\rightarrow$ `shipping` hoặc `cancelled`.
+  - `shipping` $\rightarrow$ `delivered`.
+  - `delivered` và `cancelled` là các trạng thái kết thúc (terminal states), không thể chuyển đổi tiếp.
+  - Gửi lại cùng trạng thái hiện tại hoặc chuyển trạng thái không hợp lệ: Trả về **HTTP 422** với thông báo lỗi tiếng Việt.
+  - Hủy đơn bởi cửa hàng (`pending` hoặc `confirmed` $\rightarrow$ `cancelled`): **Bắt buộc** phải cung cấp lý do (`reason`), hoàn lại tồn kho cho từng biến thể trong cùng một transaction.
+  - Chuyển sang `delivered` với đơn hàng COD: Tự động cập nhật `payment_status = 'paid'` và ghi nhận `paid_at = now()`.
+  - Mọi thao tác chuyển trạng thái đều tự động ghi lại bản ghi lịch sử vào bảng `order_status_histories`.
+
+### Danh sách Endpoint Quản Trị:
+
+#### 1. Danh sách đơn hàng (`GET /api/admin/orders`)
+- **Tham số truy vấn (Query Parameters)**:
+  - `status`: Lọc theo trạng thái (`pending`, `confirmed`, `shipping`, `delivered`, `cancelled`).
+  - `payment_status`: Lọc theo trạng thái thanh toán (`unpaid`, `paid`, `failed`, `refunded`).
+  - `from`: Lọc từ ngày đặt hàng (`YYYY-MM-DD`).
+  - `to`: Lọc đến ngày đặt hàng (`YYYY-MM-DD`, phải $\ge$ `from`).
+  - `search`: Tìm kiếm theo mã đơn hàng, tên người nhận hoặc số điện thoại người nhận (tự động escape ký tự đại diện `%` và `_`).
+  - `per_page`: Số dòng mỗi trang, tối đa là 50.
+  - `page`: Số trang cần xem.
+- **Response (HTTP 200)**: Cấu trúc phân trang chuẩn gồm thông tin đơn hàng, số dòng hàng (`items_count`) và thông tin khách hàng (`customer`: `id`, `full_name`, `email`, `phone`).
+
+#### 2. Chi tiết đơn hàng (`GET /api/admin/orders/{order_code}`)
+- **Response (HTTP 200)**: Trả về chi tiết toàn diện của đơn hàng, danh sách sản phẩm snapshot (`items`), thông tin khách hàng (`customer`) và lịch sử biến động trạng thái (`status_histories`: `from_status`, `to_status`, `reason`, `created_at`, `changed_by`).
+- **Response (HTTP 404)**: Nếu mã đơn không tồn tại.
+
+#### 3. Cập nhật trạng thái đơn hàng (`PATCH /api/admin/orders/{order_code}/status`)
+- **Body (JSON)**:
+  ```json
+  {
+    "status": "confirmed",
+    "reason": "Đã xác nhận thanh toán và thông tin khách hàng"
+  }
+  ```
+  *(Khi `status` là `cancelled`, trường `reason` là bắt buộc. Ở các trạng thái khác, `reason` là tùy chọn).*
+- **Response (HTTP 200)**: Trả về thông điệp thành công và đối tượng đơn hàng sau khi cập nhật kèm lịch sử mới nhất.
+
+---
+
+## 12. Dừng Hệ Thống Docker
 
 - Dừng containers:
   ```bash
