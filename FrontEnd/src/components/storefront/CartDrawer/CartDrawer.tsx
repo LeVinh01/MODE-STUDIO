@@ -44,9 +44,9 @@ export const CartDrawer = () => {
     handleClose()
     const token = localStorage.getItem('mode_studio_token')
     if (!token) {
-      // Yêu cầu 5: Khách chưa đăng nhập bấm thì chuyển sang /login kèm state.from về /cart
+      // Khách chưa đăng nhập bấm thì chuyển sang /login kèm state.from về /checkout
       navigate('/login', {
-        state: { from: { pathname: '/cart' } },
+        state: { from: { pathname: '/checkout' } },
       })
       return
     }

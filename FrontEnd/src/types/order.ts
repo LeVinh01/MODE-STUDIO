@@ -8,19 +8,8 @@ export type OrderStatus =
 export type PaymentStatus = 'unpaid' | 'paid' | 'failed' | 'refunded'
 export type PaymentMethod = 'cod' | 'vnpay'
 
-export interface ShippingAddress {
-  fullName: string
-  phone: string
-  addressLine: string
-  city?: string
-  district?: string
-  ward?: string
-  postalCode?: string
-}
-
 export interface OrderItem {
-  id: string
-  orderId?: string
+  id: number | string
   productId: string
   variantId: string
   productName: string
@@ -34,9 +23,7 @@ export interface OrderItem {
 }
 
 export interface Order {
-  id: string
   orderCode: string
-  userId: string
   status: OrderStatus
   paymentMethod: PaymentMethod | string
   paymentStatus: PaymentStatus | string
@@ -53,4 +40,19 @@ export interface Order {
   paidAt?: string | null
   createdAt: string
   items: OrderItem[]
+}
+
+export interface CreateOrderPayload {
+  recipient_name: string
+  recipient_phone: string
+  shipping_address: string
+  note?: string | null
+  payment_method: 'cod' | 'vnpay'
+}
+
+export interface InsufficientStockItem {
+  variantId: number
+  productName: string
+  requestedQuantity: number
+  availableStock: number
 }

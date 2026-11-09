@@ -1,3 +1,4 @@
+import { createElement } from 'react'
 import type { RouteObject } from 'react-router-dom'
 
 export const storefrontRoutes: RouteObject[] = [
@@ -36,10 +37,31 @@ export const storefrontRoutes: RouteObject[] = [
   {
     path: 'checkout',
     lazy: async () => {
-      const { CheckoutPage } = await import(
-        '@/pages/storefront/CheckoutPage/CheckoutPage'
-      )
-      return { Component: CheckoutPage }
+      const [{ CheckoutPage }, { ProtectedRoute }] = await Promise.all([
+        import('@/pages/storefront/CheckoutPage/CheckoutPage'),
+        import('@/components/auth/ProtectedRoute/ProtectedRoute'),
+      ])
+      return {
+        Component: () =>
+          createElement(ProtectedRoute, null, createElement(CheckoutPage)),
+      }
+    },
+  },
+  {
+    path: 'order-success/:orderCode',
+    lazy: async () => {
+      const [{ OrderSuccessPage }, { ProtectedRoute }] = await Promise.all([
+        import('@/pages/storefront/OrderSuccessPage/OrderSuccessPage'),
+        import('@/components/auth/ProtectedRoute/ProtectedRoute'),
+      ])
+      return {
+        Component: () =>
+          createElement(
+            ProtectedRoute,
+            null,
+            createElement(OrderSuccessPage),
+          ),
+      }
     },
   },
   {
