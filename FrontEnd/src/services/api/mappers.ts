@@ -2,6 +2,8 @@ import type {
   ApiCartItem,
   ApiCartResponse,
   ApiCategoryItem,
+  ApiOrder,
+  ApiOrderItem,
   ApiPaginationMeta,
   ApiProductDetailItem,
   ApiProductListItem,
@@ -9,6 +11,7 @@ import type {
 import type { ApiUser, User } from '@/types/auth'
 import type { Cart, CartItem } from '@/types/cart'
 import type { PaginationMeta } from '@/types/common'
+import type { Order, OrderItem, OrderStatus, PaymentMethod, PaymentStatus } from '@/types/order'
 import type {
   Product,
   ProductCategory,
@@ -262,6 +265,50 @@ export const mapApiCartToCart = (apiCart: ApiCartResponse): Cart => {
     totalQuantity: apiCart.total_quantity,
     itemsCount: apiCart.items_count,
     hasUnpurchasableItems: apiCart.has_unpurchasable_items,
+  }
+}
+
+/**
+ * Chuyển đổi ApiOrderItem sang OrderItem
+ */
+export const mapApiOrderItemToOrderItem = (apiItem: ApiOrderItem): OrderItem => {
+  return {
+    id: apiItem.id,
+    productId: String(apiItem.product_id),
+    variantId: String(apiItem.variant_id),
+    productName: apiItem.product_name,
+    sku: apiItem.sku,
+    colorName: apiItem.color_name,
+    sizeName: apiItem.size_name,
+    imageUrl: apiItem.image_url,
+    unitPrice: apiItem.unit_price,
+    quantity: apiItem.quantity,
+    lineTotal: apiItem.line_total,
+  }
+}
+
+/**
+ * Chuyển đổi ApiOrder sang Order (camelCase, không có id/userId)
+ */
+export const mapApiOrderToOrder = (apiOrder: ApiOrder): Order => {
+  return {
+    orderCode: apiOrder.order_code,
+    status: apiOrder.status as OrderStatus,
+    paymentMethod: apiOrder.payment_method as PaymentMethod,
+    paymentStatus: apiOrder.payment_status as PaymentStatus,
+    recipientName: apiOrder.recipient_name,
+    recipientPhone: apiOrder.recipient_phone,
+    shippingAddress: apiOrder.shipping_address,
+    note: apiOrder.note,
+    subtotal: apiOrder.subtotal,
+    shippingFee: apiOrder.shipping_fee,
+    discountAmount: apiOrder.discount_amount,
+    totalAmount: apiOrder.total_amount,
+    cancelReason: apiOrder.cancel_reason,
+    cancelledAt: apiOrder.cancelled_at,
+    paidAt: apiOrder.paid_at,
+    createdAt: apiOrder.created_at,
+    items: (apiOrder.items || []).map(mapApiOrderItemToOrderItem),
   }
 }
 

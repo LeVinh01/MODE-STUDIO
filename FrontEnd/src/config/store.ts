@@ -5,6 +5,7 @@
 
 export const STORE_POLICIES = {
   freeShippingThreshold: 2000000, // 2.000.000 VND
+  standardShippingFee: 30000, // 30.000 VND (phí vận chuyển tiêu chuẩn dưới ngưỡng)
   returnPeriodDays: 14, // 14 ngày
   brandName: 'MODE STUDIO',
   slogan: 'Thời trang may đo & thiết kế tối giản',

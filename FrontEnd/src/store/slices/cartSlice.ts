@@ -18,6 +18,7 @@ export interface CartState {
   itemsCount: number
   hasUnpurchasableItems: boolean
   isLoading: boolean
+  hasLoaded: boolean
   isUpdatingItemId: string | null
   isMerging: boolean
   error: string | null
@@ -32,6 +33,7 @@ const initialState: CartState = {
   itemsCount: 0,
   hasUnpurchasableItems: false,
   isLoading: false,
+  hasLoaded: false,
   isUpdatingItemId: null,
   isMerging: false,
   error: null,
@@ -335,6 +337,7 @@ export const cartSlice = createSlice({
       state.itemsCount = 0
       state.hasUnpurchasableItems = false
       state.isLoading = false
+      state.hasLoaded = false
       state.isUpdatingItemId = null
       state.isMerging = false
       state.error = null
@@ -351,6 +354,7 @@ export const cartSlice = createSlice({
       // Xóa latestRequestId để mọi fetchCart cũ chạy trước đó không được ghi đè
       state.latestRequestId = null
       state.isLoading = false
+      state.hasLoaded = true
     },
     setIsMerging: (state, action: PayloadAction<boolean>) => {
       state.isMerging = action.payload
@@ -379,6 +383,7 @@ export const cartSlice = createSlice({
       }
 
       state.isLoading = false
+      state.hasLoaded = true
 
       if (!action.payload?.cart) {
         state.items = []
@@ -409,6 +414,7 @@ export const cartSlice = createSlice({
       }
 
       state.isLoading = false
+      state.hasLoaded = true
       const payload = action.payload as
         | { aborted?: boolean; message?: string }
         | undefined
@@ -459,6 +465,7 @@ export const selectCartItemsCount = (state: RootState) => state.cart.itemsCount
 export const selectCartHasUnpurchasableItems = (state: RootState) =>
   state.cart.hasUnpurchasableItems
 export const selectCartLoading = (state: RootState) => state.cart.isLoading
+export const selectCartHasLoaded = (state: RootState) => state.cart.hasLoaded
 export const selectCartUpdatingItemId = (state: RootState) =>
   state.cart.isUpdatingItemId
 export const selectCartIsMerging = (state: RootState) => state.cart.isMerging

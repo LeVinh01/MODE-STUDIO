@@ -216,3 +216,59 @@ export interface ApiCartStockErrorResponse {
   }
   available_stock?: number
 }
+
+export interface ApiOrderItem {
+  id: number
+  product_id: number
+  variant_id: number
+  product_name: string
+  sku: string
+  color_name: string
+  size_name: string
+  image_url: string | null
+  unit_price: number
+  quantity: number
+  line_total: number
+}
+
+export interface ApiOrder {
+  order_code: string
+  status: string
+  payment_method: string
+  payment_status: string
+  recipient_name: string
+  recipient_phone: string
+  shipping_address: string
+  note: string | null
+  subtotal: number
+  shipping_fee: number
+  discount_amount: number
+  total_amount: number
+  cancel_reason?: string | null
+  cancelled_at?: string | null
+  paid_at?: string | null
+  created_at: string
+  items?: ApiOrderItem[]
+}
+
+export interface ApiOrderStoreResponse {
+  message: string
+  order: ApiOrder
+}
+
+export interface ApiOrderShowResponse {
+  order: ApiOrder
+}
+
+export interface ApiInsufficientStockItem {
+  variant_id: number
+  product_name: string
+  requested_quantity: number
+  available_stock: number
+}
+
+export interface ApiOrderStoreErrorResponse {
+  message: string
+  errors?: Record<string, string[]>
+  insufficient_items?: ApiInsufficientStockItem[]
+}

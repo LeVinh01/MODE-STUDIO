@@ -49,7 +49,7 @@ export const CartPage = () => {
   // 3. Tính toán phí vận chuyển ước tính
   const freeThreshold = STORE_POLICIES.freeShippingThreshold
   const isFreeShipping = subtotal >= freeThreshold
-  const standardShippingFee = 30000
+  const standardShippingFee = STORE_POLICIES.standardShippingFee
   const estimatedShippingFee = isFreeShipping ? 0 : standardShippingFee
   const estimatedTotal = subtotal + estimatedShippingFee
   const amountToFreeShipping = Math.max(0, freeThreshold - subtotal)
@@ -178,9 +178,9 @@ export const CartPage = () => {
   const handleCheckout = () => {
     const token = localStorage.getItem('mode_studio_token')
     if (!token) {
-      // Yêu cầu 5: Khách chưa đăng nhập bấm thì chuyển sang /login kèm state.from về /cart
+      // Khách chưa đăng nhập bấm thì chuyển sang /login kèm state.from về /checkout
       navigate('/login', {
-        state: { from: { pathname: '/cart' } },
+        state: { from: { pathname: '/checkout' } },
       })
       return
     }
