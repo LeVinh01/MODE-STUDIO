@@ -41,6 +41,34 @@
   gap: var(--space-1);
 }
 
+.noticeBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-6);
+  background-color: var(--color-gray-100);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.noticeCloseBtn {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 0 var(--space-1);
+
+  &:hover {
+    color: var(--color-text-primary);
+  }
+}
+
 .pageTitle {
   font-family: $font-serif;
   font-size: clamp(1.75rem, 3vw, 2.5rem);

@@ -203,39 +203,47 @@ export const mapApiUserToUser = (apiUser: ApiUser): User => {
 }
 
 /**
- * Chuyển đổi ApiCartItem sang CartItem (chuẩn hóa camelCase, id là string)
+ * Chuyển đổi ApiCartItem sang CartItem (chuẩn hóa camelCase, an toàn với id null ở giỏ khách)
  */
 export const mapApiCartItemToCartItem = (item: ApiCartItem): CartItem => {
+  const rowId = item.id !== null && item.id !== undefined ? String(item.id) : `guest-${item.variant.id}`
+
   return {
-    id: String(item.id),
+    id: rowId,
     variantId: String(item.variant.id),
     variant: {
       id: String(item.variant.id),
-      sku: item.variant.sku,
-      color: {
-        id: String(item.variant.color.id),
-        name: item.variant.color.name,
-        hexCode: item.variant.color.hex_code,
-      },
-      size: {
-        id: String(item.variant.size.id),
-        name: item.variant.size.name,
-      },
-      stockQuantity: item.variant.stock_quantity,
-      isActive: item.variant.is_active,
-    },
-    product: {
-      id: String(item.product.id),
-      name: item.product.name,
-      slug: item.product.slug,
-      status: item.product.status,
-      mainImage: item.product.main_image
+      sku: item.variant.sku ?? null,
+      color: item.variant.color
         ? {
-            url: item.product.main_image.url,
-            altText: item.product.main_image.alt_text,
+            id: String(item.variant.color.id),
+            name: item.variant.color.name,
+            hexCode: item.variant.color.hex_code,
           }
         : null,
+      size: item.variant.size
+        ? {
+            id: String(item.variant.size.id),
+            name: item.variant.size.name,
+          }
+        : null,
+      stockQuantity: item.variant.stock_quantity ?? 0,
+      isActive: Boolean(item.variant.is_active),
     },
+    product: item.product
+      ? {
+          id: String(item.product.id),
+          name: item.product.name,
+          slug: item.product.slug,
+          status: item.product.status,
+          mainImage: item.product.main_image
+            ? {
+                url: item.product.main_image.url,
+                altText: item.product.main_image.alt_text,
+              }
+            : null,
+        }
+      : null,
     unitPrice: item.unit_price,
     quantity: item.quantity,
     lineTotal: item.line_total,
