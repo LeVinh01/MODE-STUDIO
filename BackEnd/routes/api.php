@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\AdminOrderController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
@@ -54,6 +55,13 @@ Route::middleware(['auth:sanctum', 'active'])->prefix('orders')->group(function 
     Route::post('/', [OrderController::class, 'store']);
     Route::get('/{order_code}', [OrderController::class, 'show']);
     Route::post('/{order_code}/cancel', [OrderController::class, 'cancel']);
+});
+
+// Admin & Operator Orders Management API
+Route::middleware(['auth:sanctum', 'active', 'role:admin,operator'])->prefix('admin/orders')->group(function () {
+    Route::get('/', [AdminOrderController::class, 'index']);
+    Route::get('/{order_code}', [AdminOrderController::class, 'show']);
+    Route::patch('/{order_code}/status', [AdminOrderController::class, 'updateStatus']);
 });
 
 // Public read-only API (không có prefix /v1)

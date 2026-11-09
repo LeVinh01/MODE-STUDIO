@@ -14,6 +14,7 @@ use App\Http\Resources\OrderResource;
 use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\OrderStatusHistory;
 use App\Models\ProductVariant;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -241,6 +242,16 @@ class OrderController extends Controller
             // 8. Xóa toàn bộ giỏ hàng của người dùng
             CartItem::where('user_id', $user->id)->delete();
 
+            // 9. Ghi nhận lịch sử trạng thái ban đầu của đơn hàng
+            OrderStatusHistory::create([
+                'order_id'    => $order->id,
+                'from_status' => null,
+                'to_status'   => OrderStatus::Pending->value,
+                'changed_by'  => $user->id,
+                'reason'      => 'Khách hàng tạo đơn',
+                'created_at'  => now(),
+            ]);
+
             return $order;
         }, attempts: 3);
 
@@ -311,6 +322,16 @@ class OrderController extends Controller
                 'status'        => OrderStatus::Cancelled,
                 'cancelled_at'  => now(),
                 'cancel_reason' => $reason,
+            ]);
+
+            // 7. Ghi lịch sử trạng thái trong cùng transaction
+            OrderStatusHistory::create([
+                'order_id'    => $order->id,
+                'from_status' => OrderStatus::Pending->value,
+                'to_status'   => OrderStatus::Cancelled->value,
+                'changed_by'  => $user->id,
+                'reason'      => $reason,
+                'created_at'  => now(),
             ]);
 
             return $order;
