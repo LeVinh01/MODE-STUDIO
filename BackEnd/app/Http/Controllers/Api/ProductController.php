@@ -127,8 +127,7 @@ class ProductController extends Controller
                 'category',
                 'brand',
                 'images' => fn($q) => $q->orderBy('sort_order', 'asc'),
-                'variants.color',
-                'variants.size',
+                'variants' => fn($q) => $q->where('is_active', true)->with(['color', 'size']),
             ])
             ->first();
 

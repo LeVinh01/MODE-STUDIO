@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class CartItemStoreRequest extends FormRequest
 {
@@ -19,7 +20,11 @@ class CartItemStoreRequest extends FormRequest
         $maxQuantity = config('shop.cart.max_item_quantity', 20);
 
         return [
-            'variant_id' => ['required', 'integer', 'exists:product_variants,id'],
+            'variant_id' => [
+                'required',
+                'integer',
+                Rule::exists('product_variants', 'id')->whereNull('deleted_at'),
+            ],
             'quantity'   => ['required', 'integer', 'min:1', "max:{$maxQuantity}"],
         ];
     }

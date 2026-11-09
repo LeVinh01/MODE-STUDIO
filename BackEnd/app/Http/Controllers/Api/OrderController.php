@@ -98,8 +98,9 @@ class OrderController extends Controller
             // 2. Lấy danh sách variant_id và sắp xếp tăng dần để tránh deadlock giữa các giao dịch
             $variantIds = $cartItems->pluck('variant_id')->unique()->sort()->values()->all();
 
-            // 3. Khóa các biến thể theo thứ tự id tăng dần
-            $variants = ProductVariant::whereIn('id', $variantIds)
+            // 3. Khóa các biến thể theo thứ tự id tăng dần (bao gồm cả biến thể đã xóa mềm để kiểm tra và xử lý)
+            $variants = ProductVariant::withTrashed()
+                ->whereIn('id', $variantIds)
                 ->orderBy('id', 'asc')
                 ->with([
                     'product' => fn($q) => $q->withTrashed()->with('mainImage'),
@@ -123,6 +124,7 @@ class OrderController extends Controller
                     : (string) ($product?->status ?? '');
 
                 $isAvailable = $variant
+                    && !$variant->trashed()
                     && (bool) $variant->is_active
                     && $product
                     && !$product->trashed()
@@ -297,7 +299,8 @@ class OrderController extends Controller
             $variantIds = $items->pluck('variant_id')->filter()->unique()->sort()->values()->all();
 
             if (!empty($variantIds)) {
-                $variants = ProductVariant::whereIn('id', $variantIds)
+                $variants = ProductVariant::withTrashed()
+                    ->whereIn('id', $variantIds)
                     ->orderBy('id', 'asc')
                     ->lockForUpdate()
                     ->get()

@@ -20,9 +20,11 @@ class CartItemResource extends JsonResource
             ? $product->status->value
             : (string) ($product?->status ?? '');
 
-        // Kiểm tra sản phẩm có đang mở bán công khai hay không
+        // Kiểm tra sản phẩm và biến thể có đang mở bán công khai hay không
         $isProductPublished = $product
             && !$product->trashed()
+            && $variant
+            && !$variant->trashed()
             && $productStatus === 'active'
             && (!$product->published_at || $product->published_at <= now());
 
@@ -31,9 +33,9 @@ class CartItemResource extends JsonResource
         if (!$product || $product->trashed() || $productStatus !== 'active' || ($product->published_at && $product->published_at > now())) {
             $isPurchasable = false;
             $unpurchasableReason = 'Sản phẩm đã ngừng kinh doanh';
-        } elseif (!$variant || !$variant->is_active) {
+        } elseif (!$variant || $variant->trashed() || !$variant->is_active) {
             $isPurchasable = false;
-            $unpurchasableReason = 'Biến thể tạm ngừng bán';
+            $unpurchasableReason = (!$variant || $variant->trashed()) ? 'Sản phẩm đã ngừng kinh doanh' : 'Biến thể tạm ngừng bán';
         } elseif ($variant->stock_quantity <= 0) {
             $isPurchasable = false;
             $unpurchasableReason = 'Sản phẩm đã hết hàng';

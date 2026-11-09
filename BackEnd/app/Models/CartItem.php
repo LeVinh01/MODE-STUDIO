@@ -20,6 +20,6 @@ class CartItem extends Model
 
     public function variant(): BelongsTo
     {
-        return $this->belongsTo(ProductVariant::class, 'variant_id');
+        return $this->belongsTo(ProductVariant::class, 'variant_id')->withTrashed();
     }
 }

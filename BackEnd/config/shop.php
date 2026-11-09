@@ -16,4 +16,9 @@ return [
         // Phí vận chuyển tiêu chuẩn cho đơn dưới ngưỡng (mặc định 30.000 đ)
         'standard_fee'   => (int) env('SHIPPING_STANDARD_FEE', 30000),
     ],
+
+    'stock' => [
+        // Ngưỡng cảnh báo tồn kho thấp mặc định
+        'low_stock_threshold' => (int) env('LOW_STOCK_THRESHOLD', 10),
+    ],
 ];

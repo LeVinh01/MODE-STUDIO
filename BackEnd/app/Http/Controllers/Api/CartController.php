@@ -55,8 +55,9 @@ class CartController extends Controller
 
         $variantIds = array_keys($aggregated);
 
-        // Truy vấn thông tin các biến thể
-        $variants = ProductVariant::whereIn('id', $variantIds)
+        // Truy vấn thông tin các biến thể (kể cả biến thể đã xóa mềm để phản hồi chính xác)
+        $variants = ProductVariant::withTrashed()
+            ->whereIn('id', $variantIds)
             ->with([
                 'color',
                 'size',
@@ -158,7 +159,8 @@ class CartController extends Controller
                 $sortedVariantIds = array_keys($aggregated);
                 sort($sortedVariantIds, SORT_NUMERIC);
 
-                $lockedVariants = ProductVariant::whereIn('id', $sortedVariantIds)
+                $lockedVariants = ProductVariant::withTrashed()
+                    ->whereIn('id', $sortedVariantIds)
                     ->with(['product' => fn($q) => $q->withTrashed()])
                     ->orderBy('id', 'asc')
                     ->lockForUpdate()
@@ -177,6 +179,15 @@ class CartController extends Controller
                     }
 
                     $variant = $lockedVariants->get($vid);
+
+                    // Biến thể đã bị xóa mềm
+                    if ($variant->trashed()) {
+                        $skipped[] = [
+                            'variant_id' => $vid,
+                            'reason'     => 'Biến thể sản phẩm đã ngừng kinh doanh.',
+                        ];
+                        continue;
+                    }
                     $product = $variant->product;
                     $productStatus = $product?->status instanceof ProductStatus
                         ? $product->status->value
