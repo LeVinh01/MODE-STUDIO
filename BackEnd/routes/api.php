@@ -1,6 +1,11 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\AdminLookupController;
 use App\Http\Controllers\Api\Admin\AdminOrderController;
+use App\Http\Controllers\Api\Admin\AdminProductController;
+use App\Http\Controllers\Api\Admin\AdminProductImageController;
+use App\Http\Controllers\Api\Admin\AdminStockController;
+use App\Http\Controllers\Api\Admin\AdminVariantController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
@@ -62,6 +67,32 @@ Route::middleware(['auth:sanctum', 'active', 'role:admin,operator'])->prefix('ad
     Route::get('/', [AdminOrderController::class, 'index']);
     Route::get('/{order_code}', [AdminOrderController::class, 'show']);
     Route::patch('/{order_code}/status', [AdminOrderController::class, 'updateStatus']);
+});
+
+// Admin & Operator Read-only Catalog & Stock API
+Route::middleware(['auth:sanctum', 'active', 'role:admin,operator'])->prefix('admin')->group(function () {
+    Route::get('/lookups', [AdminLookupController::class, 'index']);
+    Route::get('/products', [AdminProductController::class, 'index']);
+    Route::get('/products/{id}', [AdminProductController::class, 'show']);
+    Route::get('/variants/{variant_id}/stock-adjustments', [AdminStockController::class, 'history']);
+    Route::get('/stock/low', [AdminStockController::class, 'lowStock']);
+});
+
+// Admin Only Catalog, Image & Stock Write API
+Route::middleware(['auth:sanctum', 'active', 'role:admin'])->prefix('admin')->group(function () {
+    Route::post('/products', [AdminProductController::class, 'store']);
+    Route::match(['put', 'patch'], '/products/{id}', [AdminProductController::class, 'update']);
+    Route::delete('/products/{id}', [AdminProductController::class, 'destroy']);
+
+    Route::post('/products/{id}/variants', [AdminVariantController::class, 'store']);
+    Route::match(['put', 'patch'], '/variants/{variant_id}', [AdminVariantController::class, 'update']);
+    Route::delete('/variants/{variant_id}', [AdminVariantController::class, 'destroy']);
+
+    Route::post('/variants/{variant_id}/stock', [AdminStockController::class, 'adjust']);
+
+    Route::post('/products/{id}/images', [AdminProductImageController::class, 'upload']);
+    Route::match(['put', 'patch'], '/products/{id}/images/{image_id}', [AdminProductImageController::class, 'update']);
+    Route::delete('/products/{id}/images/{image_id}', [AdminProductImageController::class, 'destroy']);
 });
 
 // Public read-only API (không có prefix /v1)

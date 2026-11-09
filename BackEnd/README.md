@@ -494,7 +494,183 @@ Dành riêng cho người dùng có vai trò `admin` hoặc `operator`. Yêu c�
 
 ---
 
-## 12. Dừng Hệ Thống Docker
+## 13. API Quản Trị Sản Phẩm, Biến Thể, Hình Ảnh & Tồn Kho (Admin & Operator)
+
+### Phân quyền truy cập (RBAC):
+- **Write Actions** (Tạo/sửa/xóa sản phẩm, tạo/sửa/xóa biến thể, tải lên/sửa/xóa ảnh, điều chỉnh tồn kho): **Chỉ vai trò `admin`**.
+- **Read Actions** (Xem danh sách/chi tiết sản phẩm, xem lịch sử điều chỉnh tồn kho, xem danh sách tồn kho thấp, xem dữ liệu tra cứu lookups): **Cả vai trò `admin` và `operator`**.
+- Khách chưa đăng nhập trả về **HTTP 401**. Người dùng vai trò `customer` hoặc tài khoản bị khóa (`status = locked`) trả về **HTTP 403** (thông báo tiếng Việt).
+
+### Quy trình xuất bản & Ràng buộc toàn vẹn (Invariants):
+1. **Quy trình tạo & xuất bản sản phẩm**:
+   - Khi tạo mới (`POST /api/admin/products`), sản phẩm luôn được tạo ở trạng thái `draft`. Không thể tạo trực tiếp với `status = active` (trả về **HTTP 422** do chưa có biến thể và hình ảnh).
+   - Sau khi tạo sản phẩm bản nháp, quản trị viên thêm ít nhất một biến thể (`POST /api/admin/products/{id}/variants`) và tải lên ít nhất một hình ảnh (`POST /api/admin/products/{id}/images`), sau đó cập nhật trạng thái sang `active` (`PATCH /api/admin/products/{id}`).
+2. **Chống tụt dưới điều kiện xuất bản cho sản phẩm active**:
+   - Đối với sản phẩm đang ở trạng thái `active`:
+     - Chặn bằng **HTTP 422** khi xóa mềm hoặc tắt `is_active = false` của biến thể đang bán cuối cùng.
+     - Chặn bằng **HTTP 422** khi xóa hình ảnh cuối cùng của sản phẩm.
+     - Để xóa biến thể/hình ảnh cuối cùng, quản trị viên cần chuyển trạng thái sản phẩm về `draft` hoặc `archived` trước.
+3. **Quản lý biến thể & Xóa mềm (SoftDeletes)**:
+   - Khi thêm biến thể (`POST /api/admin/products/{id}/variants`):
+     - Nếu cặp `(color_id, size_id)` đã tồn tại và chưa bị xóa mềm $\rightarrow$ Trả về **HTTP 422**.
+     - Nếu cặp `(color_id, size_id)` trùng với biến thể **đã bị xóa mềm** trước đó của sản phẩm $\rightarrow$ Hệ thống tự động khôi phục (`restore()`), giữ nguyên mã SKU cũ, cập nhật lại tồn kho `stock_quantity`, `is_active` và ghi chú `note` theo dữ liệu gửi lên.
+   - Khi biến thể bị xóa mềm:
+     - Giỏ hàng (`GET /api/cart`) đánh dấu `is_purchasable = false`, lý do `"Sản phẩm đã ngừng kinh doanh"`.
+     - Đặt hàng (`POST /api/orders`) với biến thể đã xóa mềm trong giỏ trả về **HTTP 422** `insufficient_items`.
+     - Thao tác hủy đơn (khách tự hủy hoặc admin hủy) **vẫn hoàn kho** chính xác cho biến thể đã xóa mềm.
+     - Gộp giỏ hàng khách (`POST /api/cart/merge`) tự động bỏ qua biến thể đã xóa mềm và ghi nhận vào danh sách `skipped`.
+4. **Phạm vi ảnh chính (`is_main`) theo màu sắc**:
+   - Hệ thống cho phép một ảnh chính cho mỗi màu sắc `(product_id, color_id)`, trong đó `color_id = null` là ảnh chính chung của sản phẩm.
+   - Khi đánh dấu một ảnh là `is_main = true`, hệ thống chỉ gỡ cờ `is_main = false` của các ảnh thuộc cùng phạm vi `(product_id, color_id)`, hoàn toàn không ảnh hưởng đến ảnh của các màu khác.
+   - Khi xóa một ảnh chính, hệ thống tự động thăng cấp một ảnh khác trong cùng phạm vi làm ảnh chính mới.
+5. **Xử lý tệp hình ảnh vật lý**:
+   - Khi tải ảnh lên (`POST /api/admin/products/{id}/images`), tệp được lưu vào `storage/app/public/products/{product_id}` và trả về URL công khai dạng `/storage/products/...` có thể truy cập trực tiếp qua Web Server Nginx.
+   - Chỉ cho phép tệp ảnh có định dạng `jpeg, png, jpg, webp`, dung lượng tối đa 2MB (chặn định dạng SVG).
+   - Khi xóa ảnh: Chỉ xóa tệp vật lý trên disk khi `image_url` trỏ vào storage cục bộ của hệ thống. Đối với các ảnh seed từ dịch vụ ngoài (`https://placehold.co/...`), hệ thống chỉ xóa bản ghi trong CSDL, không gây lỗi xóa file.
+6. **Lịch sử điều chỉnh tồn kho (`stock_adjustments`)**:
+   - Bảng `stock_adjustments` **CHỈ ghi nhận các biến động điều chỉnh thủ công** từ quản trị viên thông qua endpoint `POST /api/admin/variants/{variant_id}/stock` (`set`, `increment`, `decrement`) kèm lý do `reason` và định danh người thực hiện `changed_by`.
+   - Các biến động tồn kho tự động phát sinh từ việc khách đặt hàng hoặc hủy đơn hàng **KHÔNG** ghi vào bảng này.
+
+---
+
+### Danh sách Endpoint Quản Trị Catalog & Tồn Kho:
+
+#### 1. Dữ liệu tra cứu Lookups (`GET /api/admin/lookups`)
+- **Phân quyền**: `admin`, `operator`.
+- **Response (HTTP 200)**: Trả về danh sách danh mục (`categories`), thương hiệu (`brands`), màu sắc (`colors`), kích cỡ (`sizes`), tùy chọn giới tính (`genders`) và trạng thái (`statuses`).
+
+#### 2. Danh sách sản phẩm (`GET /api/admin/products`)
+- **Phân quyền**: `admin`, `operator`.
+- **Tham số truy vấn (Query Parameters)**:
+  - `status`: Lọc theo trạng thái (`draft`, `active`, `archived`).
+  - `category_id`: Lọc theo ID danh mục.
+  - `brand_id`: Lọc theo ID thương hiệu.
+  - `search`: Tìm kiếm theo tên sản phẩm hoặc đường dẫn slug (tự động escape `%` và `_`).
+  - `per_page`: Số sản phẩm mỗi trang (1-50, mặc định 15).
+  - `page`: Số trang.
+- **Response (HTTP 200)**: Danh sách sản phẩm phân trang kèm `category`, `brand`, `main_image`, `variants_count` và `total_stock` (chỉ tính các biến thể chưa xóa mềm).
+
+#### 3. Chi tiết sản phẩm (`GET /api/admin/products/{id}`)
+- **Phân quyền**: `admin`, `operator`.
+- **Response (HTTP 200)**: Thông tin chi tiết toàn diện của sản phẩm, gồm danh mục, thương hiệu, toàn bộ biến thể (bao gồm cả biến thể đã xóa mềm kèm cờ `deleted_at`) và toàn bộ hình ảnh.
+
+#### 4. Tạo sản phẩm (`POST /api/admin/products`)
+- **Phân quyền**: `admin`.
+- **Body (JSON)**:
+  ```json
+  {
+    "name": "Áo Sơ Mi Nam Oxford Cổ Điển",
+    "slug": "ao-so-mi-nam-oxford-co-dien",
+    "description": "Vải dệt oxford dày dặn, bền màu.",
+    "material": "100% Cotton",
+    "gender": "men",
+    "category_id": 1,
+    "brand_id": 1,
+    "base_price": 450000,
+    "compare_at_price": 550000,
+    "status": "draft",
+    "is_featured": false
+  }
+  ```
+- **Response (HTTP 201)**: Trả về chi tiết sản phẩm vừa tạo ở trạng thái bản nháp (`draft`).
+
+#### 5. Cập nhật sản phẩm (`PUT /api/admin/products/{id}` hoặc `PATCH /api/admin/products/{id}`)
+- **Phân quyền**: `admin`.
+- **Response (HTTP 200)**: Trả về chi tiết sản phẩm sau khi cập nhật. Kiểm tra ràng buộc xuất bản nếu đổi `status` sang `active`.
+
+#### 6. Xóa mềm sản phẩm (`DELETE /api/admin/products/{id}`)
+- **Phân quyền**: `admin`.
+- **Response (HTTP 200)**: `{"message": "Xóa sản phẩm thành công."}`.
+
+#### 7. Thêm biến thể cho sản phẩm (`POST /api/admin/products/{id}/variants`)
+- **Phân quyền**: `admin`.
+- **Body (JSON)**:
+  ```json
+  {
+    "color_id": 1,
+    "size_id": 2,
+    "sku": "SMI-OXF-WHT-M",
+    "stock_quantity": 50,
+    "is_active": true,
+    "note": "Hàng nhập đợt 1"
+  }
+  ```
+- **Response (HTTP 201 hoặc HTTP 200 nếu khôi phục biến thể cũ)**: Trả về thông tin biến thể.
+
+#### 8. Cập nhật biến thể (`PUT /api/admin/variants/{variant_id}` hoặc `PATCH /api/admin/variants/{variant_id}`)
+- **Phân quyền**: `admin`.
+- **Body (JSON)**: `color_id`, `size_id`, `sku`, `is_active`, `note`. *(Lưu ý: Không cập nhật trực tiếp `stock_quantity` tại đây mà phải thông qua API điều chỉnh tồn kho)*.
+- **Response (HTTP 200)**: Trả về thông tin biến thể sau cập nhật.
+
+#### 9. Xóa mềm biến thể (`DELETE /api/admin/variants/{variant_id}`)
+- **Phân quyền**: `admin`.
+- **Response (HTTP 200)**: `{"message": "Xóa biến thể sản phẩm thành công."}`.
+
+#### 10. Điều chỉnh tồn kho biến thể (`POST /api/admin/variants/{variant_id}/stock`)
+- **Phân quyền**: `admin`.
+- **Body (JSON)**:
+  ```json
+  {
+    "type": "increment",
+    "quantity": 20,
+    "reason": "Nhập thêm hàng từ xưởng may"
+  }
+  ```
+  *(Các loại `type` hợp lệ: `set`, `increment`, `decrement`).*
+- **Response (HTTP 200)**:
+  ```json
+  {
+    "data": {
+      "id": 1,
+      "variant_id": 5,
+      "quantity_before": 10,
+      "delta": 20,
+      "quantity_after": 30,
+      "reason": "Nhập thêm hàng từ xưởng may",
+      "changed_by": {
+        "id": 1,
+        "full_name": "Admin User",
+        "email": "admin@example.com",
+        "role": "admin"
+      },
+      "created_at": "2026-11-10T05:25:00.000000Z"
+    }
+  }
+  ```
+
+#### 11. Lịch sử điều chỉnh tồn kho của biến thể (`GET /api/admin/variants/{variant_id}/stock-adjustments`)
+- **Phân quyền**: `admin`, `operator`.
+- **Response (HTTP 200)**: Danh sách phân trang các lần điều chỉnh tồn kho thủ công của biến thể.
+
+#### 12. Cảnh báo tồn kho thấp (`GET /api/admin/stock/low`)
+- **Phân quyền**: `admin`, `operator`.
+- **Tham số truy vấn**:
+  - `threshold`: Ngưỡng cảnh báo (mặc định lấy từ `config('shop.stock.low_stock_threshold')` là `10`).
+  - `per_page`: Số dòng mỗi trang.
+- **Response (HTTP 200)**: Danh sách các biến thể có tồn kho $\le$ ngưỡng (bao gồm cả tồn kho bằng 0), thuộc các sản phẩm chưa bị xóa mềm, sắp xếp theo `stock_quantity asc`.
+
+#### 13. Tải lên hình ảnh sản phẩm (`POST /api/admin/products/{id}/images`)
+- **Phân quyền**: `admin`.
+- **Form Data**:
+  - `image`: Tệp hình ảnh (`jpeg, png, jpg, webp`, tối đa 2MB).
+  - `color_id`: ID màu sắc (để trống nếu là ảnh chung).
+  - `alt_text`: Văn bản thay thế.
+  - `is_main`: Đánh dấu là ảnh chính cho phạm vi màu này (`true`/`false`).
+  - `sort_order`: Thứ tự hiển thị.
+- **Response (HTTP 201)**: Trả về thông tin hình ảnh kèm URL công khai.
+
+#### 14. Cập nhật thuộc tính hình ảnh (`PUT/PATCH /api/admin/products/{id}/images/{image_id}`)
+- **Phân quyền**: `admin`.
+- **Body (JSON)**: `color_id`, `alt_text`, `is_main`, `sort_order`.
+- **Response (HTTP 200)**: Trả về thông tin hình ảnh sau cập nhật.
+
+#### 15. Xóa hình ảnh sản phẩm (`DELETE /api/admin/products/{id}/images/{image_id}`)
+- **Phân quyền**: `admin`.
+- **Response (HTTP 200)**: `{"message": "Xóa hình ảnh sản phẩm thành công."}`.
+
+---
+
+## 14. Dừng Hệ Thống Docker
 
 - Dừng containers:
   ```bash

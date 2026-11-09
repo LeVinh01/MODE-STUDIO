@@ -171,7 +171,8 @@ class AdminOrderController extends Controller
                 $variantIds = $items->pluck('variant_id')->filter()->unique()->sort()->values()->all();
 
                 if (!empty($variantIds)) {
-                    $variants = ProductVariant::whereIn('id', $variantIds)
+                    $variants = ProductVariant::withTrashed()
+                        ->whereIn('id', $variantIds)
                         ->orderBy('id', 'asc')
                         ->lockForUpdate()
                         ->get()
