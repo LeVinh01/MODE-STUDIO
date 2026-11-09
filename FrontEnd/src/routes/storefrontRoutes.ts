@@ -65,6 +65,36 @@ export const storefrontRoutes: RouteObject[] = [
     },
   },
   {
+    path: 'orders',
+    lazy: async () => {
+      const [{ MyOrdersPage }, { ProtectedRoute }] = await Promise.all([
+        import('@/pages/storefront/MyOrdersPage/MyOrdersPage'),
+        import('@/components/auth/ProtectedRoute/ProtectedRoute'),
+      ])
+      return {
+        Component: () =>
+          createElement(ProtectedRoute, null, createElement(MyOrdersPage)),
+      }
+    },
+  },
+  {
+    path: 'orders/:orderCode',
+    lazy: async () => {
+      const [{ OrderDetailPage }, { ProtectedRoute }] = await Promise.all([
+        import('@/pages/storefront/OrderDetailPage/OrderDetailPage'),
+        import('@/components/auth/ProtectedRoute/ProtectedRoute'),
+      ])
+      return {
+        Component: () =>
+          createElement(
+            ProtectedRoute,
+            null,
+            createElement(OrderDetailPage),
+          ),
+      }
+    },
+  },
+  {
     path: 'login',
     lazy: async () => {
       const { LoginPage } = await import('@/pages/storefront/LoginPage')

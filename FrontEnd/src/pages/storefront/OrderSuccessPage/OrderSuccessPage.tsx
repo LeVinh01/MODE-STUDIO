@@ -2,20 +2,12 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { CheckCircle2, ShoppingBag } from 'lucide-react'
 import { orderService } from '@/services/api/orderService'
-import type { Order, OrderStatus } from '@/types/order'
+import type { Order } from '@/types/order'
+import { ORDER_STATUS_CONFIG } from '@/config/orderStatus'
 import { formatCurrency, formatDateTime } from '@/utils/formatters'
 import { Button, Badge } from '@/components/common'
-import type { BadgeVariant } from '@/components/common/Badge/Badge'
 import { EmptyState, Spinner } from '@/components/feedback'
 import styles from './OrderSuccessPage.module.scss'
-
-const STATUS_LABELS: Record<OrderStatus, { label: string; variant: BadgeVariant }> = {
-  pending: { label: 'Chờ xác nhận', variant: 'warning' },
-  confirmed: { label: 'Đã xác nhận', variant: 'info' },
-  shipping: { label: 'Đang vận chuyển', variant: 'info' },
-  delivered: { label: 'Đã giao thành công', variant: 'success' },
-  cancelled: { label: 'Đã hủy', variant: 'error' },
-}
 
 export const OrderSuccessPage = () => {
   const { orderCode } = useParams<{ orderCode: string }>()
@@ -84,7 +76,7 @@ export const OrderSuccessPage = () => {
     )
   }
 
-  const statusConfig = STATUS_LABELS[order.status] || {
+  const statusConfig = ORDER_STATUS_CONFIG[order.status] || {
     label: order.status,
     variant: 'default',
   }
@@ -251,6 +243,14 @@ export const OrderSuccessPage = () => {
         {/* ACTION BUTTONS */}
         <div className={styles.actionButtons}>
           <Button
+            variant="primary"
+            size="lg"
+            onClick={() => navigate('/orders')}
+          >
+            Xem Đơn Hàng Của Tôi
+          </Button>
+
+          <Button
             variant="secondary"
             size="lg"
             onClick={() => navigate('/products')}
@@ -259,7 +259,7 @@ export const OrderSuccessPage = () => {
           </Button>
 
           <Button
-            variant="primary"
+            variant="ghost"
             size="lg"
             onClick={() => navigate('/')}
           >

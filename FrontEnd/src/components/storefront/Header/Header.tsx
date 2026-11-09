@@ -170,6 +170,15 @@ export const Header = ({ cartCount = 0 }: HeaderProps) => {
 
                   <div className={styles.dropdownDivider} role="separator" />
 
+                  <Link
+                    to="/orders"
+                    role="menuitem"
+                    className={styles.dropdownItem}
+                    onClick={() => setIsAccountMenuOpen(false)}
+                  >
+                    Đơn hàng của tôi
+                  </Link>
+
                   {(user.role === 'admin' || user.role === 'operator') && (
                     <Link
                       to="/admin"

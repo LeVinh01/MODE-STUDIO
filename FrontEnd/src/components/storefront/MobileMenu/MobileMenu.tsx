@@ -1,5 +1,5 @@
 import { NavLink, Link } from 'react-router-dom'
-import { ChevronRight, User } from 'lucide-react'
+import { ChevronRight, User, Package } from 'lucide-react'
 import { Drawer } from '@/components/feedback/Drawer'
 import { MAIN_NAVIGATION } from '@/config/navigation'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
@@ -26,14 +26,25 @@ export const MobileMenu = () => {
       title="MODE STUDIO"
       footer={
         <div className={styles.footerActions}>
-          <Link
-            to={user ? '/account' : '/login'}
-            onClick={handleClose}
-            className={styles.accountButton}
-          >
-            <User size={18} />
-            <span>{user ? user.fullName : 'Đăng Nhập / Đăng Ký'}</span>
-          </Link>
+          {user ? (
+            <Link
+              to="/orders"
+              onClick={handleClose}
+              className={styles.accountButton}
+            >
+              <Package size={18} />
+              <span>Đơn hàng của tôi</span>
+            </Link>
+          ) : (
+            <Link
+              to="/login"
+              onClick={handleClose}
+              className={styles.accountButton}
+            >
+              <User size={18} />
+              <span>Đăng Nhập / Đăng Ký</span>
+            </Link>
+          )}
 
           {import.meta.env.DEV && (
             <div className={styles.devRow}>
