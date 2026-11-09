@@ -28,5 +28,14 @@ export const adminRoutes: RouteObject[] = [
       return { Component: OrderManagementPage }
     },
   },
+  {
+    path: 'orders/:orderCode',
+    lazy: async () => {
+      const { AdminOrderDetailPage } = await import(
+        '@/pages/admin/AdminOrderDetailPage/AdminOrderDetailPage'
+      )
+      return { Component: AdminOrderDetailPage }
+    },
+  },
 ]
 
