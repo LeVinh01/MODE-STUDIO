@@ -1,2 +1,6 @@
 export { RowActionsMenu } from './RowActionsMenu'
 export type { RowActionsMenuProps, RowActionMenuItem } from './RowActionsMenu'
+export { StockAdjustmentModal } from './StockAdjustmentModal/StockAdjustmentModal'
+export type { StockAdjustmentModalProps } from './StockAdjustmentModal/StockAdjustmentModal'
+export { StockHistoryModal } from './StockHistoryModal/StockHistoryModal'
+export type { StockHistoryModalProps } from './StockHistoryModal/StockHistoryModal'

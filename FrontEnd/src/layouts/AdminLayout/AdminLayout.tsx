@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, Package, ShoppingCart, Store } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, Store, Boxes } from 'lucide-react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { toggleAdminSidebar } from '@/store/slices/uiSlice'
 import { Button } from '@/components/common/Button'
@@ -45,6 +45,15 @@ export const AdminLayout = () => {
             >
               <ShoppingCart size={18} />
               <span>Đơn hàng</span>
+            </NavLink>
+            <NavLink
+              to="/admin/inventory"
+              className={({ isActive }) =>
+                isActive ? `${styles.navItem} ${styles.active}` : styles.navItem
+              }
+            >
+              <Boxes size={18} />
+              <span>Kho hàng</span>
             </NavLink>
           </nav>
 

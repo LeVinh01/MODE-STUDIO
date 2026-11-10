@@ -20,6 +20,8 @@ export interface StockAdjustmentModalProps {
     variantId: number,
     quantityAfter: number,
     adjustment: AdminStockAdjustmentItem,
+    type?: StockAdjustmentType,
+    quantity?: number,
   ) => void
 }
 
@@ -101,7 +103,7 @@ export const StockAdjustmentModal = ({
 
       const res = await adminProductService.adjustVariantStock(variant.id, payload)
       // Dùng ngay quantityAfter từ response để cập nhật local state trước
-      onSuccess(variant.id, res.quantityAfter, res)
+      onSuccess(variant.id, res.quantityAfter, res, type, parsedQty)
       handleCloseModal()
     } catch (err: unknown) {
       const beErrors = getApiFieldErrors(err)

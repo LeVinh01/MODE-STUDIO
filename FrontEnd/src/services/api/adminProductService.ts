@@ -2,6 +2,7 @@ import apiClient from './client'
 import {
   mapApiAdminImageItemToAdminImageItem,
   mapApiAdminLookupsToAdminLookups,
+  mapApiAdminLowStockItemToAdminLowStockItem,
   mapApiAdminProductDetailToAdminProductDetail,
   mapApiAdminProductListItemToAdminProductListItem,
   mapApiAdminStockAdjustmentToAdminStockAdjustment,
@@ -10,6 +11,8 @@ import {
 import type {
   AdminImageItem,
   AdminLookups,
+  AdminLowStockItem,
+  AdminLowStockParams,
   AdminProductDetail,
   AdminProductFilterParams,
   AdminProductImageUpdatePayload,
@@ -23,6 +26,7 @@ import type {
   AdminVariantUpdatePayload,
   ApiAdminImageItem,
   ApiAdminLookups,
+  ApiAdminLowStockItem,
   ApiAdminProductDetail,
   ApiAdminProductListItem,
   ApiAdminStockAdjustment,
@@ -274,5 +278,40 @@ export const adminProductService = {
     )
 
     return response.data
+  },
+
+  /**
+   * Lấy danh sách biến thể tồn kho thấp / sắp hết hàng
+   * GET /api/admin/stock/low
+   */
+  async getLowStockVariants(
+    params?: AdminLowStockParams,
+    signal?: AbortSignal,
+  ): Promise<{ items: AdminLowStockItem[]; meta: ApiPaginationMeta }> {
+    const cleanParams: Record<string, number> = {}
+    if (params) {
+      if (params.threshold !== undefined) {
+        cleanParams.threshold = params.threshold
+      }
+      if (params.page !== undefined) {
+        cleanParams.page = params.page
+      }
+      if (params.per_page !== undefined) {
+        cleanParams.per_page = params.per_page
+      }
+    }
+
+    const response = await apiClient.get<ApiPaginatedResponse<ApiAdminLowStockItem>>(
+      '/admin/stock/low',
+      {
+        params: cleanParams,
+        signal,
+      },
+    )
+
+    return {
+      items: (response.data.data || []).map(mapApiAdminLowStockItemToAdminLowStockItem),
+      meta: response.data.meta,
+    }
   },
 }

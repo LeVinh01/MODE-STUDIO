@@ -1,4 +1,5 @@
 import type { ProductStatus } from '@/config/productStatus'
+import type { ApiPaginationMeta } from '@/types/api'
 
 export type { ProductStatus }
 
@@ -326,4 +327,73 @@ export interface ProductFormValues {
   compareAtPrice: string
   isFeatured: boolean
   status: ProductStatus
+}
+
+// DTO từ backend API: GET /api/admin/stock/low
+export interface ApiAdminLowStockProduct {
+  id: number
+  name: string
+  slug: string
+  base_price: number
+  category?: {
+    id: number
+    name: string
+  } | null
+}
+
+export interface ApiAdminLowStockItem {
+  id: number
+  sku: string
+  stock_quantity: number
+  is_active: boolean
+  color?: {
+    id: number
+    name: string
+    hex_code: string
+  } | null
+  size?: {
+    id: number
+    name: string
+  } | null
+  product?: ApiAdminLowStockProduct | null
+}
+
+// Client-side domain model (camelCase)
+export interface AdminLowStockProduct {
+  id: number
+  name: string
+  slug: string
+  basePrice: number
+  category: {
+    id: number
+    name: string
+  } | null
+}
+
+export interface AdminLowStockItem {
+  id: number
+  sku: string
+  stockQuantity: number
+  isActive: boolean
+  color: {
+    id: number
+    name: string
+    hexCode: string
+  } | null
+  size: {
+    id: number
+    name: string
+  } | null
+  product: AdminLowStockProduct | null
+}
+
+export interface AdminLowStockParams {
+  threshold?: number
+  page?: number
+  per_page?: number
+}
+
+export interface AdminLowStockResponse {
+  items: AdminLowStockItem[]
+  meta: ApiPaginationMeta
 }

@@ -1,12 +1,14 @@
 import type {
   AdminImageItem,
   AdminLookups,
+  AdminLowStockItem,
   AdminProductDetail,
   AdminProductListItem,
   AdminStockAdjustmentItem,
   AdminVariantItem,
   ApiAdminImageItem,
   ApiAdminLookups,
+  ApiAdminLowStockItem,
   ApiAdminProductDetail,
   ApiAdminProductListItem,
   ApiAdminStockAdjustment,
@@ -496,6 +498,48 @@ export const mapApiAdminLookupsToAdminLookups = (
     statuses: data.statuses || [],
   }
 }
+
+/**
+ * Chuyển đổi ApiAdminLowStockItem sang AdminLowStockItem (camelCase)
+ */
+export const mapApiAdminLowStockItemToAdminLowStockItem = (
+  item: ApiAdminLowStockItem,
+): AdminLowStockItem => {
+  return {
+    id: item.id,
+    sku: item.sku,
+    stockQuantity: item.stock_quantity,
+    isActive: item.is_active,
+    color: item.color
+      ? {
+          id: item.color.id,
+          name: item.color.name,
+          hexCode: item.color.hex_code,
+        }
+      : null,
+    size: item.size
+      ? {
+          id: item.size.id,
+          name: item.size.name,
+        }
+      : null,
+    product: item.product
+      ? {
+          id: item.product.id,
+          name: item.product.name,
+          slug: item.product.slug,
+          basePrice: item.product.base_price,
+          category: item.product.category
+            ? {
+                id: item.product.category.id,
+                name: item.product.category.name,
+              }
+            : null,
+        }
+      : null,
+  }
+}
+
 
 
 

@@ -18,11 +18,9 @@ import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { getApiErrorMessage } from '@/utils'
 import { Button, Badge } from '@/components/common'
 import { Modal, EmptyState } from '@/components/feedback'
-import { RowActionsMenu } from '@/components/admin'
+import { RowActionsMenu, StockAdjustmentModal, StockHistoryModal } from '@/components/admin'
 import type { RowActionMenuItem } from '@/components/admin'
 import { VariantModal } from '../VariantModal/VariantModal'
-import { StockAdjustmentModal } from '../StockAdjustmentModal/StockAdjustmentModal'
-import { StockHistoryModal } from '../StockHistoryModal/StockHistoryModal'
 import styles from './VariantManagementTab.module.scss'
 
 export interface VariantManagementTabProps {
