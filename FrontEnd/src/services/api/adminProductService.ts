@@ -1,19 +1,32 @@
 import apiClient from './client'
 import {
+  mapApiAdminImageItemToAdminImageItem,
   mapApiAdminLookupsToAdminLookups,
   mapApiAdminProductDetailToAdminProductDetail,
   mapApiAdminProductListItemToAdminProductListItem,
+  mapApiAdminStockAdjustmentToAdminStockAdjustment,
+  mapApiAdminVariantItemToAdminVariantItem,
 } from './mappers'
 import type {
+  AdminImageItem,
   AdminLookups,
   AdminProductDetail,
   AdminProductFilterParams,
+  AdminProductImageUpdatePayload,
   AdminProductListItem,
   AdminProductStorePayload,
   AdminProductUpdatePayload,
+  AdminStockAdjustmentItem,
+  AdminStockAdjustmentPayload,
+  AdminVariantItem,
+  AdminVariantStorePayload,
+  AdminVariantUpdatePayload,
+  ApiAdminImageItem,
   ApiAdminLookups,
   ApiAdminProductDetail,
   ApiAdminProductListItem,
+  ApiAdminStockAdjustment,
+  ApiAdminVariantItem,
 } from '@/types/adminProduct'
 import type { ApiPaginatedResponse, ApiPaginationMeta } from '@/types/api'
 
@@ -124,6 +137,140 @@ export const adminProductService = {
   async deleteAdminProduct(id: number | string): Promise<{ message: string }> {
     const response = await apiClient.delete<{ message: string }>(
       `/admin/products/${id}`,
+    )
+
+    return response.data
+  },
+
+  /**
+   * Thêm biến thể sản phẩm (hoặc khôi phục biến thể đã xóa mềm)
+   */
+  async createVariant(
+    productId: number | string,
+    payload: AdminVariantStorePayload,
+  ): Promise<{ variant: AdminVariantItem; isRestored: boolean }> {
+    const response = await apiClient.post<{ data: ApiAdminVariantItem }>(
+      `/admin/products/${productId}/variants`,
+      payload,
+    )
+
+    return {
+      variant: mapApiAdminVariantItemToAdminVariantItem(response.data.data),
+      isRestored: response.status === 200,
+    }
+  },
+
+  /**
+   * Cập nhật thông tin biến thể (SKU, ghi chú, trạng thái bật/tắt)
+   */
+  async updateVariant(
+    variantId: number | string,
+    payload: AdminVariantUpdatePayload,
+  ): Promise<AdminVariantItem> {
+    const response = await apiClient.patch<{ data: ApiAdminVariantItem }>(
+      `/admin/variants/${variantId}`,
+      payload,
+    )
+
+    return mapApiAdminVariantItemToAdminVariantItem(response.data.data)
+  },
+
+  /**
+   * Xóa mềm biến thể
+   */
+  async deleteVariant(variantId: number | string): Promise<{ message: string }> {
+    const response = await apiClient.delete<{ message: string }>(
+      `/admin/variants/${variantId}`,
+    )
+
+    return response.data
+  },
+
+  /**
+   * Điều chỉnh tồn kho biến thể (set / increment / decrement)
+   */
+  async adjustVariantStock(
+    variantId: number | string,
+    payload: AdminStockAdjustmentPayload,
+  ): Promise<AdminStockAdjustmentItem> {
+    const response = await apiClient.post<{ data: ApiAdminStockAdjustment }>(
+      `/admin/variants/${variantId}/stock`,
+      payload,
+    )
+
+    return mapApiAdminStockAdjustmentToAdminStockAdjustment(response.data.data)
+  },
+
+  /**
+   * Xem lịch sử biến động tồn kho của biến thể
+   */
+  async getVariantStockAdjustments(
+    variantId: number | string,
+    params?: { page?: number; per_page?: number },
+    signal?: AbortSignal,
+  ): Promise<{ adjustments: AdminStockAdjustmentItem[]; meta: ApiPaginationMeta }> {
+    const response = await apiClient.get<ApiPaginatedResponse<ApiAdminStockAdjustment>>(
+      `/admin/variants/${variantId}/stock-adjustments`,
+      {
+        params,
+        signal,
+      },
+    )
+
+    const rawData = response.data.data || []
+    return {
+      adjustments: rawData.map(mapApiAdminStockAdjustmentToAdminStockAdjustment),
+      meta: response.data.meta,
+    }
+  },
+
+  /**
+   * Tải hình ảnh sản phẩm lên
+   */
+  async uploadProductImage(
+    productId: number | string,
+    formData: FormData,
+    signal?: AbortSignal,
+  ): Promise<AdminImageItem> {
+    const response = await apiClient.post<{ data: ApiAdminImageItem }>(
+      `/admin/products/${productId}/images`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        signal,
+      },
+    )
+
+    return mapApiAdminImageItemToAdminImageItem(response.data.data)
+  },
+
+  /**
+   * Cập nhật thông tin ảnh (is_main, color_id, alt_text, sort_order)
+   */
+  async updateProductImage(
+    productId: number | string,
+    imageId: number | string,
+    payload: AdminProductImageUpdatePayload,
+  ): Promise<AdminImageItem> {
+    const response = await apiClient.patch<{ data: ApiAdminImageItem }>(
+      `/admin/products/${productId}/images/${imageId}`,
+      payload,
+    )
+
+    return mapApiAdminImageItemToAdminImageItem(response.data.data)
+  },
+
+  /**
+   * Xóa ảnh sản phẩm
+   */
+  async deleteProductImage(
+    productId: number | string,
+    imageId: number | string,
+  ): Promise<{ message: string }> {
+    const response = await apiClient.delete<{ message: string }>(
+      `/admin/products/${productId}/images/${imageId}`,
     )
 
     return response.data

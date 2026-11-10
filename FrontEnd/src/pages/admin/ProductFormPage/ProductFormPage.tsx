@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
-import { useParams, useNavigate, useLocation, Link, useBlocker } from 'react-router-dom'
+import { useParams, useNavigate, useLocation, useSearchParams, useBlocker, Link } from 'react-router-dom'
 import {
   ArrowLeft,
   Save,
@@ -9,10 +9,13 @@ import {
   AlertTriangle,
   RotateCcw,
   X,
+  Layers,
+  Image as ImageIcon,
+  FileText,
 } from 'lucide-react'
-import axios from 'axios'
 import { adminProductService } from '@/services/api/adminProductService'
 import { useAdminLookups } from '@/hooks/useAdminLookups'
+import { useAdminProductDetail } from '@/hooks/useAdminProductDetail'
 import type {
   AdminProductDetail,
   ProductFormValues,
@@ -20,14 +23,16 @@ import type {
   AdminProductUpdatePayload,
   ProductGender,
   ProductStatus,
+  ProductFormTab,
 } from '@/types/adminProduct'
-import { getProductStatusBadge } from '@/config/productStatus'
-import { formatCurrency, formatDateTime } from '@/utils/formatters'
-import { slugify } from '@/utils/slugify'
-import { Button, Input, Select, Textarea, Checkbox, Badge } from '@/components/common'
-import { Modal, EmptyState, Skeleton } from '@/components/feedback'
+import { formatCurrency, slugify, getApiErrorMessage, getApiFieldErrors } from '@/utils'
+import { Button, Input, Select, Textarea, Checkbox } from '@/components/common'
+import { Modal, Skeleton } from '@/components/feedback'
 import { useAppSelector } from '@/store/hooks'
 import { selectCurrentUser } from '@/store/slices/authSlice'
+import { PublishStatusCard } from './components/PublishStatusCard/PublishStatusCard'
+import { VariantManagementTab } from './components/VariantManagementTab/VariantManagementTab'
+import { ImageManagementTab } from './components/ImageManagementTab/ImageManagementTab'
 import styles from './ProductFormPage.module.scss'
 
 const INITIAL_FORM_VALUES: ProductFormValues = {
@@ -56,12 +61,32 @@ export const ProductFormPage = () => {
   const isEditMode = Boolean(id)
   const navigate = useNavigate()
   const location = useLocation()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const currentUser = useAppSelector(selectCurrentUser)
   const isAdmin = currentUser?.role === 'admin'
   const isOperator = currentUser?.role === 'operator'
 
-  // Lookups (danh mục, thương hiệu, v.v.)
+  // Tab navigation (?tab=basic|variants|images, fallback: basic)
+  const rawTab = searchParams.get('tab')
+  const activeTab: ProductFormTab =
+    rawTab === 'variants' || rawTab === 'images' || rawTab === 'basic'
+      ? rawTab
+      : 'basic'
+
+  const handleTabChange = (newTab: ProductFormTab) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      if (newTab === 'basic') {
+        next.delete('tab')
+      } else {
+        next.set('tab', newTab)
+      }
+      return next
+    })
+  }
+
+  // Lookups (danh mục, thương hiệu, màu, size...)
   const {
     lookups,
     isLoading: isLoadingLookups,
@@ -69,14 +94,13 @@ export const ProductFormPage = () => {
     retry: retryLookups,
   } = useAdminLookups()
 
-  // State dữ liệu trang
+  // Form state
   const [form, setForm] = useState<ProductFormValues>(INITIAL_FORM_VALUES)
-  const [baselineProduct, setBaselineProduct] = useState<AdminProductDetail | null>(null)
-  const [isLoadingDetail, setIsLoadingDetail] = useState(isEditMode)
-  const [fetchError, setFetchError] = useState<string | null>(null)
+  const isFormInitializedRef = useRef(false)
 
   // Submitting / UI states
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isPublishing, setIsPublishing] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [successMessage, setSuccessMessage] = useState<string | null>(
     () => (location.state as { successMessage?: string } | null)?.successMessage || null,
@@ -87,12 +111,9 @@ export const ProductFormPage = () => {
   // Tracking user manual slug touch (Create mode)
   const [isSlugTouched, setIsSlugTouched] = useState(false)
 
-  // Modal Xóa
+  // Modal Xóa sản phẩm
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
-
-  // Ref AbortController cho fetch detail
-  const abortControllerRef = useRef<AbortController | null>(null)
 
   // 1. Operator guard: Operator không được vào trang tạo mới
   useEffect(() => {
@@ -128,40 +149,34 @@ export const ProductFormPage = () => {
     }
   }, [])
 
-  // 4. Fetch chi tiết sản phẩm khi ở Edit Mode
-  useEffect(() => {
-    if (!isEditMode || !id) return
-
-    abortControllerRef.current?.abort()
-    const controller = new AbortController()
-    abortControllerRef.current = controller
-
-    let isMounted = true
-
-    adminProductService
-      .getAdminProductDetail(id, controller.signal)
-      .then((res) => {
-        if (!isMounted) return
-        setBaselineProduct(res)
-        setForm(mapDetailToForm(res))
-        setIsLoadingDetail(false)
-        setFetchError(null)
-      })
-      .catch((err) => {
-        if (axios.isCancel(err) || !isMounted) return
-        const msg =
-          err?.response?.data?.message || 'Không thể tải thông tin sản phẩm. Vui lòng thử lại.'
-        setFetchError(msg)
-        setIsLoadingDetail(false)
-      })
-
-    return () => {
-      isMounted = false
-      controller.abort()
+  // Callback khởi tạo form khi dữ liệu chi tiết tải về lần đầu
+  const handleDetailLoaded = useCallback((detail: AdminProductDetail) => {
+    if (!isFormInitializedRef.current) {
+      setForm(mapDetailToForm(detail))
+      isFormInitializedRef.current = true
     }
-  }, [isEditMode, id, mapDetailToForm])
+  }, [mapDetailToForm])
 
-  // 5. Kiểm tra Form Dirty (Có thay đổi chưa lưu)
+  // Hook quản lý chi tiết sản phẩm với latest-wins (chỉ chạy khi isEditMode)
+  const {
+    product,
+    isLoading: isLoadingDetail,
+    error: fetchError,
+    refetch,
+    updateLocalVariant,
+    removeLocalVariant,
+    updateLocalStock,
+    updateLocalImage,
+    removeLocalImage,
+    updateLocalStatus,
+  } = useAdminProductDetail(isEditMode ? id : undefined, {
+    onLoaded: handleDetailLoaded,
+  })
+
+  // baselineProduct là chính product đang có
+  const baselineProduct = product
+
+  // 4. Kiểm tra Form Dirty (Có thay đổi chưa lưu)
   const isDirty = useMemo(() => {
     if (!isEditMode) {
       return Boolean(
@@ -196,7 +211,7 @@ export const ProductFormPage = () => {
     )
   }, [isEditMode, form, baselineProduct])
 
-  // 6. Cảnh báo rời trang khi form dirty (React Router v6 data router)
+  // 5. Cảnh báo rời trang khi form dirty (React Router v6 data router)
   const blocker = useBlocker(
     useCallback(
       ({
@@ -207,17 +222,14 @@ export const ProductFormPage = () => {
         nextLocation: { pathname: string; search: string }
       }) => {
         if (isOperator || isSubmitting) return false
-        return (
-          isDirty &&
-          (currentLocation.pathname !== nextLocation.pathname ||
-            currentLocation.search !== nextLocation.search)
-        )
+        if (currentLocation.pathname === nextLocation.pathname) return false
+        return isDirty
       },
       [isDirty, isSubmitting, isOperator],
     ),
   )
 
-  // 7. Cảnh báo F5 / đóng tab khi form dirty
+  // 6. Cảnh báo F5 / đóng tab khi form dirty
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isDirty && !isSubmitting && !isOperator) {
@@ -229,11 +241,19 @@ export const ProductFormPage = () => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [isDirty, isSubmitting, isOperator])
 
-  // 8. Handlers cập nhật form
+  // 7. Hàm refetch an toàn: Cập nhật biến thể/ảnh/status nhưng KHÔNG ghi đè form nếu dirty
+  const handleSafeRefetch = useCallback(async (): Promise<AdminProductDetail | null> => {
+    const fresh = await refetch()
+    if (fresh && !isDirty) {
+      setForm(mapDetailToForm(fresh))
+    }
+    return fresh
+  }, [refetch, isDirty, mapDetailToForm])
+
+  // Handlers cập nhật form cơ bản
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newName = e.target.value
     setForm((prev) => {
-      // Khi TẠO MỚI và người dùng CHƯA sửa tay slug: tự sinh slug từ tên
       if (!isEditMode && !isSlugTouched) {
         return {
           ...prev,
@@ -253,9 +273,7 @@ export const ProductFormPage = () => {
   }
 
   const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!isEditMode) {
-      setIsSlugTouched(true)
-    }
+    setIsSlugTouched(true)
     setForm((prev) => ({ ...prev, slug: e.target.value }))
     if (fieldErrors.slug) {
       setFieldErrors((prev) => {
@@ -266,73 +284,66 @@ export const ProductFormPage = () => {
     }
   }
 
-  const handlePriceChange = (field: 'basePrice' | 'compareAtPrice', value: string) => {
-    // Chỉ cho phép nhập số
-    const cleaned = value.replace(/[^\d]/g, '')
-    setForm((prev) => ({ ...prev, [field]: cleaned }))
-    if (fieldErrors[field]) {
+  const handleBasePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/[^0-9]/g, '')
+    setForm((prev) => ({ ...prev, basePrice: val }))
+    if (fieldErrors.basePrice) {
       setFieldErrors((prev) => {
         const next = { ...prev }
-        delete next[field]
+        delete next.basePrice
         return next
       })
     }
   }
 
-  // 9. Client-side Validation
-  const validateForm = (): boolean => {
-    const errors: Record<string, string> = {}
-
-    if (!form.name.trim()) {
-      errors.name = 'Vui lòng nhập tên sản phẩm.'
+  const handleCompareAtPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/[^0-9]/g, '')
+    setForm((prev) => ({ ...prev, compareAtPrice: val }))
+    if (fieldErrors.compareAtPrice) {
+      setFieldErrors((prev) => {
+        const next = { ...prev }
+        delete next.compareAtPrice
+        return next
+      })
     }
-
-    if (!form.categoryId) {
-      errors.categoryId = 'Vui lòng chọn danh mục.'
-    }
-
-    if (!form.brandId) {
-      errors.brandId = 'Vui lòng chọn thương hiệu.'
-    }
-
-    if (!form.gender) {
-      errors.gender = 'Vui lòng chọn giới tính.'
-    }
-
-    if (!form.basePrice.trim()) {
-      errors.basePrice = 'Vui lòng nhập giá bán.'
-    } else {
-      const basePriceNum = Number(form.basePrice)
-      if (isNaN(basePriceNum) || basePriceNum < 0 || !Number.isInteger(basePriceNum)) {
-        errors.basePrice = 'Giá bán phải là số nguyên dương.'
-      }
-    }
-
-    if (form.compareAtPrice.trim()) {
-      const compPriceNum = Number(form.compareAtPrice)
-      const basePriceNum = Number(form.basePrice)
-      if (isNaN(compPriceNum) || compPriceNum < 0 || !Number.isInteger(compPriceNum)) {
-        errors.compareAtPrice = 'Giá so sánh phải là số nguyên dương.'
-      } else if (!isNaN(basePriceNum) && compPriceNum <= basePriceNum) {
-        errors.compareAtPrice = 'Giá so sánh (giá gốc) phải lớn hơn giá bán.'
-      }
-    }
-
-    setFieldErrors(errors)
-    return Object.keys(errors).length === 0
   }
 
-  // 10. Submit Handler
+  // Submit Form Thông tin cơ bản
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (isOperator) return
 
+    setFieldErrors({})
     setErrorMessage(null)
     setSuccessMessage(null)
     setInfoMessage(null)
 
-    if (!validateForm()) {
-      setErrorMessage('Vui lòng kiểm tra lại các trường thông tin có lỗi.')
+    // Client validation
+    const errors: Record<string, string> = {}
+    if (!form.name.trim()) errors.name = 'Vui lòng nhập tên sản phẩm.'
+    if (!form.gender) errors.gender = 'Vui lòng chọn giới tính.'
+    if (!form.categoryId) errors.categoryId = 'Vui lòng chọn danh mục.'
+    if (!form.brandId) errors.brandId = 'Vui lòng chọn thương hiệu.'
+
+    const parsedPrice = parseInt(form.basePrice, 10)
+    if (!form.basePrice || isNaN(parsedPrice)) {
+      errors.basePrice = 'Vui lòng nhập giá bán cơ bản.'
+    } else if (parsedPrice < 0) {
+      errors.basePrice = 'Giá bán không được âm.'
+    }
+
+    if (form.compareAtPrice) {
+      const parsedCompare = parseInt(form.compareAtPrice, 10)
+      if (isNaN(parsedCompare) || parsedCompare < 0) {
+        errors.compareAtPrice = 'Giá gốc không được âm.'
+      } else if (parsedCompare < parsedPrice) {
+        errors.compareAtPrice = 'Giá gốc nên lớn hơn hoặc bằng giá bán.'
+      }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
+      setErrorMessage('Vui lòng kiểm tra và điền đầy đủ các trường bắt buộc.')
       return
     }
 
@@ -340,30 +351,29 @@ export const ProductFormPage = () => {
 
     try {
       if (!isEditMode) {
-        // === TẠO MỚI ===
+        // === TẠO MỚI (POST) ===
         const payload: AdminProductStorePayload = {
           name: form.name.trim(),
+          slug: form.slug.trim() || null,
+          description: form.description.trim() || null,
+          material: form.material.trim() || null,
           gender: form.gender as ProductGender,
           category_id: Number(form.categoryId),
           brand_id: Number(form.brandId),
-          base_price: Number(form.basePrice),
-          is_featured: form.isFeatured,
+          base_price: parsedPrice,
+          compare_at_price: form.compareAtPrice ? parseInt(form.compareAtPrice, 10) : null,
           status: 'draft',
-        }
-
-        if (form.slug.trim()) payload.slug = form.slug.trim()
-        if (form.description.trim()) payload.description = form.description.trim()
-        if (form.material.trim()) payload.material = form.material.trim()
-        if (form.compareAtPrice.trim()) {
-          payload.compare_at_price = Number(form.compareAtPrice)
+          is_featured: form.isFeatured,
         }
 
         const newProduct = await adminProductService.createAdminProduct(payload)
 
-        // Chuyển sang trang sửa kèm thông báo thành công
-        navigate(`/admin/products/${newProduct.id}/edit`, {
+        // Sau khi tạo xong chuyển sang /admin/products/:id/edit?tab=variants
+        navigate(`/admin/products/${newProduct.id}/edit?tab=variants`, {
           replace: true,
-          state: { successMessage: `Đã tạo sản phẩm "${newProduct.name}" thành công.` },
+          state: {
+            successMessage: `Đã tạo sản phẩm "${newProduct.name}" thành công. Hãy thêm biến thể và hình ảnh.`,
+          },
         })
       } else {
         // === CẬP NHẬT (PATCH DIFF) ===
@@ -393,10 +403,10 @@ export const ProductFormPage = () => {
           diffPayload.brand_id = Number(form.brandId)
         }
         if (Number(form.basePrice) !== baselineProduct.basePrice) {
-          diffPayload.base_price = Number(form.basePrice)
+          diffPayload.base_price = parsedPrice
         }
 
-        const formCompare = form.compareAtPrice.trim() ? Number(form.compareAtPrice) : null
+        const formCompare = form.compareAtPrice ? parseInt(form.compareAtPrice, 10) : null
         const baseCompare = baselineProduct.compareAtPrice ?? null
         if (formCompare !== baseCompare) {
           diffPayload.compare_at_price = formCompare
@@ -409,7 +419,6 @@ export const ProductFormPage = () => {
           diffPayload.status = form.status
         }
 
-        // Nếu không có thay đổi nào
         if (Object.keys(diffPayload).length === 0) {
           setInfoMessage('Không có thay đổi nào cần lưu.')
           setIsSubmitting(false)
@@ -418,45 +427,72 @@ export const ProductFormPage = () => {
 
         const updated = await adminProductService.updateAdminProduct(id, diffPayload)
 
-        // Cập nhật baseline & reset form theo dữ liệu mới từ backend
-        setBaselineProduct(updated)
         setForm(mapDetailToForm(updated))
         setSuccessMessage('Lưu thông tin sản phẩm thành công.')
+        handleSafeRefetch()
       }
     } catch (err: unknown) {
-      if (axios.isAxiosError(err) && err.response?.status === 422) {
-        const data = err.response.data
+      const beErrors = getApiFieldErrors(err)
+      if (Object.keys(beErrors).length > 0) {
         const backendErrors: Record<string, string> = {}
-
-        if (data.errors) {
-          // Map backend field names sang form fields
-          Object.keys(data.errors).forEach((key) => {
-            const firstMsg = data.errors[key][0]
-            if (key === 'category_id') backendErrors.categoryId = firstMsg
-            else if (key === 'brand_id') backendErrors.brandId = firstMsg
-            else if (key === 'base_price') backendErrors.basePrice = firstMsg
-            else if (key === 'compare_at_price') backendErrors.compareAtPrice = firstMsg
-            else if (key === 'is_featured') backendErrors.isFeatured = firstMsg
-            else backendErrors[key] = firstMsg
-          })
-        }
-
+        Object.entries(beErrors).forEach(([key, val]) => {
+          if (key === 'category_id') backendErrors.categoryId = val
+          else if (key === 'brand_id') backendErrors.brandId = val
+          else if (key === 'base_price') backendErrors.basePrice = val
+          else if (key === 'compare_at_price') backendErrors.compareAtPrice = val
+          else if (key === 'is_featured') backendErrors.isFeatured = val
+          else backendErrors[key] = val
+        })
         setFieldErrors(backendErrors)
-        setErrorMessage(
-          data.message || 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại các trường có thông báo lỗi.',
-        )
-      } else {
-        setErrorMessage(
-          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-            'Đã có lỗi xảy ra khi lưu sản phẩm. Vui lòng thử lại.',
-        )
       }
+
+      setErrorMessage(
+        getApiErrorMessage(
+          err,
+          'Đã có lỗi xảy ra khi lưu sản phẩm. Vui lòng kiểm tra lại các trường có thông báo lỗi.',
+        ),
+      )
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  // 11. Xóa sản phẩm
+  // Xử lý Xuất bản sản phẩm
+  const handlePublish = async () => {
+    if (!isAdmin || !id) return
+
+    if (isDirty) {
+      setErrorMessage(
+        'Biểu mẫu thông tin có thay đổi chưa lưu. Vui lòng lưu thông tin trước khi xuất bản.',
+      )
+      handleTabChange('basic')
+      return
+    }
+
+    setIsPublishing(true)
+    setErrorMessage(null)
+    setSuccessMessage(null)
+
+    try {
+      const updated = await adminProductService.updateAdminProduct(id, {
+        status: 'active',
+      })
+      updateLocalStatus('active', updated.publishedAt)
+      setForm((prev) => ({ ...prev, status: 'active' }))
+      setSuccessMessage('Sản phẩm đã được xuất bản và đang hoạt động trên cửa hàng.')
+      handleSafeRefetch()
+    } catch (err: unknown) {
+      const msg = getApiErrorMessage(
+        err,
+        'Không thể xuất bản sản phẩm. Vui lòng kiểm tra lại điều kiện.',
+      )
+      setErrorMessage(msg)
+    } finally {
+      setIsPublishing(false)
+    }
+  }
+
+  // Xóa sản phẩm
   const handleDeleteConfirm = async () => {
     if (!isAdmin || !id || !baselineProduct) return
 
@@ -471,36 +507,53 @@ export const ProductFormPage = () => {
     } catch (err: unknown) {
       setIsDeleteModalOpen(false)
       setErrorMessage(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-          'Không thể xóa sản phẩm. Vui lòng thử lại.',
+        getApiErrorMessage(err, 'Không thể xóa sản phẩm. Vui lòng thử lại.'),
       )
     } finally {
       setIsDeleting(false)
     }
   }
 
-  // Đường dẫn quay lại danh sách
+  const handleToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    if (type === 'success') {
+      setSuccessMessage(message)
+      setErrorMessage(null)
+    } else if (type === 'error') {
+      setErrorMessage(message)
+    } else {
+      setInfoMessage(message)
+    }
+  }
+
+  // Hoàn tác các thay đổi chưa lưu trong chế độ sửa (Tab 1)
+  const handleResetForm = () => {
+    if (!baselineProduct) return
+    setForm(mapDetailToForm(baselineProduct))
+    setFieldErrors({})
+    setErrorMessage(null)
+    setInfoMessage('Đã hoàn tác các thay đổi chưa lưu.')
+  }
+
   const backUrl = (location.state as { from?: string } | null)?.from || '/admin/products'
 
-  // Kiểm tra cảnh báo slug thay đổi trong Edit mode
   const isSlugChangedInEdit =
     isEditMode && baselineProduct && form.slug.trim() !== (baselineProduct.slug || '')
 
-  // Loading skeleton khi tải chi tiết
-  if (isEditMode && isLoadingDetail) {
+  // Skeleton loading khi tải chi tiết
+  if (isEditMode && isLoadingDetail && !baselineProduct) {
     return (
       <div className={styles.productFormPage}>
         <div className={styles.skeletonContainer}>
           <Skeleton width="200px" height="20px" />
           <Skeleton width="400px" height="36px" />
+          <Skeleton width="100%" height="80px" />
           <div className={styles.formLayout}>
             <div className={styles.mainColumn}>
               <Skeleton width="100%" height="280px" />
               <Skeleton width="100%" height="180px" />
             </div>
             <div className={styles.sideColumn}>
-              <Skeleton width="100%" height="220px" />
-              <Skeleton width="100%" height="180px" />
+              <Skeleton width="100%" height="240px" />
             </div>
           </div>
         </div>
@@ -508,95 +561,71 @@ export const ProductFormPage = () => {
     )
   }
 
-  // Lỗi tải chi tiết sản phẩm
-  if (isEditMode && fetchError) {
+  // Màn hình lỗi nếu không tìm thấy sản phẩm
+  if (isEditMode && fetchError && !baselineProduct) {
     return (
       <div className={styles.productFormPage}>
-        <EmptyState
-          title="Không tìm thấy sản phẩm"
-          description={fetchError}
-          action={
-            <Button variant="primary" onClick={() => navigate('/admin/products')}>
-              Quay lại danh sách sản phẩm
+        <div className={styles.errorContainer}>
+          <AlertCircle size={48} className={styles.errorIcon} />
+          <h2>Lỗi tải dữ liệu sản phẩm</h2>
+          <p>{fetchError}</p>
+          <div className={styles.errorActions}>
+            <Button variant="secondary" onClick={() => navigate(backUrl)}>
+              Quay lại danh sách
             </Button>
-          }
-        />
+            <Button
+              variant="primary"
+              onClick={() => handleSafeRefetch()}
+              leftIcon={<RotateCcw size={16} />}
+            >
+              Thử lại
+            </Button>
+          </div>
+        </div>
       </div>
     )
   }
 
+  const currentProduct = baselineProduct || product
+
   return (
     <div className={styles.productFormPage}>
-      {/* Breadcrumb Navigation */}
+      {/* Breadcrumb Nav */}
       <nav className={styles.breadcrumbNav} aria-label="Breadcrumb">
-        <Link to="/admin">Quản trị</Link>
-        <span className={styles.separator}>/</span>
-        <Link to={backUrl}>Sản phẩm</Link>
+        <Link to="/admin/products">Sản phẩm</Link>
         <span className={styles.separator}>/</span>
         <span className={styles.current}>
-          {isEditMode ? baselineProduct?.name || 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}
+          {isEditMode ? currentProduct?.name || 'Chỉnh sửa' : 'Tạo sản phẩm mới'}
         </span>
       </nav>
 
       {/* Header */}
-      <header className={styles.header}>
+      <div className={styles.header}>
         <div className={styles.headerLeft}>
           <Link to={backUrl} className={styles.backLink}>
             <ArrowLeft size={16} />
             <span>Quay lại danh sách</span>
           </Link>
-          <div className={styles.titleRow}>
-            <h1>{isEditMode ? baselineProduct?.name || 'Sửa sản phẩm' : 'Thêm sản phẩm mới'}</h1>
-            {isEditMode && baselineProduct && (
-              <Badge variant={getProductStatusBadge(baselineProduct.status).variant} size="md">
-                {getProductStatusBadge(baselineProduct.status).label}
-              </Badge>
-            )}
-          </div>
-          {isEditMode && baselineProduct && (
-            <div className={styles.metaInfo}>
-              <span>Mã ID: #{baselineProduct.id}</span>
-              <span> &bull; Tạo lúc: {formatDateTime(baselineProduct.createdAt)}</span>
-              <span> &bull; Cập nhật: {formatDateTime(baselineProduct.updatedAt)}</span>
-            </div>
-          )}
+          <h1 className={styles.pageTitle}>
+            {isEditMode
+              ? `Chỉnh sửa: ${currentProduct?.name || 'Sản phẩm'}`
+              : 'Thêm sản phẩm mới'}
+          </h1>
+          <p className={styles.pageSubtitle}>
+            {isEditMode
+              ? 'Quản lý thông tin, biến thể, hình ảnh và trạng thái xuất bản'
+              : 'Nhập thông tin cơ bản để bắt đầu tạo sản phẩm'}
+          </p>
         </div>
-
-        <div className={styles.headerActions}>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => navigate(backUrl)}
-            disabled={isSubmitting}
-          >
-            Hủy
-          </Button>
-
-          {isAdmin && (
-            <Button
-              type="submit"
-              form="product-form"
-              variant="primary"
-              disabled={isSubmitting}
-              leftIcon={<Save size={16} />}
-            >
-              {isSubmitting
-                ? 'Đang lưu...'
-                : isEditMode
-                  ? 'Lưu thay đổi'
-                  : 'Tạo sản phẩm'}
-            </Button>
-          )}
-        </div>
-      </header>
+      </div>
 
       {/* Operator Banner */}
       {isOperator && (
-        <div className={`${styles.alertBanner} ${styles.info}`} role="alert">
-          <div className={styles.alertContent}>
+        <div className={styles.operatorBanner} role="note">
+          <div className={styles.operatorContent}>
             <AlertCircle size={18} />
             <span>
-              <strong>Chế độ chỉ đọc:</strong> Bạn đang đăng nhập với vai trò Nhân viên vận hành
+              <strong>Chế độ xem:</strong> Bạn đang đăng nhập với vai trò Nhân viên vận hành
               (Operator). Bạn chỉ có quyền xem thông tin sản phẩm và không thể sửa hoặc xóa.
             </span>
           </div>
@@ -655,7 +684,6 @@ export const ProductFormPage = () => {
         </div>
       )}
 
-      {/* Lookups Error Banner */}
       {lookupsError && (
         <div className={`${styles.alertBanner} ${styles.warning}`} role="alert">
           <div className={styles.alertContent}>
@@ -676,384 +704,436 @@ export const ProductFormPage = () => {
         </div>
       )}
 
-      {/* Main Form */}
-      <form id="product-form" onSubmit={handleSubmit} noValidate>
-        <div className={styles.formLayout}>
-          {/* Main Column */}
-          <div className={styles.mainColumn}>
-            {/* Card 1: Thông tin cơ bản */}
-            <div className={styles.card}>
-              <div className={styles.cardHeader}>
-                <h2 className={styles.cardTitle}>Thông tin cơ bản</h2>
-                <span className={styles.cardSubtitle}>Tên, đường dẫn và mô tả</span>
-              </div>
-              <div className={styles.cardBody}>
-                <Input
-                  label="Tên sản phẩm *"
-                  placeholder="Ví dụ: Áo Sơ Mi Oxford Dài Tay"
-                  value={form.name}
-                  onChange={handleNameChange}
-                  errorMessage={fieldErrors.name}
-                  disabled={isOperator || isSubmitting}
-                  fullWidth
-                />
+      {/* THẺ TRẠNG THÁI & CHECKLIST XUẤT BẢN (Chỉ hiện khi ở Edit Mode) */}
+      {isEditMode && currentProduct && (
+        <PublishStatusCard
+          product={currentProduct}
+          isAdmin={isAdmin}
+          isFormDirty={isDirty}
+          isPublishing={isPublishing}
+          onPublish={handlePublish}
+          onSavePrompt={() => {
+            setErrorMessage(
+              'Biểu mẫu thông tin cơ bản có thay đổi chưa lưu. Hãy lưu trước khi bấm Xuất bản.',
+            )
+            handleTabChange('basic')
+          }}
+        />
+      )}
 
-                <div>
+      {/* THANH ĐIỀU HƯỚNG TABS (Chỉ hiện khi ở Edit Mode) */}
+      {isEditMode && currentProduct && (
+        <div className={styles.tabBar}>
+          <button
+            type="button"
+            className={`${styles.tabBtn} ${activeTab === 'basic' ? styles.active : ''}`}
+            onClick={() => handleTabChange('basic')}
+          >
+            <FileText size={16} />
+            <span>Thông tin cơ bản</span>
+            {isDirty && <span className={styles.dirtyDot} title="Có thay đổi chưa lưu" />}
+          </button>
+
+          <button
+            type="button"
+            className={`${styles.tabBtn} ${activeTab === 'variants' ? styles.active : ''}`}
+            onClick={() => handleTabChange('variants')}
+          >
+            <Layers size={16} />
+            <span>Biến thể &amp; Tồn kho</span>
+            <span className={styles.tabBadge}>
+              {currentProduct.variants.filter((v) => !v.deletedAt).length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className={`${styles.tabBtn} ${activeTab === 'images' ? styles.active : ''}`}
+            onClick={() => handleTabChange('images')}
+          >
+            <ImageIcon size={16} />
+            <span>Thư viện hình ảnh</span>
+            <span className={styles.tabBadge}>{currentProduct.images.length}</span>
+          </button>
+        </div>
+      )}
+
+      {/* TAB 1: THÔNG TIN CƠ BẢN (Luôn giữ mounted trong DOM để không mất dữ liệu đang gõ) */}
+      <div style={{ display: activeTab === 'basic' ? 'block' : 'none' }}>
+        <form id="product-form" onSubmit={handleSubmit} noValidate>
+          <div className={styles.formLayout}>
+            {/* Cột chính */}
+            <div className={styles.mainColumn}>
+              {/* Card: Thông tin cơ bản */}
+              <div className={styles.card}>
+                <div className={styles.cardHeader}>
+                  <h2 className={styles.cardTitle}>Thông tin cơ bản</h2>
+                  <span className={styles.cardSubtitle}>Tên, đường dẫn và mô tả</span>
+                </div>
+                <div className={styles.cardBody}>
                   <Input
-                    label="Đường dẫn (Slug)"
-                    placeholder="Tuỳ chọn - tự sinh từ tên nếu để trống"
-                    value={form.slug}
-                    onChange={handleSlugChange}
-                    errorMessage={fieldErrors.slug}
-                    helperText={
-                      !isEditMode
-                        ? 'Tự động tạo theo tên sản phẩm. Bạn có thể sửa tay nếu muốn.'
-                        : undefined
-                    }
+                    label="Tên sản phẩm *"
+                    placeholder="Ví dụ: Áo Sơ Mi Oxford Dài Tay"
+                    value={form.name}
+                    onChange={handleNameChange}
+                    errorMessage={fieldErrors.name}
                     disabled={isOperator || isSubmitting}
                     fullWidth
                   />
-                  {isSlugChangedInEdit && (
-                    <div className={styles.slugWarning}>
-                      <AlertTriangle size={16} />
-                      <span>
-                        <strong>Cảnh báo:</strong> Đổi slug sẽ làm thay đổi đường dẫn URL sản phẩm.
-                        Các liên kết cũ ngoài website có thể bị ảnh hưởng.
-                      </span>
-                    </div>
-                  )}
-                </div>
 
-                <div className={styles.twoColGrid}>
+                  <div>
+                    <Input
+                      label="Đường dẫn (Slug)"
+                      placeholder="Tuỳ chọn - tự sinh từ tên nếu để trống"
+                      value={form.slug}
+                      onChange={handleSlugChange}
+                      errorMessage={fieldErrors.slug}
+                      helperText={
+                        !isEditMode
+                          ? 'Tự động tạo theo tên sản phẩm. Bạn có thể sửa tay nếu muốn.'
+                          : undefined
+                      }
+                      disabled={isOperator || isSubmitting}
+                      fullWidth
+                    />
+                    {isSlugChangedInEdit && (
+                      <div className={styles.slugWarning}>
+                        <AlertTriangle size={16} />
+                        <span>
+                          <strong>Cảnh báo:</strong> Đổi slug sẽ làm thay đổi đường dẫn URL sản phẩm.
+                          Các liên kết cũ ngoài website có thể bị ảnh hưởng.
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className={styles.twoColGrid}>
+                    <Select
+                      label="Giới tính *"
+                      value={form.gender}
+                      onChange={(e) => {
+                        setForm((prev) => ({
+                          ...prev,
+                          gender: e.target.value as ProductGender,
+                        }))
+                        if (fieldErrors.gender) {
+                          setFieldErrors((prev) => {
+                            const next = { ...prev }
+                            delete next.gender
+                            return next
+                          })
+                        }
+                      }}
+                      options={GENDER_OPTIONS}
+                      errorMessage={fieldErrors.gender}
+                      disabled={isOperator || isSubmitting}
+                      fullWidth
+                    />
+
+                    <Input
+                      label="Chất liệu"
+                      placeholder="Ví dụ: 100% Cotton, Vải dạ..."
+                      value={form.material}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, material: e.target.value }))
+                      }
+                      disabled={isOperator || isSubmitting}
+                      fullWidth
+                    />
+                  </div>
+
+                  <Textarea
+                    label="Mô tả sản phẩm"
+                    placeholder="Nhập thông tin chi tiết về sản phẩm, đặc điểm nổi bật..."
+                    value={form.description}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, description: e.target.value }))
+                    }
+                    rows={6}
+                    disabled={isOperator || isSubmitting}
+                    fullWidth
+                  />
+                </div>
+              </div>
+
+              {/* Card: Giá bán */}
+              <div className={styles.card}>
+                <div className={styles.cardHeader}>
+                  <h2 className={styles.cardTitle}>Giá bán</h2>
+                  <span className={styles.cardSubtitle}>
+                    Thiết lập giá bán cơ bản và giá khuyến mãi
+                  </span>
+                </div>
+                <div className={styles.cardBody}>
+                  <div className={styles.twoColGrid}>
+                    <div>
+                      <Input
+                        label="Giá bán cơ bản (VND) *"
+                        placeholder="0"
+                        value={form.basePrice}
+                        onChange={handleBasePriceChange}
+                        errorMessage={fieldErrors.basePrice}
+                        helperText={
+                          form.basePrice
+                            ? `Xem trước: ${formatCurrency(parseInt(form.basePrice, 10) || 0)}`
+                            : undefined
+                        }
+                        disabled={isOperator || isSubmitting}
+                        fullWidth
+                      />
+                    </div>
+
+                    <div>
+                      <Input
+                        label="Giá so sánh / Giá gốc (VND)"
+                        placeholder="0 (Tuỳ chọn)"
+                        value={form.compareAtPrice}
+                        onChange={handleCompareAtPriceChange}
+                        errorMessage={fieldErrors.compareAtPrice}
+                        helperText={
+                          form.compareAtPrice
+                            ? `Xem trước: ${formatCurrency(
+                                parseInt(form.compareAtPrice, 10) || 0,
+                              )}`
+                            : 'Dùng để hiển thị giá gạch bỏ khi có giảm giá.'
+                        }
+                        disabled={isOperator || isSubmitting}
+                        fullWidth
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Cột phụ (Sidebar) */}
+            <div className={styles.sideColumn}>
+              {/* Phân loại: Danh mục & Thương hiệu */}
+              <div className={styles.card}>
+                <div className={styles.cardHeader}>
+                  <h2 className={styles.cardTitle}>Phân loại</h2>
+                </div>
+                <div className={styles.cardBody}>
                   <Select
-                    label="Giới tính *"
-                    value={form.gender}
+                    label="Danh mục sản phẩm *"
+                    placeholder="-- Chọn danh mục --"
+                    value={form.categoryId}
                     onChange={(e) => {
-                      setForm((prev) => ({
-                        ...prev,
-                        gender: e.target.value as ProductGender,
-                      }))
-                      if (fieldErrors.gender) {
+                      const val = e.target.value ? Number(e.target.value) : ''
+                      setForm((prev) => ({ ...prev, categoryId: val }))
+                      if (fieldErrors.categoryId) {
                         setFieldErrors((prev) => {
                           const next = { ...prev }
-                          delete next.gender
+                          delete next.categoryId
                           return next
                         })
                       }
                     }}
-                    options={GENDER_OPTIONS}
-                    errorMessage={fieldErrors.gender}
-                    disabled={isOperator || isSubmitting}
+                    errorMessage={fieldErrors.categoryId}
+                    disabled={isOperator || isSubmitting || isLoadingLookups}
                     fullWidth
-                  />
+                  >
+                    <option value="">-- Chọn danh mục --</option>
+                    {lookups.categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </Select>
 
-                  <Input
-                    label="Chất liệu"
-                    placeholder="Ví dụ: 100% Cotton Premium"
-                    value={form.material}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, material: e.target.value }))
-                    }
-                    errorMessage={fieldErrors.material}
-                    disabled={isOperator || isSubmitting}
-                    fullWidth
-                  />
-                </div>
-
-                <Textarea
-                  label="Mô tả sản phẩm"
-                  placeholder="Nhập thông tin chi tiết về sản phẩm..."
-                  rows={5}
-                  value={form.description}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, description: e.target.value }))
-                  }
-                  errorMessage={fieldErrors.description}
-                  disabled={isOperator || isSubmitting}
-                  fullWidth
-                />
-              </div>
-            </div>
-
-            {/* Card 2: Giá sản phẩm */}
-            <div className={styles.card}>
-              <div className={styles.cardHeader}>
-                <h2 className={styles.cardTitle}>Giá bán</h2>
-                <span className={styles.cardSubtitle}>Đơn vị tiền tệ: VND (Chỉ số nguyên)</span>
-              </div>
-              <div className={styles.cardBody}>
-                <div className={styles.twoColGrid}>
-                  <div>
-                    <Input
-                      label="Giá bán (base_price) *"
-                      placeholder="0"
-                      value={form.basePrice}
-                      onChange={(e) => handlePriceChange('basePrice', e.target.value)}
-                      errorMessage={fieldErrors.basePrice}
-                      helperText="Giá bán chính thức của sản phẩm"
-                      disabled={isOperator || isSubmitting}
-                      fullWidth
-                    />
-                    {form.basePrice && !isNaN(Number(form.basePrice)) && (
-                      <div className={styles.pricePreview}>
-                        Hiển thị:{' '}
-                        <span className={styles.highlight}>
-                          {formatCurrency(Number(form.basePrice))}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <Input
-                      label="Giá so sánh (compare_at_price)"
-                      placeholder="0"
-                      value={form.compareAtPrice}
-                      onChange={(e) =>
-                        handlePriceChange('compareAtPrice', e.target.value)
+                  <Select
+                    label="Thương hiệu *"
+                    placeholder="-- Chọn thương hiệu --"
+                    value={form.brandId}
+                    onChange={(e) => {
+                      const val = e.target.value ? Number(e.target.value) : ''
+                      setForm((prev) => ({ ...prev, brandId: val }))
+                      if (fieldErrors.brandId) {
+                        setFieldErrors((prev) => {
+                          const next = { ...prev }
+                          delete next.brandId
+                          return next
+                        })
                       }
-                      errorMessage={fieldErrors.compareAtPrice}
-                      helperText="Giá gốc trước khi giảm (phải lớn hơn giá bán)"
-                      disabled={isOperator || isSubmitting}
-                      fullWidth
-                    />
-                    {form.compareAtPrice && !isNaN(Number(form.compareAtPrice)) && (
-                      <div className={styles.pricePreview}>
-                        Hiển thị:{' '}
-                        <span className={styles.highlight}>
-                          {formatCurrency(Number(form.compareAtPrice))}
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                    }}
+                    errorMessage={fieldErrors.brandId}
+                    disabled={isOperator || isSubmitting || isLoadingLookups}
+                    fullWidth
+                  >
+                    <option value="">-- Chọn thương hiệu --</option>
+                    {lookups.brands.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </Select>
                 </div>
               </div>
-            </div>
 
-            {/* Card 3: Biến thể & Hình ảnh (Lượt B Placeholder) */}
-            <div className={styles.phaseBCard}>
-              <div className={styles.phaseBHeader}>
-                <h3>Biến thể &amp; Thư viện ảnh (Lượt B)</h3>
-                <Badge variant="outline" size="sm">
-                  Giai đoạn kế tiếp
-                </Badge>
-              </div>
-              <div className={styles.phaseBContent}>
-                <p>
-                  Tính năng quản lý chi tiết màu sắc, kích thước, tồn kho từng biến thể, thư viện
-                  hình ảnh và kích hoạt trạng thái bán hàng sẽ được triển khai đầy đủ trong{' '}
-                  <strong>Lượt B</strong>.
-                </p>
+              {/* Trạng thái & Hiển thị */}
+              <div className={styles.card}>
+                <div className={styles.cardHeader}>
+                  <h2 className={styles.cardTitle}>Trạng thái &amp; Hiển thị</h2>
+                </div>
+                <div className={styles.cardBody}>
+                  {!isEditMode ? (
+                    <div>
+                      <Input
+                        label="Trạng thái"
+                        value="Bản nháp (draft)"
+                        disabled
+                        helperText="Sản phẩm mới luôn được tạo ở trạng thái Bản nháp."
+                        fullWidth
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      <Select
+                        label="Trạng thái sản phẩm"
+                        value={form.status}
+                        onChange={(e) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            status: e.target.value as ProductStatus,
+                          }))
+                        }
+                        disabled={isOperator || isSubmitting}
+                        fullWidth
+                        helperText={
+                          currentProduct?.status !== 'active'
+                            ? 'Để kích hoạt (active), vui lòng dùng nút "Xuất bản" sau khi đủ điều kiện.'
+                            : 'Bạn có thể chuyển về Bản nháp hoặc Lưu trữ.'
+                        }
+                      >
+                        {currentProduct?.status === 'active' ? (
+                          <>
+                            <option value="active">Đang hoạt động (active)</option>
+                            <option value="draft">Bản nháp (draft)</option>
+                            <option value="archived">Lưu trữ (archived)</option>
+                          </>
+                        ) : (
+                          <>
+                            <option value="draft">Bản nháp (draft)</option>
+                            <option value="archived">Lưu trữ (archived)</option>
+                            <option value="active" disabled>
+                              Đang hoạt động (Dùng nút Xuất bản)
+                            </option>
+                          </>
+                        )}
+                      </Select>
+                    </div>
+                  )}
+
+                  <Checkbox
+                    label="Sản phẩm nổi bật (Featured)"
+                    helperText="Hiển thị ở khu vực nổi bật trên trang chủ"
+                    checked={form.isFeatured}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, isFeatured: e.target.checked }))
+                    }
+                    disabled={isOperator || isSubmitting}
+                  />
+                </div>
               </div>
 
-              {isEditMode && baselineProduct && (
-                <div className={styles.phaseBStats}>
-                  <div className={styles.statItem}>
-                    <span className={styles.statLabel}>Số biến thể:</span>
-                    <span className={styles.statValue}>
-                      {baselineProduct.variantsCount || 0}
-                    </span>
+              {/* Vùng nguy hiểm: Xóa sản phẩm */}
+              {isEditMode && isAdmin && (
+                <div className={`${styles.card} ${styles.dangerZone}`}>
+                  <div className={styles.cardHeader}>
+                    <h2 className={`${styles.cardTitle} ${styles.dangerHeader}`}>
+                      Vùng nguy hiểm
+                    </h2>
                   </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statLabel}>Tổng tồn kho:</span>
-                    <span className={styles.statValue}>
-                      {baselineProduct.totalStock || 0}
-                    </span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statLabel}>Số hình ảnh:</span>
-                    <span className={styles.statValue}>
-                      {baselineProduct.images?.length || 0}
-                    </span>
+                  <div className={styles.cardBody}>
+                    <p className={styles.dangerText}>
+                      Xóa hoàn toàn sản phẩm khỏi hệ thống.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="primary"
+                      className={styles.dangerBtn}
+                      size="sm"
+                      onClick={() => setIsDeleteModalOpen(true)}
+                      disabled={isSubmitting || isDeleting}
+                      leftIcon={<Trash2 size={16} />}
+                    >
+                      Xóa sản phẩm này
+                    </Button>
                   </div>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Sidebar Column */}
-          <div className={styles.sideColumn}>
-            {/* Phân loại sản phẩm */}
-            <div className={styles.card}>
-              <div className={styles.cardHeader}>
-                <h2 className={styles.cardTitle}>Phân loại</h2>
-              </div>
-              <div className={styles.cardBody}>
-                <Select
-                  label="Danh mục sản phẩm *"
-                  placeholder="-- Chọn danh mục --"
-                  value={form.categoryId}
-                  onChange={(e) => {
-                    const val = e.target.value ? Number(e.target.value) : ''
-                    setForm((prev) => ({ ...prev, categoryId: val }))
-                    if (fieldErrors.categoryId) {
-                      setFieldErrors((prev) => {
-                        const next = { ...prev }
-                        delete next.categoryId
-                        return next
-                      })
-                    }
-                  }}
-                  errorMessage={fieldErrors.categoryId}
-                  disabled={isOperator || isSubmitting || isLoadingLookups}
-                  fullWidth
-                >
-                  <option value="">-- Chọn danh mục --</option>
-                  {lookups.categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </Select>
-
-                <Select
-                  label="Thương hiệu *"
-                  placeholder="-- Chọn thương hiệu --"
-                  value={form.brandId}
-                  onChange={(e) => {
-                    const val = e.target.value ? Number(e.target.value) : ''
-                    setForm((prev) => ({ ...prev, brandId: val }))
-                    if (fieldErrors.brandId) {
-                      setFieldErrors((prev) => {
-                        const next = { ...prev }
-                        delete next.brandId
-                        return next
-                      })
-                    }
-                  }}
-                  errorMessage={fieldErrors.brandId}
-                  disabled={isOperator || isSubmitting || isLoadingLookups}
-                  fullWidth
-                >
-                  <option value="">-- Chọn thương hiệu --</option>
-                  {lookups.brands.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-            </div>
-
-            {/* Trạng thái & Hiển thị */}
-            <div className={styles.card}>
-              <div className={styles.cardHeader}>
-                <h2 className={styles.cardTitle}>Trạng thái &amp; Hiển thị</h2>
-              </div>
-              <div className={styles.cardBody}>
-                {!isEditMode ? (
-                  <div>
-                    <Input
-                      label="Trạng thái"
-                      value="Bản nháp (draft)"
-                      disabled
-                      helperText="Sản phẩm mới luôn được tạo ở trạng thái Bản nháp."
-                      fullWidth
-                    />
-                  </div>
-                ) : (
-                  <div>
-                    <Select
-                      label="Trạng thái sản phẩm"
-                      value={form.status}
-                      onChange={(e) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          status: e.target.value as ProductStatus,
-                        }))
-                      }
-                      disabled={isOperator || isSubmitting}
-                      fullWidth
-                      helperText={
-                        baselineProduct?.status !== 'active'
-                          ? 'Kích hoạt sản phẩm sẽ được thực hiện ở Lượt B khi đã đủ biến thể và ảnh.'
-                          : 'Bạn có thể chuyển về Bản nháp hoặc Lưu trữ.'
-                      }
-                    >
-                      {baselineProduct?.status === 'active' ? (
-                        <>
-                          <option value="active">Đang hoạt động (active)</option>
-                          <option value="draft">Bản nháp (draft)</option>
-                          <option value="archived">Lưu trữ (archived)</option>
-                        </>
-                      ) : (
-                        <>
-                          <option value="draft">Bản nháp (draft)</option>
-                          <option value="archived">Lưu trữ (archived)</option>
-                          <option value="active" disabled>
-                            Đang hoạt động (Kích hoạt ở Lượt B)
-                          </option>
-                        </>
-                      )}
-                    </Select>
+          {/* Sticky Action Bar */}
+          {!isOperator && isAdmin && (
+            <div className={styles.stickyActionBar}>
+              <div className={styles.stickyStatus}>
+                {isEditMode && isDirty && (
+                  <div className={styles.dirtyBadge}>
+                    <AlertCircle size={14} />
+                    <span>Có thay đổi chưa lưu</span>
                   </div>
                 )}
-
-                <Checkbox
-                  label="Sản phẩm nổi bật (Featured)"
-                  helperText="Hiển thị ở khu vực nổi bật trên trang chủ"
-                  checked={form.isFeatured}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, isFeatured: e.target.checked }))
-                  }
-                  disabled={isOperator || isSubmitting}
-                />
+              </div>
+              <div className={styles.stickyActions}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={isEditMode ? handleResetForm : () => navigate(backUrl)}
+                  disabled={isSubmitting || (isEditMode && !isDirty)}
+                >
+                  {isEditMode ? 'Hủy thay đổi' : 'Hủy'}
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  disabled={isSubmitting || (isEditMode && !isDirty)}
+                  leftIcon={<Save size={16} />}
+                >
+                  {isSubmitting
+                    ? isEditMode
+                      ? 'Đang lưu...'
+                      : 'Đang tạo...'
+                    : isEditMode
+                      ? 'Lưu thay đổi'
+                      : 'Tạo sản phẩm'}
+                </Button>
               </div>
             </div>
-
-            {/* Vùng nguy hiểm: Xóa sản phẩm */}
-            {isEditMode && isAdmin && (
-              <div className={`${styles.card} ${styles.dangerZone}`}>
-                <div className={styles.cardHeader}>
-                  <h2 className={`${styles.cardTitle} ${styles.dangerHeader}`}>
-                    Vùng nguy hiểm
-                  </h2>
-                </div>
-                <div className={styles.cardBody}>
-                  <p className={styles.dangerText}>
-                    Xóa hoàn toàn sản phẩm khỏi hệ thống. Hành động này không thể hoàn tác nếu
-                    đã xóa vĩnh viễn.
-                  </p>
-                  <Button
-                    type="button"
-                    variant="primary"
-                    className={styles.dangerBtn}
-                    size="sm"
-                    onClick={() => setIsDeleteModalOpen(true)}
-                    disabled={isSubmitting || isDeleting}
-                    leftIcon={<Trash2 size={16} />}
-                  >
-                    Xóa sản phẩm này
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Mobile sticky action bar */}
-        <div className={styles.bottomBar}>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => navigate(backUrl)}
-            disabled={isSubmitting}
-          >
-            Hủy
-          </Button>
-
-          {isAdmin && (
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={isSubmitting}
-              leftIcon={<Save size={16} />}
-            >
-              {isSubmitting ? 'Đang lưu...' : isEditMode ? 'Lưu thay đổi' : 'Tạo sản phẩm'}
-            </Button>
           )}
-        </div>
-      </form>
+        </form>
+      </div>
+
+      {/* TAB 2: BIẾN THỂ & TỒN KHO */}
+      {isEditMode && currentProduct && activeTab === 'variants' && (
+        <VariantManagementTab
+          product={currentProduct}
+          lookups={lookups}
+          isAdmin={isAdmin}
+          onVariantSaved={(saved) => updateLocalVariant(saved)}
+          onVariantRemoved={(variantId) => removeLocalVariant(variantId)}
+          onStockAdjusted={(variantId, quantityAfter) =>
+            updateLocalStock(variantId, quantityAfter)
+          }
+          onRefetchDetail={handleSafeRefetch}
+          onToast={handleToast}
+        />
+      )}
+
+      {/* TAB 3: THƯ VIỆN HÌNH ẢNH */}
+      {isEditMode && currentProduct && activeTab === 'images' && (
+        <ImageManagementTab
+          product={currentProduct}
+          lookups={lookups}
+          isAdmin={isAdmin}
+          onImageAdded={(img) => updateLocalImage(img)}
+          onImageUpdated={(img) => updateLocalImage(img)}
+          onImageRemoved={(imgId) => removeLocalImage(imgId)}
+          onRefetchDetail={handleSafeRefetch}
+          onToast={handleToast}
+        />
+      )}
 
       {/* Modal Cảnh báo Rời Trang (useBlocker) */}
       <Modal

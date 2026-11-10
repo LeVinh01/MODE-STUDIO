@@ -1,0 +1,146 @@
+@use '@/styles/abstracts/variables' as *;
+@use '@/styles/abstracts/mixins' as *;
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.variantHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2-5) var(--space-3);
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  flex-wrap: wrap;
+
+  .swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1px solid var(--color-border);
+  }
+
+  .variantName {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+  }
+
+  .sku {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+  }
+
+  .currentStock {
+    margin-left: auto;
+    color: var(--color-text-secondary);
+
+    strong {
+      color: var(--color-text-primary);
+    }
+  }
+}
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-8);
+  color: var(--color-text-secondary);
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-xs);
+  text-align: left;
+
+  th {
+    padding: var(--space-2) var(--space-3);
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-semibold);
+    border-bottom: 1px solid var(--color-border);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: var(--space-2-5) var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-text-primary);
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+.timeCell {
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+}
+
+.deltaBadge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-xs);
+
+  &.positive {
+    background-color: var(--color-success-bg, #ecfdf5);
+    color: var(--color-success-text, #065f46);
+  }
+
+  &.negative {
+    background-color: var(--color-error-bg, #fef2f2);
+    color: var(--color-error, #dc2626);
+  }
+
+  &.neutral {
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text-secondary);
+  }
+}
+
+.afterCell {
+  font-weight: var(--font-weight-bold);
+}
+
+.reasonCell {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.userCell {
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.paginationWrapper {
+  display: flex;
+  justify-content: center;
+  padding-top: var(--space-2);
+}
+
+.errorAlert {
+  padding: var(--space-2-5) var(--space-3);
+  background-color: var(--color-error-bg, #fef2f2);
+  border: 1px solid var(--color-error-border, #fecaca);
+  border-radius: var(--radius-md);
+  color: var(--color-error, #dc2626);
+  font-size: var(--font-size-sm);
+}

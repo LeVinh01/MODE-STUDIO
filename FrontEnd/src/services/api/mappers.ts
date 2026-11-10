@@ -1,10 +1,16 @@
 import type {
+  AdminImageItem,
   AdminLookups,
   AdminProductDetail,
   AdminProductListItem,
+  AdminStockAdjustmentItem,
+  AdminVariantItem,
+  ApiAdminImageItem,
   ApiAdminLookups,
   ApiAdminProductDetail,
   ApiAdminProductListItem,
+  ApiAdminStockAdjustment,
+  ApiAdminVariantItem,
 } from '@/types/adminProduct'
 import type {
   ApiCartItem,
@@ -366,6 +372,91 @@ export const mapApiAdminProductListItemToAdminProductListItem = (
 }
 
 /**
+ * Chuyển đổi ApiAdminVariantItem sang AdminVariantItem (camelCase)
+ */
+export const mapApiAdminVariantItemToAdminVariantItem = (
+  item: ApiAdminVariantItem,
+): AdminVariantItem => {
+  return {
+    id: item.id,
+    productId: item.product_id,
+    colorId: item.color_id,
+    sizeId: item.size_id,
+    sku: item.sku,
+    stockQuantity: item.stock_quantity ?? 0,
+    isActive: Boolean(item.is_active),
+    note: item.note ?? null,
+    deletedAt: item.deleted_at ?? null,
+    createdAt: item.created_at,
+    updatedAt: item.updated_at,
+    color: item.color
+      ? {
+          id: item.color.id,
+          name: item.color.name,
+          hexCode: item.color.hex_code,
+        }
+      : null,
+    size: item.size
+      ? {
+          id: item.size.id,
+          name: item.size.name,
+        }
+      : null,
+  }
+}
+
+/**
+ * Chuyển đổi ApiAdminImageItem sang AdminImageItem (camelCase)
+ */
+export const mapApiAdminImageItemToAdminImageItem = (
+  item: ApiAdminImageItem,
+): AdminImageItem => {
+  return {
+    id: item.id,
+    productId: item.product_id,
+    colorId: item.color_id ?? null,
+    imageUrl: item.image_url,
+    altText: item.alt_text ?? null,
+    isMain: Boolean(item.is_main),
+    sortOrder: item.sort_order ?? 0,
+    color: item.color
+      ? {
+          id: item.color.id,
+          name: item.color.name,
+          hexCode: item.color.hex_code,
+        }
+      : null,
+    createdAt: item.created_at,
+    updatedAt: item.updated_at,
+  }
+}
+
+/**
+ * Chuyển đổi ApiAdminStockAdjustment sang AdminStockAdjustmentItem (camelCase)
+ */
+export const mapApiAdminStockAdjustmentToAdminStockAdjustment = (
+  item: ApiAdminStockAdjustment,
+): AdminStockAdjustmentItem => {
+  return {
+    id: item.id,
+    variantId: item.variant_id,
+    quantityBefore: item.quantity_before,
+    delta: item.delta,
+    quantityAfter: item.quantity_after,
+    reason: item.reason,
+    changedBy: item.changed_by
+      ? {
+          id: item.changed_by.id,
+          fullName: item.changed_by.full_name,
+          email: item.changed_by.email,
+          role: item.changed_by.role,
+        }
+      : null,
+    createdAt: item.created_at,
+  }
+}
+
+/**
  * Chuyển đổi ApiAdminProductDetail sang AdminProductDetail (camelCase)
  */
 export const mapApiAdminProductDetailToAdminProductDetail = (
@@ -376,8 +467,8 @@ export const mapApiAdminProductDetailToAdminProductDetail = (
     ...base,
     description: item.description ?? null,
     material: item.material ?? null,
-    variants: item.variants || [],
-    images: item.images || [],
+    variants: (item.variants || []).map(mapApiAdminVariantItemToAdminVariantItem),
+    images: (item.images || []).map(mapApiAdminImageItemToAdminImageItem),
   }
 }
 

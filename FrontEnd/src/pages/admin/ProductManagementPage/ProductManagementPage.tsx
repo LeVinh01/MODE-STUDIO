@@ -21,6 +21,7 @@ import type { AdminProductListItem } from '@/types/adminProduct'
 import type { ApiPaginationMeta } from '@/types/api'
 import { getProductStatusBadge, type ProductStatus } from '@/config/productStatus'
 import { formatCurrency, formatDateTime } from '@/utils/formatters'
+import { getApiErrorMessage } from '@/utils'
 import { Button, Badge, Select, Input } from '@/components/common'
 import { Pagination } from '@/components/navigation/Pagination'
 import { EmptyState, Skeleton, Modal } from '@/components/feedback'
@@ -328,9 +329,7 @@ export const ProductManagementPage = () => {
       }
     } catch (err) {
       setIsDeleting(false)
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message || 'Không thể xóa sản phẩm. Vui lòng thử lại.'
+      const msg = getApiErrorMessage(err, 'Không thể xóa sản phẩm. Vui lòng thử lại.')
       setDeleteError(msg)
     }
   }
@@ -386,9 +385,7 @@ export const ProductManagementPage = () => {
       fetchProducts()
     } catch (err) {
       setRowLoadingId(null)
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message || 'Không thể cập nhật trạng thái. Vui lòng thử lại.'
+      const msg = getApiErrorMessage(err, 'Không thể cập nhật trạng thái. Vui lòng thử lại.')
       setStatusChangeError(msg)
     }
   }
