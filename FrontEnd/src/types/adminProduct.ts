@@ -4,6 +4,8 @@ export type { ProductStatus }
 
 export type ProductGender = 'women' | 'men' | 'unisex'
 
+export type ProductFormTab = 'basic' | 'variants' | 'images'
+
 /**
  * Types cho DTO Backend trả về (snake_case)
  */
@@ -81,6 +83,24 @@ export interface ApiAdminProductDetail extends ApiAdminProductListItem {
   images?: ApiAdminImageItem[]
 }
 
+export interface ApiAdminStockAdjustmentUser {
+  id: number
+  full_name: string
+  email: string
+  role: string
+}
+
+export interface ApiAdminStockAdjustment {
+  id: number
+  variant_id: number
+  quantity_before: number
+  delta: number
+  quantity_after: number
+  reason: string
+  changed_by?: ApiAdminStockAdjustmentUser | null
+  created_at: string
+}
+
 export interface ApiAdminLookupColor {
   id: number
   name: string
@@ -153,11 +173,69 @@ export interface AdminProductListItem {
   mainImage: AdminProductMainImage | null
 }
 
+export interface AdminVariantColor {
+  id: number
+  name: string
+  hexCode: string
+}
+
+export interface AdminVariantSize {
+  id: number
+  name: string
+}
+
+export interface AdminVariantItem {
+  id: number
+  productId: number
+  colorId: number
+  sizeId: number
+  sku: string
+  stockQuantity: number
+  isActive: boolean
+  note: string | null
+  deletedAt: string | null
+  createdAt: string
+  updatedAt: string
+  color: AdminVariantColor | null
+  size: AdminVariantSize | null
+}
+
+export interface AdminImageItem {
+  id: number
+  productId: number
+  colorId: number | null
+  imageUrl: string
+  altText: string | null
+  isMain: boolean
+  sortOrder: number
+  color: AdminVariantColor | null
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface AdminStockAdjustmentUser {
+  id: number
+  fullName: string
+  email: string
+  role: string
+}
+
+export interface AdminStockAdjustmentItem {
+  id: number
+  variantId: number
+  quantityBefore: number
+  delta: number
+  quantityAfter: number
+  reason: string
+  changedBy: AdminStockAdjustmentUser | null
+  createdAt: string
+}
+
 export interface AdminProductDetail extends AdminProductListItem {
   description: string | null
   material: string | null
-  variants: ApiAdminVariantItem[]
-  images: ApiAdminImageItem[]
+  variants: AdminVariantItem[]
+  images: AdminImageItem[]
 }
 
 export interface AdminLookups {
@@ -201,8 +279,40 @@ export interface AdminProductStorePayload {
 
 export type AdminProductUpdatePayload = Partial<AdminProductStorePayload>
 
+export interface AdminVariantStorePayload {
+  color_id: number
+  size_id: number
+  sku?: string | null
+  stock_quantity: number
+  is_active?: boolean
+  note?: string | null
+}
+
+export interface AdminVariantUpdatePayload {
+  color_id?: number
+  size_id?: number
+  sku?: string | null
+  is_active?: boolean
+  note?: string | null
+}
+
+export type StockAdjustmentType = 'set' | 'increment' | 'decrement'
+
+export interface AdminStockAdjustmentPayload {
+  type: StockAdjustmentType
+  quantity: number
+  reason: string
+}
+
+export interface AdminProductImageUpdatePayload {
+  color_id?: number | null
+  alt_text?: string | null
+  is_main?: boolean
+  sort_order?: number
+}
+
 /**
- * Form values dùng trong component ProductForm
+ * Form values dùng trong component ProductForm (Tab Thông tin cơ bản)
  */
 export interface ProductFormValues {
   name: string
