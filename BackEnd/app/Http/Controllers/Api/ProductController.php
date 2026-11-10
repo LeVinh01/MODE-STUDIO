@@ -89,11 +89,65 @@ class ProductController extends Controller
             $query->where('gender', $request->input('gender'));
         }
 
-        // 7. Tìm theo từ khóa q (escape !, %, _)
-        if ($request->filled('q')) {
-            $rawTerm = (string) $request->input('q');
-            $escaped = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $rawTerm);
-            $query->whereRaw("name LIKE ? ESCAPE '!'", ["%{$escaped}%"]);
+        // 7. Tìm theo từ khóa search (hoặc q làm dự phòng)
+        $rawSearch = $request->input('search', $request->input('q'));
+        $search = is_string($rawSearch) ? trim($rawSearch) : '';
+        if (mb_strlen($search) > 150) {
+            $search = mb_substr($search, 0, 150);
+        }
+
+        if ($search !== '') {
+            // Tách từ khóa theo khoảng trắng, tối đa 5 từ
+            $words = array_values(array_filter(preg_split('/\s+/u', $search), fn($w) => $w !== ''));
+            $words = array_slice($words, 0, 5);
+
+            if (!empty($words)) {
+                $query->where(function ($q) use ($words) {
+                    foreach ($words as $word) {
+                        // Tạo các biến thể cho từ khóa:
+                        // Yêu cầu: Mở rộng d -> đ: chỉ khi từ khóa có 'd'/'D' mà KHÔNG có 'đ'/'Đ'
+                        // Giữ nguyên từ gốc (OR thêm biến thể); KHÔNG thay ngược đ -> d
+                        $variants = [$word];
+                        $hasD = (mb_stripos($word, 'd') !== false);
+                        $hasDWithStroke = (mb_stripos($word, 'đ') !== false);
+
+                        if ($hasD && !$hasDWithStroke) {
+                            $dVariant = str_ireplace('d', 'đ', $word);
+                            if ($dVariant !== $word && !in_array($dVariant, $variants, true)) {
+                                $variants[] = $dVariant;
+                            }
+                        }
+
+                        // Mỗi từ khóa (gồm các biến thể) phải khớp ít nhất 1 cột
+                        $q->where(function ($subQuery) use ($variants) {
+                            foreach ($variants as $idx => $variant) {
+                                // Escape ký tự đặc biệt của LIKE (!, %, _) bằng '!'
+                                $escaped = strtr($variant, [
+                                    '!' => '!!',
+                                    '%' => '!%',
+                                    '_' => '!_',
+                                ]);
+                                $pattern = "%{$escaped}%";
+
+                                $clause = ($idx === 0) ? 'where' : 'orWhere';
+
+                                $subQuery->$clause(function ($colQuery) use ($pattern) {
+                                    $colQuery->whereRaw("name LIKE ? ESCAPE '!'", [$pattern])
+                                        ->orWhereRaw("slug LIKE ? ESCAPE '!'", [$pattern])
+                                        ->orWhereRaw("description LIKE ? ESCAPE '!'", [$pattern])
+                                        ->orWhereRaw("material LIKE ? ESCAPE '!'", [$pattern])
+                                        ->orWhereHas('brand', function ($b) use ($pattern) {
+                                            $b->whereRaw("name LIKE ? ESCAPE '!'", [$pattern]);
+                                        })
+                                        ->orWhereHas('category', function ($c) use ($pattern) {
+                                            $c->whereRaw("name LIKE ? ESCAPE '!'", [$pattern]);
+                                        });
+                                });
+                            }
+                        });
+                    }
+                });
+            }
         }
 
         // 8. Filter featured
@@ -102,12 +156,29 @@ class ProductController extends Controller
         }
 
         // 9. Sắp xếp (sort) kèm tiêu chí phụ id DESC để ổn định phân trang
+        $hasCustomSort = $request->filled('sort');
         $sort = $request->input('sort', 'newest');
-        match ($sort) {
-            'price_asc'  => $query->orderBy('base_price', 'asc'),
-            'price_desc' => $query->orderBy('base_price', 'desc'),
-            default      => $query->orderBy('published_at', 'desc'),
-        };
+
+        if ($hasCustomSort) {
+            match ($sort) {
+                'price_asc'  => $query->orderBy('base_price', 'asc'),
+                'price_desc' => $query->orderBy('base_price', 'desc'),
+                default      => $query->orderBy('published_at', 'desc'),
+            };
+        } else {
+            // Nếu có từ khóa tìm kiếm và khách không chọn sắp xếp riêng:
+            // Ưu tiên sản phẩm có tên chứa từ khóa tìm kiếm trước
+            if ($search !== '') {
+                $escapedSearch = strtr($search, [
+                    '!' => '!!',
+                    '%' => '!%',
+                    '_' => '!_',
+                ]);
+                $searchPattern = "%{$escapedSearch}%";
+                $query->orderByRaw("CASE WHEN name LIKE ? ESCAPE '!' THEN 0 ELSE 1 END", [$searchPattern]);
+            }
+            $query->orderBy('published_at', 'desc');
+        }
         $query->orderBy('id', 'desc');
 
         // 10. Phân trang

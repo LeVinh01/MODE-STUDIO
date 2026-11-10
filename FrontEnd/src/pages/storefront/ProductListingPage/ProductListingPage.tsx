@@ -1,10 +1,11 @@
-import { useEffect, useState, useMemo } from 'react'
-import { SlidersHorizontal, AlertCircle, X } from 'lucide-react'
+import { useEffect, useState, useMemo, useRef } from 'react'
+import { SlidersHorizontal, AlertCircle, X, Search } from 'lucide-react'
 import { Breadcrumbs, type BreadcrumbItem } from '@/components/navigation/Breadcrumbs'
 import { Pagination } from '@/components/navigation/Pagination'
 import { Select } from '@/components/common/Select'
 import { Button } from '@/components/common/Button'
 import { Badge } from '@/components/common/Badge'
+import { Input } from '@/components/common/Input'
 import { Drawer } from '@/components/feedback/Drawer'
 import { EmptyState } from '@/components/feedback/EmptyState'
 import { ProductCard, ProductCardSkeleton } from '@/components/storefront/ProductCard'
@@ -66,6 +67,7 @@ export const ProductListingPage = () => {
     updateUrl,
     setPage,
     setSort,
+    setSearch,
     clearAllFilters,
   } = useProductFilters()
 
@@ -83,6 +85,62 @@ export const ProductListingPage = () => {
   // 3. Mobile drawer temporary filter state
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false)
   const [tempFilters, setTempFilters] = useState<ParsedFilters>(parsedFilters)
+
+  // 4. Local search input state (debounce 400ms để bảo vệ Telex gõ tiếng Việt)
+  const [localSearch, setLocalSearch] = useState<string>(parsedFilters.search)
+  const isTypingRef = useRef<boolean>(false)
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Đồng bộ local input khi search param từ URL thay đổi (Back/Forward, clear chip, SearchModal, v.v.)
+  // Chỉ cập nhật nếu người dùng KHÔNG đang gõ dở
+  useEffect(() => {
+    if (!isTypingRef.current) {
+      setLocalSearch(parsedFilters.search)
+    }
+  }, [parsedFilters.search])
+
+  // Dọn dẹp timer khi unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
+    }
+  }, [])
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value
+    isTypingRef.current = true
+    setLocalSearch(val)
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      isTypingRef.current = false
+      setSearch(val)
+    }, 400)
+  }
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
+      isTypingRef.current = false
+      setSearch(localSearch)
+    }
+  }
+
+  const handleClearSearch = () => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
+    isTypingRef.current = false
+    setLocalSearch('')
+    setSearch('')
+  }
 
   // Wishlist mock tracking
   const [wishlist, setWishlist] = useState<Record<string, boolean>>({})
@@ -188,7 +246,7 @@ export const ProductListingPage = () => {
     if (parsedFilters.minPrice !== undefined || parsedFilters.maxPrice !== undefined) count++
     if (parsedFilters.colorIds.length > 0) count += parsedFilters.colorIds.length
     if (parsedFilters.sizeIds.length > 0) count += parsedFilters.sizeIds.length
-    if (parsedFilters.q) count++
+    if (parsedFilters.search) count++
     return count
   }, [parsedFilters])
 
@@ -205,26 +263,27 @@ export const ProductListingPage = () => {
         })
       }
       items.push({ label: activeCategory.targetCategory.name })
-    } else if (parsedFilters.q) {
+    } else if (parsedFilters.search) {
       items.push({ label: 'Bộ Sưu Tập', to: '/products' })
-      items.push({ label: `Tìm kiếm: "${parsedFilters.q}"` })
+      items.push({ label: `Tìm kiếm: "${parsedFilters.search}"` })
     } else {
       items.push({ label: 'Tất Cả Thiết Kế' })
     }
 
     return items
-  }, [activeCategory, parsedFilters.q])
+  }, [activeCategory, parsedFilters.search])
 
   // Tiêu đề trang
   const pageHeading = useMemo(() => {
-    if (parsedFilters.q) {
-      return `Kết Quả Tìm Kiếm: "${parsedFilters.q}"`
+    if (parsedFilters.search) {
+      const total = paginationMeta?.total ?? products.length
+      return `Kết quả cho "${parsedFilters.search}" (${total} sản phẩm)`
     }
     if (activeCategory) {
       return activeCategory.targetCategory.name
     }
     return 'Tất Cả Thiết Kế May Đo'
-  }, [parsedFilters.q, activeCategory])
+  }, [parsedFilters.search, paginationMeta?.total, products.length, activeCategory])
 
   return (
     <div className={styles.page}>
@@ -271,6 +330,30 @@ export const ProductListingPage = () => {
           </div>
 
           <div className={styles.toolbarRight}>
+            <div className={styles.searchBarWrapper}>
+              <Input
+                type="text"
+                placeholder="Tìm kiếm thiết kế..."
+                value={localSearch}
+                onChange={handleSearchChange}
+                onKeyDown={handleSearchKeyDown}
+                leftIcon={<Search size={16} />}
+                rightIcon={
+                  localSearch ? (
+                    <button
+                      type="button"
+                      onClick={handleClearSearch}
+                      className={styles.clearSearchBtn}
+                      aria-label="Xóa từ khóa tìm kiếm"
+                    >
+                      <X size={14} />
+                    </button>
+                  ) : undefined
+                }
+                aria-label="Tìm kiếm sản phẩm"
+              />
+            </div>
+
             <div className={styles.sortWrapper}>
               <Select
                 value={parsedFilters.sort}
@@ -389,13 +472,13 @@ export const ProductListingPage = () => {
               )
             })}
 
-            {/* Search Q Chip */}
-            {parsedFilters.q && (
+            {/* Search Chip */}
+            {parsedFilters.search && (
               <span className={styles.chip}>
-                Tìm: &ldquo;{parsedFilters.q}&rdquo;
+                Tìm: &ldquo;{parsedFilters.search}&rdquo;
                 <button
                   type="button"
-                  onClick={() => updateUrl({ q: '' })}
+                  onClick={handleClearSearch}
                   className={styles.chipRemoveBtn}
                   aria-label="Xóa từ khóa tìm kiếm"
                 >
@@ -460,15 +543,32 @@ export const ProductListingPage = () => {
 
             {/* Empty State */}
             {!isLoading && !errorMessage && products.length === 0 && (
-              <EmptyState
-                title="Không Tìm Thấy Thiết Kế Phù Hợp"
-                description="Rất tiếc, hiện tại không có sản phẩm nào thỏa mãn toàn bộ tiêu chí lọc đã chọn. Quý khách vui lòng thử điều chỉnh lại bộ lọc."
-                action={
-                  <Button variant="primary" size="md" onClick={clearAllFilters}>
-                    Xóa Tất Cả Bộ Lọc
-                  </Button>
-                }
-              />
+              parsedFilters.search ? (
+                <EmptyState
+                  title={`Không tìm thấy kết quả cho "${parsedFilters.search}"`}
+                  description="Rất tiếc, chúng tôi không tìm thấy thiết kế nào khớp với từ khóa tìm kiếm của bạn. Hãy thử kiểm tra lỗi chính tả hoặc điều chỉnh lại bộ lọc."
+                  action={
+                    <div className={styles.emptyActions}>
+                      <Button variant="secondary" size="md" onClick={handleClearSearch}>
+                        Xóa từ khóa tìm kiếm
+                      </Button>
+                      <Button variant="primary" size="md" onClick={clearAllFilters}>
+                        Xóa tất cả bộ lọc
+                      </Button>
+                    </div>
+                  }
+                />
+              ) : (
+                <EmptyState
+                  title="Không Tìm Thấy Thiết Kế Phù Hợp"
+                  description="Rất tiếc, hiện tại không có sản phẩm nào thỏa mãn toàn bộ tiêu chí lọc đã chọn. Quý khách vui lòng thử điều chỉnh lại bộ lọc."
+                  action={
+                    <Button variant="primary" size="md" onClick={clearAllFilters}>
+                      Xóa Tất Cả Bộ Lọc
+                    </Button>
+                  }
+                />
+              )
             )}
 
             {/* Success State */}

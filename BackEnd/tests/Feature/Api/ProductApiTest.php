@@ -291,4 +291,162 @@ class ProductApiTest extends TestCase
         $this->assertNotNull($belt);
         $this->assertFalse($belt['in_stock']);
     }
+
+    public function test_search_by_product_name_exact_and_partial(): void
+    {
+        // 1. Khớp từ khóa đầy đủ (exact word)
+        $response = $this->getJson('/api/products?search=blazer');
+        $response->assertStatus(200);
+
+        $this->assertGreaterThan(0, $response->json('meta.total'));
+        foreach ($response->json('data') as $item) {
+            $product = Product::with(['brand', 'category'])->findOrFail($item['id']);
+            $matched = str_contains(mb_strtolower($product->name), 'blazer')
+                || str_contains(mb_strtolower($product->slug), 'blazer')
+                || str_contains(mb_strtolower((string) $product->description), 'blazer')
+                || str_contains(mb_strtolower((string) $product->material), 'blazer')
+                || ($product->brand && str_contains(mb_strtolower($product->brand->name), 'blazer'))
+                || ($product->category && str_contains(mb_strtolower($product->category->name), 'blazer'));
+
+            $this->assertTrue($matched, "Sản phẩm {$product->name} (id: {$product->id}) phải khớp với từ khóa blazer ở ít nhất một cột tìm kiếm");
+        }
+
+        // 2. Khớp một phần (partial word: 'blaze' khớp 'blazer')
+        $resPartial = $this->getJson('/api/products?search=blaze');
+        $resPartial->assertStatus(200);
+        $this->assertGreaterThan(0, $resPartial->json('meta.total'));
+        $slugsPartial = collect($resPartial->json('data'))->pluck('slug')->all();
+        $this->assertContains('ao-blazer-len-cashmere-may-do', $slugsPartial);
+    }
+
+    public function test_search_case_insensitive(): void
+    {
+        $resLower = $this->getJson('/api/products?search=blazer');
+        $resUpper = $this->getJson('/api/products?search=BLAZER');
+
+        $resLower->assertStatus(200);
+        $resUpper->assertStatus(200);
+
+        $this->assertEquals($resLower->json('meta.total'), $resUpper->json('meta.total'));
+    }
+
+    public function test_search_expansion_d_to_dd_finds_dam_and_keeps_real_d(): void
+    {
+        if (\DB::connection()->getDriverName() === 'sqlite') {
+            $this->markTestSkipped('SQLite không hỗ trợ collation utf8mb4_unicode_ci và không hỗ trợ case-folding/bỏ dấu tiếng Việt (đ/Đ/ầ). Vui lòng chạy trên MySQL qua group mysql trong ProductSearchMysqlTest.');
+        }
+
+        // 1. "dam" mở rộng sang "đam" để tìm thấy "Đầm Suông Lụa Tơ Tằm Thượng Hạng"
+        $resDam = $this->getJson('/api/products?search=dam');
+        $resDam->assertStatus(200);
+        $slugs = collect($resDam->json('data'))->pluck('slug')->all();
+        $this->assertContains('dam-suong-lua-to-tam-thuong-hang', $slugs);
+
+        // 2. "denim" có chữ 'd' thật vẫn tìm kiếm bình thường không bị lỗi
+        $resDenim = $this->getJson('/api/products?search=denim');
+        $resDenim->assertStatus(200);
+
+        // 3. Không thay ngược đ -> d
+        $resDdam = $this->getJson('/api/products?search=đầm');
+        $resDdam->assertStatus(200);
+        $slugsDdam = collect($resDdam->json('data'))->pluck('slug')->all();
+        $this->assertContains('dam-suong-lua-to-tam-thuong-hang', $slugsDdam);
+    }
+
+    public function test_search_multiple_words_all_must_match(): void
+    {
+        // "ao blazer" -> khớp các sản phẩm chứa cả 2 từ khóa trong các cột
+        $response = $this->getJson('/api/products?search=ao+blazer');
+        $response->assertStatus(200);
+        $this->assertGreaterThanOrEqual(1, $response->json('meta.total'));
+
+        // "blazer that-lung" -> 2 từ khóa hoàn toàn không cùng xuất hiện trong bất kỳ sản phẩm nào
+        // (blazer chỉ có ở nhóm áo/quần, that-lung chỉ có ở thắt lưng da)
+        $resNone = $this->getJson('/api/products?search=blazer+that-lung');
+        $resNone->assertStatus(200);
+        $this->assertEquals(0, $resNone->json('meta.total'));
+    }
+
+    public function test_search_wildcard_characters_escaped(): void
+    {
+        // Ký tự % và _ không được hoạt động như wildcard
+        $resPercent = $this->getJson('/api/products?search=100%');
+        $resPercent->assertStatus(200);
+
+        $resUnderscore = $this->getJson('/api/products?search=_');
+        $resUnderscore->assertStatus(200);
+        // Không bung ra toàn bộ 11 sản phẩm như wildcard '%'
+        $this->assertNotEquals(11, $resUnderscore->json('meta.total'));
+    }
+
+    public function test_search_matches_brand_category_material(): void
+    {
+        // 1. Tìm theo tên thương hiệu "Heritage Craft"
+        $resBrand = $this->getJson('/api/products?search=Heritage');
+        $resBrand->assertStatus(200);
+        $this->assertGreaterThan(0, $resBrand->json('meta.total'));
+        foreach ($resBrand->json('data') as $item) {
+            $this->assertEquals('Heritage Craft', $item['brand']['name']);
+        }
+
+        // 2. Tìm theo chất liệu "Cashmere"
+        $resMaterial = $this->getJson('/api/products?search=Cashmere');
+        $resMaterial->assertStatus(200);
+        $this->assertGreaterThan(0, $resMaterial->json('meta.total'));
+    }
+
+    public function test_search_combined_with_category_and_price_filters(): void
+    {
+        $response = $this->getJson('/api/products?search=blazer&category=jackets-blazers&min_price=1000000');
+        $response->assertStatus(200);
+
+        foreach ($response->json('data') as $item) {
+            $this->assertGreaterThanOrEqual(1000000, $item['base_price']);
+            $this->assertEquals('jackets-blazers', $item['category']['slug']);
+        }
+    }
+
+    public function test_search_does_not_reveal_draft_or_archived_or_deleted_products(): void
+    {
+        // prod-012 là draft có tên "Áo Blazer Nữ Len Mỏng Dáng Rộng"
+        $response = $this->getJson('/api/products?search=Len+M%E1%BB%8Fng');
+        $response->assertStatus(200);
+        $slugs = collect($response->json('data'))->pluck('slug')->all();
+        $this->assertNotContains('ao-blazer-nu-len-mong', $slugs);
+    }
+
+    public function test_search_empty_string_returns_all_active_products(): void
+    {
+        $response = $this->getJson('/api/products?search=');
+        $response->assertStatus(200);
+        $this->assertEquals(11, $response->json('meta.total'));
+    }
+
+    public function test_search_sort_priority_by_name_when_no_custom_sort(): void
+    {
+        // Tìm "blazer" không sort: sản phẩm có chữ blazer trong tên xếp trước
+        $response = $this->getJson('/api/products?search=blazer');
+        $response->assertStatus(200);
+        $items = $response->json('data');
+        if (count($items) >= 2) {
+            $first = $items[0];
+            $this->assertStringContainsStringIgnoringCase('blazer', $first['name']);
+        }
+
+        // Khi có sort riêng (price_asc): sắp xếp theo giá
+        $resPrice = $this->getJson('/api/products?search=blazer&sort=price_asc');
+        $resPrice->assertStatus(200);
+        $priceItems = $resPrice->json('data');
+        if (count($priceItems) >= 2) {
+            $this->assertLessThanOrEqual($priceItems[1]['base_price'], $priceItems[0]['base_price']);
+        }
+    }
+
+    public function test_search_validation_fails_over_150_characters(): void
+    {
+        $longTerm = str_repeat('a', 151);
+        $response = $this->getJson("/api/products?search={$longTerm}");
+        $response->assertStatus(422)
+                 ->assertJsonValidationErrors(['search']);
+    }
 }

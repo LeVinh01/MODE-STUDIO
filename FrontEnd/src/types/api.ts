@@ -133,7 +133,7 @@ export interface ProductQueryFilter {
   minPrice?: number
   maxPrice?: number
   gender?: 'women' | 'men' | 'unisex'
-  q?: string
+  search?: string
   featured?: boolean
   sort?: 'newest' | 'price_asc' | 'price_desc'
   perPage?: number

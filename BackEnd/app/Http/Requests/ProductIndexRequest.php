@@ -41,11 +41,27 @@ class ProductIndexRequest extends FormRequest
             'min_price'  => ['sometimes', 'integer', 'min:0'],
             'max_price'  => ['sometimes', 'integer', 'min:0', 'gte:min_price'],
             'gender'     => ['sometimes', 'string', Rule::enum(ProductGender::class)],
-            'q'          => ['sometimes', 'string', 'max:100'],
+            'search'     => ['sometimes', 'nullable', 'string', 'max:150'],
+            'q'          => ['sometimes', 'nullable', 'string', 'max:150'],
             'featured'   => ['sometimes', 'boolean'],
             'sort'       => ['sometimes', 'string', Rule::in(['newest', 'price_asc', 'price_desc'])],
             'per_page'   => ['sometimes', 'integer', 'min:1', 'max:48'],
             'page'       => ['sometimes', 'integer', 'min:1'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'search.string' => 'Từ khóa tìm kiếm phải là chuỗi ký tự.',
+            'search.max'    => 'Từ khóa tìm kiếm không được vượt quá 150 ký tự.',
+            'q.string'      => 'Từ khóa tìm kiếm phải là chuỗi ký tự.',
+            'q.max'         => 'Từ khóa tìm kiếm không được vượt quá 150 ký tự.',
+            'category.max'  => 'Slug danh mục không được vượt quá 150 ký tự.',
+            'brand.max'     => 'Slug thương hiệu không được vượt quá 150 ký tự.',
+            'min_price.min' => 'Giá tối thiểu không được âm.',
+            'max_price.min' => 'Giá tối đa không được âm.',
+            'max_price.gte' => 'Giá tối đa phải lớn hơn hoặc bằng giá tối thiểu.',
         ];
     }
 }

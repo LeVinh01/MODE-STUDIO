@@ -138,6 +138,35 @@ docker compose exec app php artisan db:seed
 
 ---
 
+## 7. API Danh Mục & Tìm Kiếm Sản Phẩm (Public Catalog & Search API)
+
+### Danh sách Endpoint:
+#### 1. Danh sách sản phẩm & Tìm kiếm (`GET /api/products`)
+Hỗ trợ lọc, phân trang và tìm kiếm sản phẩm cho khách hàng trên Storefront.
+
+**Tham số truy vấn (Query Parameters):**
+- `search` *(string, max:150, tùy chọn)*: Từ khóa tìm kiếm chính thức của khách hàng (hệ thống vẫn giữ `q` làm dự phòng tương thích ngược).
+  - **Phạm vi tìm kiếm đa cột**: Quét qua `products.name`, `products.slug`, `products.description`, `products.material`, `brand.name` (thương hiệu), `category.name` (danh mục). Sử dụng `whereHas` để tránh trùng lặp dữ liệu và giữ đúng phân trang.
+  - **Hỗ trợ nhiều từ khóa**: Chuỗi tìm kiếm được tách theo khoảng trắng thành tối đa 5 từ. MỖI từ phải khớp ít nhất một cột (quan hệ `AND` giữa các từ, `OR` giữa các cột).
+  - **Dấu tiếng Việt & Collation**: Nhờ collation `utf8mb4_unicode_ci`, hệ thống tự động đối chiếu không phân biệt hoa thường và không dấu cho các nguyên âm có dấu (ví dụ `ao` khớp `Áo`, `so mi` khớp `sơ mi`, `quan` khớp `quần`).
+  - **Mở rộng `d` $\leftrightarrow$ `đ`**: Khi từ khóa chứa chữ `d/D` mà không có `đ/Đ`, hệ thống tự động sinh thêm biến thể chứa `đ` (ví dụ `dam` tìm thấy cả `Đầm Suông...`), không thay thế ngược `đ` sang `d`.
+  - **Escape Wildcard**: Ký tự đặc biệt của SQL LIKE (`%`, `_`, `\`) được escape tường minh (`ESCAPE '\'`), ngăn chặn khai thác wildcard.
+  - **Ưu tiên sắp xếp theo độ khớp**: Nếu khách hàng không chỉ định `sort`, sản phẩm có tên chứa từ khóa tìm kiếm sẽ được ưu tiên xếp trước (`CASE WHEN name LIKE ... THEN 0 ELSE 1 END`), tiếp theo là ngày phát hành mới nhất (`published_at DESC`) và `id DESC`. Nếu có `sort` cụ thể (`price_asc`, `price_desc`), hệ thống tuân theo `sort`.
+  - **Bảo toàn hiển thị**: Chỉ trả về sản phẩm `active` và `published_at <= now()`. Tuyệt đối không để lộ sản phẩm `draft`, `archived` hoặc đã bị xóa mềm.
+- `category` *(string, slug danh mục)*: Lọc theo danh mục (bao gồm cả danh mục con).
+- `brand` *(string, slug thương hiệu)*: Lọc theo thương hiệu.
+- `color` *(string, ID phân tách bởi dấu phẩy, ví dụ `1,2`)*: Lọc theo màu sắc.
+- `size` *(string, ID phân tách bởi dấu phẩy, ví dụ `3,4`)*: Lọc theo kích cỡ.
+- `min_price` / `max_price` *(integer, $\ge 0$)*: Khoảng giá lọc.
+- `gender` *(enum: `women`, `men`, `unisex`)*: Lọc theo giới tính.
+- `sort` *(enum: `newest`, `price_asc`, `price_desc`)*: Sắp xếp kết quả.
+- `page` / `per_page` *(integer)*: Phân trang (mặc định 12 sản phẩm/trang, tối đa 48).
+
+#### 2. Chi tiết sản phẩm công khai (`GET /api/products/{slug}`)
+Lấy đầy đủ thông tin chi tiết của sản phẩm kèm danh sách biến thể đang hoạt động (`is_active = true`) và thư viện hình ảnh.
+
+---
+
 ## 8. API Xác Thực & Phân Quyền (Authentication & Authorization)
 
 Hệ thống sử dụng **Laravel Sanctum** với cơ chế Personal Access Token. Token được cấp khi đăng ký hoặc đăng nhập thành công và gửi kèm trong các request tiếp theo qua header:
