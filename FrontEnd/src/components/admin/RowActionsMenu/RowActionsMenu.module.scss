@@ -1,0 +1,167 @@
+@use '@/styles/abstracts/variables' as *;
+@use '@/styles/abstracts/mixins' as *;
+
+.kebabBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background-color: var(--color-gray-100);
+  border: 1px solid var(--color-border-subtle);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all $transition-fast;
+  line-height: 1;
+  box-sizing: border-box;
+
+  &:hover:not(:disabled),
+  &.active {
+    background-color: var(--color-gray-200);
+    border-color: var(--color-gray-300);
+    color: var(--color-black);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  /* Size variants */
+  &.sizeMd {
+    // Desktop >= 1200px: 36x36px
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+
+    // Tablet & màn vừa < 1200px: 38x38px (chuẩn 38-40px)
+    @media (max-width: 1199px) {
+      width: 38px;
+      height: 38px;
+      min-width: 38px;
+      min-height: 38px;
+    }
+  }
+
+  &.sizeLg {
+    // Mobile card view: 44x44px
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* Dropdown Menu (Portal into document.body) */
+.dropdownMenu {
+  position: fixed;
+  z-index: 1050; // Nằm trên table/header nhưng dưới modal (1070)
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  min-width: 190px;
+  padding: var(--space-1) 0;
+  display: flex;
+  flex-direction: column;
+  animation: menuFadeIn 150ms ease-out;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+@keyframes menuFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  height: 38px;
+  min-height: 38px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  font-size: var(--font-size-xs, 0.8125rem);
+  font-weight: $font-weight-medium;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: background-color $transition-fast, color $transition-fast;
+  user-select: none;
+
+  svg {
+    flex-shrink: 0;
+    color: var(--color-text-secondary);
+    transition: color $transition-fast;
+  }
+
+  &:hover:not(:disabled),
+  &:focus-visible,
+  &.focused {
+    background-color: var(--color-gray-100);
+    outline: none;
+
+    svg {
+      color: var(--color-text-primary);
+    }
+  }
+
+  &.dangerItem {
+    color: var(--color-error);
+
+    svg {
+      color: var(--color-error);
+    }
+
+    &:hover:not(:disabled),
+    &:focus-visible,
+    &.focused {
+      background-color: rgba(168, 50, 50, 0.08);
+      color: var(--color-error);
+
+      svg {
+        color: var(--color-error);
+      }
+    }
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+/* Mobile size cho dropdown menu items: >= 44px */
+.mobileMenu {
+  min-width: 220px;
+
+  .menuItem {
+    height: 44px;
+    min-height: 44px;
+    font-size: var(--font-size-sm);
+    padding: var(--space-2) var(--space-4);
+  }
+}
+
+.divider {
+  height: 1px;
+  background-color: var(--color-border-subtle);
+  margin: var(--space-1) 0;
+}

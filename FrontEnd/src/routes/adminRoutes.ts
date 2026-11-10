@@ -20,6 +20,24 @@ export const adminRoutes: RouteObject[] = [
     },
   },
   {
+    path: 'products/new',
+    lazy: async () => {
+      const { ProductFormPage } = await import(
+        '@/pages/admin/ProductFormPage/ProductFormPage'
+      )
+      return { Component: ProductFormPage }
+    },
+  },
+  {
+    path: 'products/:id/edit',
+    lazy: async () => {
+      const { ProductFormPage } = await import(
+        '@/pages/admin/ProductFormPage/ProductFormPage'
+      )
+      return { Component: ProductFormPage }
+    },
+  },
+  {
     path: 'orders',
     lazy: async () => {
       const { OrderManagementPage } = await import(
