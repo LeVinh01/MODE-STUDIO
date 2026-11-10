@@ -55,5 +55,14 @@ export const adminRoutes: RouteObject[] = [
       return { Component: AdminOrderDetailPage }
     },
   },
+  {
+    path: 'inventory',
+    lazy: async () => {
+      const { InventoryManagementPage } = await import(
+        '@/pages/admin/InventoryManagementPage/InventoryManagementPage'
+      )
+      return { Component: InventoryManagementPage }
+    },
+  },
 ]
 
