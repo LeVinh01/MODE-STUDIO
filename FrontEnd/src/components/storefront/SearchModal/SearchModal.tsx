@@ -32,7 +32,7 @@ export const SearchModal = () => {
 
     handleClose()
     setQuery('')
-    navigate(`/products?q=${encodeURIComponent(trimmed)}`)
+    navigate(`/products?search=${encodeURIComponent(trimmed)}`)
   }
 
   const handleSubmit = (e: FormEvent) => {

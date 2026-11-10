@@ -42,7 +42,7 @@ export const productService = {
     if (filter.minPrice !== undefined) params.min_price = filter.minPrice
     if (filter.maxPrice !== undefined) params.max_price = filter.maxPrice
     if (filter.gender) params.gender = filter.gender
-    if (filter.q) params.q = filter.q
+    if (filter.search) params.search = filter.search
     if (filter.featured !== undefined) params.featured = filter.featured ? 1 : 0
     if (filter.sort) params.sort = filter.sort
     if (filter.perPage !== undefined) params.per_page = filter.perPage

@@ -54,6 +54,7 @@
 /* Toolbar */
 .toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
@@ -105,13 +106,53 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  flex-wrap: wrap;
+  width: 100%;
+
+  @include respond-to('sm') {
+    width: auto;
+    flex-wrap: nowrap;
+  }
 }
 
-.sortWrapper {
-  width: 180px;
+.searchBarWrapper {
+  width: 100%;
 
   @include respond-to('sm') {
     width: 220px;
+  }
+
+  @include respond-to('md') {
+    width: 260px;
+  }
+
+  @include respond-to('lg') {
+    width: 280px;
+  }
+}
+
+.clearSearchBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  pointer-events: auto;
+  transition: color $transition-fast;
+
+  &:hover {
+    color: var(--color-black);
+  }
+}
+
+.sortWrapper {
+  width: 100%;
+
+  @include respond-to('sm') {
+    width: 200px;
   }
 }
 
@@ -245,6 +286,15 @@
   color: var(--color-text-secondary);
   max-width: 500px;
   margin: 0;
+}
+
+.emptyActions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-top: var(--space-2);
 }
 
 /* Mobile Drawer Footer */

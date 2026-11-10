@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react'
+import { useMemo, useCallback, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { ProductQueryFilter } from '@/types/api'
 import { DEFAULT_PER_PAGE } from '@/config/filters'
@@ -10,7 +10,7 @@ export interface ParsedFilters {
   sizeIds: string[]
   minPrice?: number
   maxPrice?: number
-  q: string
+  search: string
   sort: 'newest' | 'price_asc' | 'price_desc'
   page: number
   perPage: number
@@ -21,6 +21,19 @@ export interface ParsedFilters {
  */
 export const useProductFilters = () => {
   const [searchParams, setSearchParams] = useSearchParams()
+
+  // Tự động chuyển ?q= cũ sang ?search= bằng replace state (không tạo thêm bước Back)
+  useEffect(() => {
+    if (searchParams.has('q')) {
+      const qVal = searchParams.get('q') || ''
+      const nextParams = new URLSearchParams(searchParams)
+      nextParams.delete('q')
+      if (qVal.trim() && !nextParams.has('search')) {
+        nextParams.set('search', qVal.trim())
+      }
+      setSearchParams(nextParams, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
 
   // 1. Phân tích và validate nghiêm ngặt các tham số từ URL
   const parsedFilters: ParsedFilters = useMemo(() => {
@@ -69,10 +82,10 @@ export const useProductFilters = () => {
       maxPrice = temp
     }
 
-    // F. Từ khóa tìm kiếm q (tối đa 100 ký tự)
-    let q = searchParams.get('q')?.trim() || ''
-    if (q.length > 100) {
-      q = q.slice(0, 100)
+    // F. Từ khóa tìm kiếm search (tối đa 150 ký tự, fallback q nếu vừa vào URL cũ)
+    let search = (searchParams.get('search') ?? searchParams.get('q') ?? '').trim()
+    if (search.length > 150) {
+      search = search.slice(0, 150)
     }
 
     // G. Sắp xếp sort (chỉ nhận newest | price_asc | price_desc, mặc định newest)
@@ -106,7 +119,7 @@ export const useProductFilters = () => {
       sizeIds,
       minPrice,
       maxPrice,
-      q,
+      search,
       sort,
       page,
       perPage,
@@ -122,7 +135,7 @@ export const useProductFilters = () => {
       size: parsedFilters.sizeIds.length > 0 ? parsedFilters.sizeIds.join(',') : undefined,
       minPrice: parsedFilters.minPrice,
       maxPrice: parsedFilters.maxPrice,
-      q: parsedFilters.q || undefined,
+      search: parsedFilters.search || undefined,
       sort: parsedFilters.sort,
       page: parsedFilters.page,
       perPage: parsedFilters.perPage,
@@ -153,7 +166,7 @@ export const useProductFilters = () => {
       if (current.maxPrice !== undefined && current.maxPrice > 0) {
         params.set('max_price', String(current.maxPrice))
       }
-      if (current.q) params.set('q', current.q)
+      if (current.search) params.set('search', current.search)
 
       // Chỉ ghi sort nếu khác 'newest'
       if (current.sort && current.sort !== 'newest') {
@@ -190,6 +203,13 @@ export const useProductFilters = () => {
     [updateUrl],
   )
 
+  const setSearch = useCallback(
+    (searchTerm: string) => {
+      updateUrl({ search: searchTerm.trim() })
+    },
+    [updateUrl],
+  )
+
   const clearAllFilters = useCallback(() => {
     setSearchParams(new URLSearchParams())
   }, [setSearchParams])
@@ -200,6 +220,7 @@ export const useProductFilters = () => {
     updateUrl,
     setPage,
     setSort,
+    setSearch,
     clearAllFilters,
   }
 }
