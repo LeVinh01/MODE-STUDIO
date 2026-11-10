@@ -1,4 +1,12 @@
 import type {
+  AdminLookups,
+  AdminProductDetail,
+  AdminProductListItem,
+  ApiAdminLookups,
+  ApiAdminProductDetail,
+  ApiAdminProductListItem,
+} from '@/types/adminProduct'
+import type {
   ApiCartItem,
   ApiCartResponse,
   ApiCategoryItem,
@@ -311,5 +319,92 @@ export const mapApiOrderToOrder = (apiOrder: ApiOrder): Order => {
     items: (apiOrder.items || []).map(mapApiOrderItemToOrderItem),
   }
 }
+
+/**
+ * Chuyển đổi ApiAdminProductListItem sang AdminProductListItem (camelCase)
+ */
+export const mapApiAdminProductListItemToAdminProductListItem = (
+  item: ApiAdminProductListItem,
+): AdminProductListItem => {
+  return {
+    id: item.id,
+    name: item.name,
+    slug: item.slug,
+    gender: item.gender,
+    basePrice: item.base_price,
+    compareAtPrice: item.compare_at_price,
+    status: item.status,
+    isFeatured: item.is_featured,
+    variantsCount: item.variants_count,
+    totalStock: item.total_stock,
+    publishedAt: item.published_at,
+    createdAt: item.created_at,
+    updatedAt: item.updated_at,
+    category: item.category
+      ? {
+          id: item.category.id,
+          name: item.category.name,
+          slug: item.category.slug,
+          parentId: item.category.parent_id ?? null,
+        }
+      : null,
+    brand: item.brand
+      ? {
+          id: item.brand.id,
+          name: item.brand.name,
+          slug: item.brand.slug,
+        }
+      : null,
+    mainImage: item.main_image
+      ? {
+          id: item.main_image.id,
+          imageUrl: item.main_image.image_url,
+          altText: item.main_image.alt_text ?? null,
+        }
+      : null,
+  }
+}
+
+/**
+ * Chuyển đổi ApiAdminProductDetail sang AdminProductDetail (camelCase)
+ */
+export const mapApiAdminProductDetailToAdminProductDetail = (
+  item: ApiAdminProductDetail,
+): AdminProductDetail => {
+  const base = mapApiAdminProductListItemToAdminProductListItem(item)
+  return {
+    ...base,
+    description: item.description ?? null,
+    material: item.material ?? null,
+    variants: item.variants || [],
+    images: item.images || [],
+  }
+}
+
+/**
+ * Chuyển đổi ApiAdminLookups sang AdminLookups
+ */
+export const mapApiAdminLookupsToAdminLookups = (
+  data: ApiAdminLookups,
+): AdminLookups => {
+  return {
+    categories: (data.categories || []).map((c) => ({
+      id: c.id,
+      name: c.name,
+      slug: c.slug,
+      parentId: c.parent_id ?? null,
+    })),
+    brands: (data.brands || []).map((b) => ({
+      id: b.id,
+      name: b.name,
+      slug: b.slug,
+    })),
+    colors: data.colors || [],
+    sizes: data.sizes || [],
+    genders: data.genders || [],
+    statuses: data.statuses || [],
+  }
+}
+
 
 
