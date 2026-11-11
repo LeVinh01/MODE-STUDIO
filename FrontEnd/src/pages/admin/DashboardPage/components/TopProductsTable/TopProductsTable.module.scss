@@ -1,0 +1,172 @@
+@use '@/styles/abstracts' as *;
+
+.card {
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  margin-top: var(--space-6);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.titleArea {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.title {
+  font-family: $font-serif;
+  font-size: 1.125rem;
+  font-weight: $font-weight-medium;
+  color: var(--color-black);
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.8125rem;
+}
+
+.th {
+  padding: var(--space-3) var(--space-4);
+  font-weight: $font-weight-medium;
+  color: var(--color-text-secondary);
+  background: var(--color-gray-100);
+  border-bottom: 1px solid var(--color-gray-200);
+  white-space: nowrap;
+
+  &:last-child {
+    text-align: right;
+  }
+}
+
+.tr {
+  border-bottom: 1px solid var(--color-gray-200);
+  transition: background-color var(--transition-fast);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background-color: var(--color-gray-50);
+  }
+}
+
+.td {
+  padding: var(--space-3) var(--space-4);
+  vertical-align: middle;
+  color: var(--color-black);
+
+  &:last-child {
+    text-align: right;
+  }
+}
+
+.rankBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: $font-weight-bold;
+  background: var(--color-gray-100);
+  color: var(--color-text-secondary);
+
+  &.rank1 {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  &.rank2 {
+    background: #e2e8f0;
+    color: #334155;
+  }
+
+  &.rank3 {
+    background: #fed7aa;
+    color: #9a3412;
+  }
+}
+
+.productCell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.thumbnail {
+  width: 44px;
+  height: 52px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  background: var(--color-gray-100);
+  border: 1px solid var(--color-gray-200);
+  flex-shrink: 0;
+}
+
+.productInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.productName {
+  font-weight: $font-weight-medium;
+  color: var(--color-black);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.deletedBadge {
+  font-size: 0.6875rem;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.quantity {
+  font-weight: $font-weight-medium;
+}
+
+.revenue {
+  font-family: $font-serif;
+  font-weight: $font-weight-semibold;
+  color: var(--color-black);
+}
+
+.emptyState {
+  padding: var(--space-8);
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  font-style: italic;
+}
