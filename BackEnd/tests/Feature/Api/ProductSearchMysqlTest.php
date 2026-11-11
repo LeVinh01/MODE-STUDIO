@@ -47,9 +47,11 @@ class ProductSearchMysqlTest extends TestCase
         // Đảm bảo kết nối đúng DB mode_studio_testing, không đụng DB dev hay chạy nhầm sqlite
         $this->assertEquals(
             'mode_studio_testing',
-            DB::connection()->getDatabaseName(),
+            DB::connection('mysql_testing')->getDatabaseName(),
             'Database test phải là mode_studio_testing. Hãy tạo DB bằng lệnh: CREATE DATABASE mode_studio_testing CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'
         );
+
+        parent::setUp();
 
         $this->seed([
             RoleSeeder::class,

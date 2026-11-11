@@ -273,7 +273,7 @@ class ProductSeeder extends Seeder
 
     private function createProduct(array $data, $categories, $brands, $colors, $sizes): void
     {
-        $product = Product::firstOrCreate(
+        $product = Product::withTrashed()->firstOrCreate(
             ['slug' => $data['slug']],
             [
                 'category_id'      => $categories[$data['category_slug']],
