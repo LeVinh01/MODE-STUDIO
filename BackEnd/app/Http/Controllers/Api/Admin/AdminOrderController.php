@@ -40,11 +40,13 @@ class AdminOrderController extends Controller
         }
 
         if ($request->filled('from')) {
-            $query->where('created_at', '>=', $request->input('from') . ' 00:00:00');
+            $fromUtc = \Carbon\Carbon::createFromFormat('Y-m-d', $request->input('from'), 'Asia/Ho_Chi_Minh')->startOfDay()->setTimezone('UTC');
+            $query->where('created_at', '>=', $fromUtc);
         }
 
         if ($request->filled('to')) {
-            $query->where('created_at', '<=', $request->input('to') . ' 23:59:59');
+            $toUtc = \Carbon\Carbon::createFromFormat('Y-m-d', $request->input('to'), 'Asia/Ho_Chi_Minh')->endOfDay()->setTimezone('UTC');
+            $query->where('created_at', '<=', $toUtc);
         }
 
         if ($request->filled('search')) {
