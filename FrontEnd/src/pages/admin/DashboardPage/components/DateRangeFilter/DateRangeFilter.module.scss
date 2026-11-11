@@ -1,0 +1,139 @@
+@use '@/styles/abstracts' as *;
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-6);
+
+  @include respond-to('md') {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+}
+
+.presetGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  overflow-x: auto;
+  padding-bottom: var(--space-1);
+
+  @include respond-to('md') {
+    padding-bottom: 0;
+  }
+}
+
+.presetBtn {
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.8125rem;
+  font-weight: $font-weight-medium;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+
+  &:hover {
+    color: var(--color-black);
+    background: var(--color-gray-100);
+  }
+
+  &.active {
+    color: var(--color-white);
+    background: var(--color-black);
+    border-color: var(--color-black);
+  }
+}
+
+.customRangeForm {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.dateInputWrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.dateInput {
+  padding: var(--space-1) var(--space-2);
+  font-size: 0.8125rem;
+  font-family: inherit;
+  color: var(--color-black);
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-md);
+  outline: none;
+  transition: border-color var(--transition-fast);
+
+  &:focus {
+    border-color: var(--color-black);
+  }
+}
+
+.applyBtn {
+  padding: var(--space-1) var(--space-3);
+  font-size: 0.8125rem;
+  font-weight: $font-weight-medium;
+  color: var(--color-white);
+  background: var(--color-black);
+  border: 1px solid var(--color-black);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+
+  &:hover:not(:disabled) {
+    opacity: 0.85;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.refreshBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.8125rem;
+  font-weight: $font-weight-medium;
+  color: var(--color-text-secondary);
+  background: var(--color-gray-100);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+
+  &:hover {
+    color: var(--color-black);
+    border-color: var(--color-gray-300);
+  }
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.errorMessage {
+  font-size: 0.75rem;
+  color: var(--color-error);
+  margin-top: var(--space-1);
+  width: 100%;
+}

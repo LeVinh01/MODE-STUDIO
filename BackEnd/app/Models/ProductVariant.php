@@ -54,4 +54,16 @@ class ProductVariant extends Model
     {
         return $this->hasMany(StockAdjustment::class, 'variant_id')->orderBy('created_at', 'desc');
     }
+
+    /**
+     * Scope lọc các biến thể tồn kho thấp (dùng chung cho AdminStockController và Dashboard)
+     */
+    public function scopeLowStock($query, ?int $threshold = null)
+    {
+        $limit = $threshold ?? (int) config('shop.stock.low_stock_threshold', 10);
+
+        return $query->withoutTrashed()
+            ->whereHas('product', fn($q) => $q->withoutTrashed())
+            ->where('stock_quantity', '<=', $limit);
+    }
 }

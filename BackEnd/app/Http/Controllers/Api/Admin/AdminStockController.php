@@ -86,9 +86,7 @@ class AdminStockController extends Controller
         $threshold = $request->filled('threshold') ? (int) $request->input('threshold') : $defaultThreshold;
         $perPage = (int) $request->input('per_page', 20);
 
-        $variants = ProductVariant::withoutTrashed()
-            ->whereHas('product', fn($q) => $q->withoutTrashed())
-            ->where('stock_quantity', '<=', $threshold)
+        $variants = ProductVariant::lowStock($threshold)
             ->with([
                 'product' => fn($q) => $q->with('category'),
                 'color',

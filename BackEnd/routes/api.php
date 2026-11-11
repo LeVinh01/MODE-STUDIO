@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\AdminDashboardController;
 use App\Http\Controllers\Api\Admin\AdminLookupController;
 use App\Http\Controllers\Api\Admin\AdminOrderController;
 use App\Http\Controllers\Api\Admin\AdminProductController;
@@ -76,6 +77,13 @@ Route::middleware(['auth:sanctum', 'active', 'role:admin,operator'])->prefix('ad
     Route::get('/products/{id}', [AdminProductController::class, 'show']);
     Route::get('/variants/{variant_id}/stock-adjustments', [AdminStockController::class, 'history']);
     Route::get('/stock/low', [AdminStockController::class, 'lowStock']);
+
+    // Admin & Operator Dashboard API
+    Route::prefix('dashboard')->group(function () {
+        Route::get('/summary', [AdminDashboardController::class, 'summary']);
+        Route::get('/revenue', [AdminDashboardController::class, 'revenue']);
+        Route::get('/top-products', [AdminDashboardController::class, 'topProducts']);
+    });
 });
 
 // Admin Only Catalog, Image & Stock Write API

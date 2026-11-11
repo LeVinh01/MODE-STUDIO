@@ -1,0 +1,106 @@
+@use '@/styles/abstracts' as *;
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+
+  @include respond-to('sm') {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+.card {
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+
+  &.warning {
+    border-color: rgba(234, 88, 12, 0.3);
+    background: linear-gradient(to bottom right, var(--color-white), rgba(254, 243, 199, 0.3));
+  }
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
+.cardTitle {
+  font-size: 0.8125rem;
+  font-weight: $font-weight-medium;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.iconWrapper {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-gray-100);
+  color: var(--color-black);
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  &.warning {
+    background: rgba(234, 88, 12, 0.1);
+    color: rgb(194, 65, 12);
+  }
+}
+
+.cardValue {
+  font-family: $font-serif;
+  font-size: 1.5rem;
+  font-weight: $font-weight-semibold;
+  color: var(--color-black);
+  margin: var(--space-1) 0 var(--space-2) 0;
+  line-height: 1.2;
+}
+
+.cardFooter {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px dashed var(--color-gray-200);
+  padding-top: var(--space-2);
+  margin-top: auto;
+}
+
+.cardLink {
+  color: var(--color-black);
+  font-weight: $font-weight-medium;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+
+  &:hover {
+    color: var(--color-text-secondary);
+  }
+}

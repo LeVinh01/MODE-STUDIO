@@ -288,7 +288,7 @@ class AdminOrderManagementTest extends TestCase
 
         Sanctum::actingAs($admin);
 
-        $todayStr = now()->format('Y-m-d');
+        $todayStr = now('Asia/Ho_Chi_Minh')->format('Y-m-d');
         $res = $this->getJson("/api/admin/orders?from={$todayStr}&to={$todayStr}")
             ->assertStatus(200)
             ->assertJsonCount(1, 'data');
