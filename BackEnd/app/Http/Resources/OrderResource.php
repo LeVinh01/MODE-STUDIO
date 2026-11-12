@@ -24,6 +24,19 @@ class OrderResource extends JsonResource
             ? $this->payment_status->value
             : (string) $this->payment_status;
 
+        $latestPayment = $this->relationLoaded('latestPayment') ? $this->latestPayment : null;
+        $paymentDetails = null;
+        if ($latestPayment) {
+            $paymentDetails = [
+                'provider'                => $latestPayment->provider,
+                'txn_ref'                 => $latestPayment->txn_ref,
+                'status'                  => $latestPayment->status,
+                'bank_code'               => $latestPayment->bank_code,
+                'provider_transaction_no' => $latestPayment->provider_transaction_no,
+                'paid_at'                 => $latestPayment->paid_at?->toISOString(),
+            ];
+        }
+
         return [
             'order_code'       => $this->order_code,
             'status'           => $status,
@@ -41,6 +54,7 @@ class OrderResource extends JsonResource
             'cancelled_at'     => $this->cancelled_at?->toISOString(),
             'paid_at'          => $this->paid_at?->toISOString(),
             'created_at'       => $this->created_at?->toISOString(),
+            'payment_details'  => $paymentDetails,
             'items'            => OrderItemResource::collection($this->whenLoaded('items')),
         ];
     }

@@ -48,6 +48,15 @@ export const storefrontRoutes: RouteObject[] = [
     },
   },
   {
+    path: 'payment/vnpay/callback',
+    lazy: async () => {
+      const { VnPayCallbackPage } = await import(
+        '@/pages/storefront/VnPayCallbackPage/VnPayCallbackPage'
+      )
+      return { Component: VnPayCallbackPage }
+    },
+  },
+  {
     path: 'order-success/:orderCode',
     lazy: async () => {
       const [{ OrderSuccessPage }, { ProtectedRoute }] = await Promise.all([

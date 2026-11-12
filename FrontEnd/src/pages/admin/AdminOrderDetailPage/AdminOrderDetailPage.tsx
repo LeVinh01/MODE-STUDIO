@@ -347,19 +347,43 @@ export const AdminOrderDetailPage = () => {
         {/* NÚT THAO TÁC THEO MÁY TRẠNG THÁI */}
         {availableActions.length > 0 && (
           <div className={styles.actionsGroup}>
-            {availableActions.map((action) => (
-              <Button
-                key={action.targetStatus}
-                variant={action.variant}
-                size="md"
-                onClick={() => handleOpenActionModal(action)}
-              >
-                {action.label}
-              </Button>
-            ))}
+            {availableActions.map((action) => {
+              const isUnpaidVnPay =
+                order.paymentMethod === 'vnpay' && order.paymentStatus !== 'paid'
+              const isCancel = Boolean(action.isCancel) || action.targetStatus === 'cancelled'
+              const isDisabled = isUnpaidVnPay && !isCancel
+
+              return (
+                <Button
+                  key={action.targetStatus}
+                  variant={action.variant}
+                  size="md"
+                  disabled={isDisabled}
+                  title={
+                    isDisabled
+                      ? 'Đơn VNPay chưa thanh toán. Không thể xử lý đơn hàng.'
+                      : undefined
+                  }
+                  onClick={() => handleOpenActionModal(action)}
+                >
+                  {action.label}
+                </Button>
+              )
+            })}
           </div>
         )}
       </div>
+
+      {order.paymentMethod === 'vnpay' &&
+        order.paymentStatus !== 'paid' &&
+        order.status !== 'cancelled' && (
+          <div className={`${styles.alertBanner} ${styles.warning}`} role="alert" style={{ marginBottom: 'var(--space-6)' }}>
+            <AlertTriangle size={18} />
+            <span className={styles.alertText}>
+              Đơn hàng này thanh toán qua VNPay nhưng chưa thanh toán. Các thao tác xác nhận và giao hàng đang bị khóa cho tới khi thanh toán hoàn tất. Quản trị viên có thể hủy đơn nếu khách yêu cầu.
+            </span>
+          </div>
+        )}
 
       {/* BỐ CỤC LƯỚI CHI TIẾT */}
       <div className={styles.detailGrid}>
@@ -530,6 +554,26 @@ export const AdminOrderDetailPage = () => {
                 <div className={styles.infoRow}>
                   <span className={styles.infoLabel}>Thời gian thanh toán:</span>
                   <span className={styles.infoValue}>{formatDateTime(order.paidAt)}</span>
+                </div>
+              )}
+              {order.paymentDetails?.providerTransactionNo && (
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>Mã GD VNPay:</span>
+                  <span className={styles.infoValue}>
+                    {order.paymentDetails.providerTransactionNo}
+                  </span>
+                </div>
+              )}
+              {order.paymentDetails?.bankCode && (
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>Ngân hàng:</span>
+                  <span className={styles.infoValue}>{order.paymentDetails.bankCode}</span>
+                </div>
+              )}
+              {order.paymentDetails?.txnRef && (
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>Mã tham chiếu:</span>
+                  <span className={styles.infoValue}>{order.paymentDetails.txnRef}</span>
                 </div>
               )}
             </div>

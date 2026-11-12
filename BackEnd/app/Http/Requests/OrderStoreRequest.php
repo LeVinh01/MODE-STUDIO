@@ -3,7 +3,6 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Validator;
 
 class OrderStoreRequest extends FormRequest
 {
@@ -40,17 +39,5 @@ class OrderStoreRequest extends FormRequest
             'payment_method.required'   => 'Vui lòng chọn phương thức thanh toán.',
             'payment_method.in'         => 'Phương thức thanh toán không hợp lệ.',
         ];
-    }
-
-    public function withValidator(Validator $validator): void
-    {
-        $validator->after(function (Validator $validator) {
-            if ($this->input('payment_method') === 'vnpay') {
-                $validator->errors()->add(
-                    'payment_method',
-                    'Phương thức thanh toán VNPay hiện đang được phát triển. Vui lòng chọn thanh toán khi nhận hàng (COD).'
-                );
-            }
-        });
     }
 }

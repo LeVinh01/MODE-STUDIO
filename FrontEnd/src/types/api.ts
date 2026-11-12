@@ -231,6 +231,15 @@ export interface ApiOrderItem {
   line_total: number
 }
 
+export interface ApiPaymentDetails {
+  provider: string
+  txn_ref: string
+  status: string
+  bank_code: string | null
+  provider_transaction_no: string | null
+  paid_at: string | null
+}
+
 export interface ApiOrder {
   order_code: string
   status: string
@@ -248,7 +257,31 @@ export interface ApiOrder {
   cancelled_at?: string | null
   paid_at?: string | null
   created_at: string
+  payment_details?: ApiPaymentDetails | null
   items?: ApiOrderItem[]
+}
+
+export interface ApiVnPayCreateUrlResponse {
+  payment_url: string
+  txn_ref: string
+}
+
+export interface ApiVnPayVerifyResponse {
+  status:
+    | 'success'
+    | 'failed'
+    | 'invalid_signature'
+    | 'invalid_tmn_code'
+    | 'not_found'
+    | 'amount_mismatch'
+    | 'success_abnormal'
+    | string
+  order_code?: string
+  message: string
+  amount?: number
+  bank_code?: string | null
+  provider_transaction_no?: string | null
+  response_code?: string
 }
 
 export interface ApiOrderStoreResponse {

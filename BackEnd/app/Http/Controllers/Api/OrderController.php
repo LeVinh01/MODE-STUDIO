@@ -35,7 +35,7 @@ class OrderController extends Controller
 
         $query = Order::query()
             ->where('user_id', $user->id)
-            ->with('items')
+            ->with(['items', 'latestPayment'])
             ->orderBy('id', 'desc');
 
         if ($request->filled('status')) {
@@ -57,7 +57,7 @@ class OrderController extends Controller
 
         $order = Order::where('order_code', $order_code)
             ->where('user_id', $user->id)
-            ->with('items')
+            ->with(['items', 'latestPayment'])
             ->first();
 
         if (!$order) {
@@ -194,7 +194,7 @@ class OrderController extends Controller
                         'order_code'       => $orderCode,
                         'user_id'          => $user->id,
                         'status'           => OrderStatus::Pending,
-                        'payment_method'   => PaymentMethod::Cod,
+                        'payment_method'   => PaymentMethod::from($validated['payment_method']),
                         'payment_status'   => PaymentStatus::Unpaid,
                         'recipient_name'   => $validated['recipient_name'],
                         'recipient_phone'  => $validated['recipient_phone'],
@@ -257,7 +257,7 @@ class OrderController extends Controller
             return $order;
         }, attempts: 3);
 
-        $order->load('items');
+        $order->load(['items', 'latestPayment']);
 
         return response()->json([
             'message' => 'Đặt hàng thành công.',
@@ -291,6 +291,13 @@ class OrderController extends Controller
             if ($order->status !== OrderStatus::Pending) {
                 throw new HttpResponseException(response()->json([
                     'message' => 'Chỉ có thể hủy đơn hàng khi đơn đang ở trạng thái chờ xử lý (pending).',
+                ], 422));
+            }
+
+            // Đơn hàng thanh toán trực tuyến đã hoàn tất thanh toán thì khách không được tự hủy
+            if ($order->payment_status === PaymentStatus::Paid) {
+                throw new HttpResponseException(response()->json([
+                    'message' => 'Không thể hủy đơn hàng đã thanh toán trực tuyến. Vui lòng liên hệ bộ phận hỗ trợ.',
                 ], 422));
             }
 

@@ -78,6 +78,7 @@ class AdminOrderController extends Controller
                 'user.role',
                 'items',
                 'statusHistories.changedBy.role',
+                'latestPayment',
             ])
             ->first();
 
@@ -126,6 +127,15 @@ class AdminOrderController extends Controller
             if ($currentStatus === OrderStatus::Delivered || $currentStatus === OrderStatus::Cancelled) {
                 throw new HttpResponseException(response()->json([
                     'message' => "Không thể thay đổi trạng thái của đơn hàng đã {$currentStatus->value}.",
+                ], 422));
+            }
+
+            // Đơn hàng thanh toán VNPay: chỉ được chuyển sang confirmed/shipping/delivered khi đã thanh toán (paid)
+            if ($order->payment_method === PaymentMethod::Vnpay
+                && $targetStatus !== OrderStatus::Cancelled
+                && $order->payment_status !== PaymentStatus::Paid) {
+                throw new HttpResponseException(response()->json([
+                    'message' => 'Đơn hàng thanh toán qua VNPay chưa hoàn tất thanh toán. Không thể xử lý đơn hàng.',
                 ], 422));
             }
 
@@ -226,7 +236,7 @@ class AdminOrderController extends Controller
 
         return response()->json([
             'message' => 'Cập nhật trạng thái đơn hàng thành công.',
-            'order'   => new AdminOrderDetailResource($order->fresh(['user.role', 'items', 'statusHistories.changedBy.role'])),
+            'order'   => new AdminOrderDetailResource($order->fresh(['user.role', 'items', 'statusHistories.changedBy.role', 'latestPayment'])),
         ], 200);
     }
 }

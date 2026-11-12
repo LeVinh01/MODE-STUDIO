@@ -21,13 +21,14 @@ import type {
   ApiOrder,
   ApiOrderItem,
   ApiPaginationMeta,
+  ApiPaymentDetails,
   ApiProductDetailItem,
   ApiProductListItem,
 } from '@/types/api'
 import type { ApiUser, User } from '@/types/auth'
 import type { Cart, CartItem } from '@/types/cart'
 import type { PaginationMeta } from '@/types/common'
-import type { Order, OrderItem, OrderStatus, PaymentMethod, PaymentStatus } from '@/types/order'
+import type { Order, OrderItem, OrderStatus, PaymentDetails, PaymentMethod, PaymentStatus } from '@/types/order'
 import type {
   Product,
   ProductCategory,
@@ -304,6 +305,23 @@ export const mapApiOrderItemToOrderItem = (apiItem: ApiOrderItem): OrderItem => 
 }
 
 /**
+ * Chuyển đổi ApiPaymentDetails sang PaymentDetails
+ */
+export const mapApiPaymentDetailsToPaymentDetails = (
+  pd?: ApiPaymentDetails | null,
+): PaymentDetails | null => {
+  if (!pd) return null
+  return {
+    provider: pd.provider,
+    txnRef: pd.txn_ref,
+    status: pd.status,
+    bankCode: pd.bank_code,
+    providerTransactionNo: pd.provider_transaction_no,
+    paidAt: pd.paid_at,
+  }
+}
+
+/**
  * Chuyển đổi ApiOrder sang Order (camelCase, không có id/userId)
  */
 export const mapApiOrderToOrder = (apiOrder: ApiOrder): Order => {
@@ -324,6 +342,7 @@ export const mapApiOrderToOrder = (apiOrder: ApiOrder): Order => {
     cancelledAt: apiOrder.cancelled_at,
     paidAt: apiOrder.paid_at,
     createdAt: apiOrder.created_at,
+    paymentDetails: mapApiPaymentDetailsToPaymentDetails(apiOrder.payment_details),
     items: (apiOrder.items || []).map(mapApiOrderItemToOrderItem),
   }
 }

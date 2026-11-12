@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProductController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Route;
@@ -61,6 +62,12 @@ Route::middleware(['auth:sanctum', 'active'])->prefix('orders')->group(function 
     Route::post('/', [OrderController::class, 'store']);
     Route::get('/{order_code}', [OrderController::class, 'show']);
     Route::post('/{order_code}/cancel', [OrderController::class, 'cancel']);
+    Route::post('/{order_code}/payment/vnpay', [PaymentController::class, 'createVnPayUrl'])->middleware('throttle:payment-vnpay');
+});
+
+// Payment API (VNPay Return / Verify - public callback)
+Route::prefix('payment/vnpay')->group(function () {
+    Route::post('/verify', [PaymentController::class, 'verifyVnPayReturn'])->middleware('throttle:payment-vnpay');
 });
 
 // Admin & Operator Orders Management API

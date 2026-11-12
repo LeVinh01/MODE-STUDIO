@@ -1,5 +1,5 @@
 import apiClient from './client'
-import { mapApiOrderItemToOrderItem } from './mappers'
+import { mapApiOrderItemToOrderItem, mapApiPaymentDetailsToPaymentDetails } from './mappers'
 import type {
   AdminCustomerInfo,
   AdminOrderDetail,
@@ -78,6 +78,7 @@ export const mapApiAdminOrderDetailToAdminOrderDetail = (
     cancelReason: item.cancel_reason ?? null,
     cancelledAt: item.cancelled_at ?? null,
     paidAt: item.paid_at ?? null,
+    paymentDetails: mapApiPaymentDetailsToPaymentDetails(item.payment_details),
     items: (item.items || []).map(mapApiOrderItemToOrderItem),
     statusHistories: (item.status_histories || []).map(mapStatusHistory),
   }

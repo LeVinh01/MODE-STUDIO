@@ -37,6 +37,19 @@ class AdminOrderDetailResource extends JsonResource
 
         $itemsCount = $this->items_count ?? ($this->relationLoaded('items') ? $this->items->count() : 0);
 
+        $latestPayment = $this->relationLoaded('latestPayment') ? $this->latestPayment : null;
+        $paymentDetails = null;
+        if ($latestPayment) {
+            $paymentDetails = [
+                'provider'                => $latestPayment->provider,
+                'txn_ref'                 => $latestPayment->txn_ref,
+                'status'                  => $latestPayment->status,
+                'bank_code'               => $latestPayment->bank_code,
+                'provider_transaction_no' => $latestPayment->provider_transaction_no,
+                'paid_at'                 => $latestPayment->paid_at?->toISOString(),
+            ];
+        }
+
         return [
             'order_code'       => $this->order_code,
             'status'           => $status,
@@ -55,6 +68,7 @@ class AdminOrderDetailResource extends JsonResource
             'paid_at'          => $this->paid_at?->toISOString(),
             'items_count'      => (int) $itemsCount,
             'created_at'       => $this->created_at?->toISOString(),
+            'payment_details'  => $paymentDetails,
             'customer'         => $customer,
             'items'            => OrderItemResource::collection($this->whenLoaded('items')),
             'status_histories' => AdminOrderStatusHistoryResource::collection($this->whenLoaded('statusHistories')),

@@ -8,6 +8,15 @@ export type OrderStatus =
 export type PaymentStatus = 'unpaid' | 'paid' | 'failed' | 'refunded'
 export type PaymentMethod = 'cod' | 'vnpay'
 
+export interface PaymentDetails {
+  provider: string
+  txnRef: string
+  status: 'pending' | 'success' | 'failed' | 'cancelled' | string
+  bankCode?: string | null
+  providerTransactionNo?: string | null
+  paidAt?: string | null
+}
+
 export interface OrderItem {
   id: number | string
   productId: string
@@ -39,6 +48,7 @@ export interface Order {
   cancelledAt?: string | null
   paidAt?: string | null
   createdAt: string
+  paymentDetails?: PaymentDetails | null
   items: OrderItem[]
 }
 

@@ -148,7 +148,7 @@ class OrderCheckoutTest extends TestCase
             ->assertJsonValidationErrors(['recipient_phone']);
     }
 
-    public function test_payment_method_vnpay_is_rejected_with_clear_message_in_errors_payment_method(): void
+    public function test_payment_method_vnpay_creates_order_with_unpaid_status(): void
     {
         $user = $this->createCustomer();
         $variant = $this->getActiveVariant();
@@ -158,9 +158,17 @@ class OrderCheckoutTest extends TestCase
             'payment_method' => 'vnpay',
         ]));
 
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors(['payment_method'])
-            ->assertJsonPath('errors.payment_method.0', 'Phương thức thanh toán VNPay hiện đang được phát triển. Vui lòng chọn thanh toán khi nhận hàng (COD).');
+        $response->assertStatus(201)
+            ->assertJsonPath('order.payment_method', 'vnpay')
+            ->assertJsonPath('order.payment_status', 'unpaid')
+            ->assertJsonPath('order.status', 'pending');
+
+        $this->assertDatabaseHas('orders', [
+            'user_id' => $user->id,
+            'payment_method' => 'vnpay',
+            'payment_status' => 'unpaid',
+            'status' => 'pending',
+        ]);
     }
 
     // =========================================================================

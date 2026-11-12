@@ -3,13 +3,17 @@ import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-do
 import { ShoppingBag, AlertCircle, ChevronRight } from 'lucide-react'
 import axios from 'axios'
 import { orderService } from '@/services/api/orderService'
+import { paymentService } from '@/services/api/paymentService'
 import type { Order, OrderStatus } from '@/types/order'
 import type { ApiPaginationMeta } from '@/types/api'
 import {
   ORDER_STATUS_CONFIG,
   ORDER_FILTER_TABS,
+  getPaymentStatusBadge,
+  getPaymentMethodLabel,
 } from '@/config/orderStatus'
 import { formatCurrency, formatDateTime } from '@/utils/formatters'
+import { getApiErrorMessage } from '@/utils/apiError'
 import { Button, Badge, Textarea } from '@/components/common'
 import { Breadcrumbs } from '@/components/navigation'
 import { Pagination } from '@/components/navigation/Pagination'
@@ -43,7 +47,26 @@ export const MyOrdersPage = () => {
   const [cancelReason, setCancelReason] = useState('')
   const [cancelError, setCancelError] = useState<string | null>(null)
   const [isCancelling, setIsCancelling] = useState(false)
+  const [retryingOrderCode, setRetryingOrderCode] = useState<string | null>(null)
   const cancelLockRef = useRef(false)
+
+  // Khởi tạo thanh toán lại cho đơn hàng VNPay
+  const handleRetryPayment = async (order: Order) => {
+    setRetryingOrderCode(order.orderCode)
+    setErrorMessage(null)
+    try {
+      const res = await paymentService.createVnPayPayment(order.orderCode)
+      window.location.assign(res.payment_url)
+    } catch (err: unknown) {
+      setRetryingOrderCode(null)
+      setErrorMessage(
+        getApiErrorMessage(
+          err,
+          `Không thể khởi tạo thanh toán cho đơn hàng ${order.orderCode}. Vui lòng thử lại sau.`,
+        ),
+      )
+    }
+  }
 
   // ĐIỀU CHỈNH 3: Chống chồng request khi chuyển tab hoặc trang nhanh bằng AbortController
   useEffect(() => {
@@ -369,9 +392,17 @@ export const MyOrdersPage = () => {
                           Đặt ngày {formatDateTime(order.createdAt)}
                         </span>
                       </div>
-                      <Badge variant={statusConfig.variant} size="sm">
-                        {statusConfig.label}
-                      </Badge>
+                      <div className={styles.headerBadges}>
+                        <Badge variant="outline" size="sm">
+                          {getPaymentMethodLabel(order.paymentMethod)}
+                        </Badge>
+                        <Badge variant={statusConfig.variant} size="sm">
+                          {statusConfig.label}
+                        </Badge>
+                        <Badge variant={getPaymentStatusBadge(order.paymentStatus).variant} size="sm">
+                          {getPaymentStatusBadge(order.paymentStatus).label}
+                        </Badge>
+                      </div>
                     </header>
 
                     {/* DANH SÁCH XEM TRƯỚC SẢN PHẨM (1-2 MÓN) */}
@@ -426,7 +457,20 @@ export const MyOrdersPage = () => {
                       </div>
 
                       <div className={styles.cardActions}>
-                        {order.status === 'pending' && (
+                        {order.status === 'pending' &&
+                          order.paymentMethod === 'vnpay' &&
+                          order.paymentStatus === 'unpaid' && (
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              isLoading={retryingOrderCode === order.orderCode}
+                              onClick={() => handleRetryPayment(order)}
+                            >
+                              Thanh toán lại
+                            </Button>
+                          )}
+
+                        {order.status === 'pending' && order.paymentStatus !== 'paid' && (
                           <Button
                             variant="ghost"
                             size="sm"
