@@ -67,28 +67,33 @@ export const FOOTER_SECTIONS: NavSection[] = [
   },
 ]
 
+/**
+ * Liên kết mạng xã hội chính thức
+ * Quy tắc: Chỉ hiển thị các mạng xã hội có URL khác rỗng (href.trim() !== '').
+ * Mặc định để chuỗi rỗng '' để ẩn đi khi chưa có kênh chính thức.
+ */
 export const SOCIAL_LINKS: SocialLink[] = [
   {
     label: 'Instagram',
-    href: 'https://instagram.com',
+    href: '', // Để trống để ẩn; điền URL ví dụ: 'https://instagram.com/modestudio'
     target: '_blank',
     rel: 'noopener noreferrer',
   },
   {
     label: 'Facebook',
-    href: 'https://facebook.com',
+    href: '', // Để trống để ẩn; điền URL ví dụ: 'https://facebook.com/modestudio'
     target: '_blank',
     rel: 'noopener noreferrer',
   },
   {
     label: 'Pinterest',
-    href: 'https://pinterest.com',
+    href: '', // Để trống để ẩn
     target: '_blank',
     rel: 'noopener noreferrer',
   },
   {
     label: 'TikTok',
-    href: 'https://tiktok.com',
+    href: '', // Để trống để ẩn
     target: '_blank',
     rel: 'noopener noreferrer',
   },

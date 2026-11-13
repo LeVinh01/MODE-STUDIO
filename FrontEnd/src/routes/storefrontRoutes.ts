@@ -65,6 +65,19 @@ export const storefrontRoutes: RouteObject[] = [
     },
   },
   {
+    path: 'account',
+    lazy: async () => {
+      const [{ AccountPage }, { ProtectedRoute }] = await Promise.all([
+        import('@/pages/storefront/AccountPage/AccountPage'),
+        import('@/components/auth/ProtectedRoute/ProtectedRoute'),
+      ])
+      return {
+        Component: () =>
+          createElement(ProtectedRoute, null, createElement(AccountPage)),
+      }
+    },
+  },
+  {
     path: 'orders',
     lazy: async () => {
       const [{ MyOrdersPage }, { ProtectedRoute }] = await Promise.all([

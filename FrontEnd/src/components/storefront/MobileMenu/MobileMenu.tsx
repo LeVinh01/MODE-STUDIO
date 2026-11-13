@@ -27,14 +27,24 @@ export const MobileMenu = () => {
       footer={
         <div className={styles.footerActions}>
           {user ? (
-            <Link
-              to="/orders"
-              onClick={handleClose}
-              className={styles.accountButton}
-            >
-              <Package size={18} />
-              <span>Đơn hàng của tôi</span>
-            </Link>
+            <>
+              <Link
+                to="/account"
+                onClick={handleClose}
+                className={styles.accountButton}
+              >
+                <User size={18} />
+                <span>Thông tin tài khoản</span>
+              </Link>
+              <Link
+                to="/orders"
+                onClick={handleClose}
+                className={styles.accountButton}
+              >
+                <Package size={18} />
+                <span>Đơn hàng của tôi</span>
+              </Link>
+            </>
           ) : (
             <Link
               to="/login"
@@ -46,7 +56,7 @@ export const MobileMenu = () => {
             </Link>
           )}
 
-          {import.meta.env.DEV && (
+          {import.meta.env.VITE_SHOW_DEV_SHORTCUTS === 'true' && (
             <div className={styles.devRow}>
               <Link
                 to="/admin"

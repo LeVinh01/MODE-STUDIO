@@ -4,6 +4,8 @@ import type {
   AuthResult,
   LoginPayload,
   RegisterPayload,
+  UpdatePasswordPayload,
+  UpdateProfilePayload,
   User,
 } from '@/types/auth'
 import { mapApiUserToUser } from './mappers'
@@ -87,6 +89,51 @@ export const authService = {
     )
 
     return mapApiUserToUser(response.data.user)
+  },
+
+  /**
+   * Cập nhật thông tin hồ sơ tài khoản (họ tên, số điện thoại)
+   */
+  async updateProfile(
+    payload: UpdateProfilePayload,
+    signal?: AbortSignal,
+  ): Promise<{ message: string; user: User }> {
+    const response = await apiClient.put<{
+      message: string
+      user: ApiAuthResponse['user']
+    }>(
+      '/user/profile',
+      {
+        full_name: payload.fullName,
+        phone: payload.phone ?? null,
+      },
+      { signal },
+    )
+
+    return {
+      message: response.data.message,
+      user: mapApiUserToUser(response.data.user),
+    }
+  },
+
+  /**
+   * Đổi mật khẩu tài khoản
+   */
+  async updatePassword(
+    payload: UpdatePasswordPayload,
+    signal?: AbortSignal,
+  ): Promise<{ message: string }> {
+    const response = await apiClient.put<{ message: string }>(
+      '/user/password',
+      {
+        current_password: payload.currentPassword,
+        password: payload.password,
+        password_confirmation: payload.passwordConfirmation,
+      },
+      { signal },
+    )
+
+    return response.data
   },
 }
 

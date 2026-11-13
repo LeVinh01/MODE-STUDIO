@@ -1,11 +1,15 @@
 import { useState, useEffect, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import axios from 'axios'
-import { Input } from '@/components/common/Input'
-import { Button } from '@/components/common/Button'
+import { Input, Button, PasswordInput } from '@/components/common'
+import { AuthLoadingScreen } from '@/components/auth/AuthLoadingScreen'
 import { authService } from '@/services/api/authService'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
-import { setUser, selectIsAuthenticated } from '@/store/slices/authSlice'
+import {
+  setUser,
+  selectIsAuthenticated,
+  selectIsAuthInitialized,
+} from '@/store/slices/authSlice'
 import type { ApiValidationErrorResponse } from '@/types/auth'
 import styles from './LoginPage.module.scss'
 
@@ -14,6 +18,7 @@ export const LoginPage = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const isAuthenticated = useAppSelector(selectIsAuthenticated)
+  const isAuthInitialized = useAppSelector(selectIsAuthInitialized)
 
   // Determine redirection target (preserving pathname and search query)
   const fromState = (
@@ -33,12 +38,12 @@ export const LoginPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [retryCountdown, setRetryCountdown] = useState<number | null>(null)
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated (chờ auth khởi tạo xong)
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthInitialized && isAuthenticated) {
       navigate(redirectTarget, { replace: true })
     }
-  }, [isAuthenticated, navigate, redirectTarget])
+  }, [isAuthInitialized, isAuthenticated, navigate, redirectTarget])
 
   // Countdown timer for 429 Too Many Requests
   useEffect(() => {
@@ -146,6 +151,11 @@ export const LoginPage = () => {
   const isButtonDisabled =
     isSubmitting || (retryCountdown !== null && retryCountdown > 0)
 
+  // Không hiển thị form khi auth chưa khởi tạo xong hoặc khi đã đăng nhập (tránh nhảy giao diện)
+  if (!isAuthInitialized || isAuthenticated) {
+    return <AuthLoadingScreen />
+  }
+
   return (
     <div className={styles.container}>
       <div className={styles.card}>
@@ -184,9 +194,8 @@ export const LoginPage = () => {
             placeholder="ten@example.com"
           />
 
-          <Input
+          <PasswordInput
             id="login-password"
-            type="password"
             label="Mật khẩu"
             value={password}
             onChange={(e) => {

@@ -56,6 +56,7 @@ export const CheckoutPage = () => {
   const submitLockRef = useRef(false)
 
   // Form State - khởi tạo từ user hiện tại
+  const isVnPayEnabled = import.meta.env.VITE_ENABLE_VNPAY === 'true'
   const [recipientName, setRecipientName] = useState(user?.fullName || '')
   const [recipientPhone, setRecipientPhone] = useState(user?.phone || '')
   const [shippingAddress, setShippingAddress] = useState('')
@@ -421,30 +422,33 @@ export const CheckoutPage = () => {
                     </div>
                   </label>
 
-                  {/* VNPAY (DISABLED) */}
-                  <label
-                    className={`${styles.paymentOption} ${styles.disabled}`}
-                  >
-                    <input
-                      type="radio"
-                      name="payment_method"
-                      value="vnpay"
-                      disabled
-                      className={styles.radioInput}
-                    />
-                    <div className={styles.paymentOptionContent}>
-                      <div className={styles.paymentOptionTitle}>
-                        <CreditCard size={18} aria-hidden="true" />
-                        <span>Cổng thanh toán VNPAY / VNPAY-QR</span>
-                        <Badge variant="outline" size="sm">
-                          Sắp ra mắt
-                        </Badge>
+                  {/* VNPAY (chỉ hiển thị khi VITE_ENABLE_VNPAY=true) */}
+                  {isVnPayEnabled && (
+                    <label
+                      className={`${styles.paymentOption} ${
+                        paymentMethod === 'vnpay' ? styles.selected : ''
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="payment_method"
+                        value="vnpay"
+                        checked={paymentMethod === 'vnpay'}
+                        onChange={() => setPaymentMethod('vnpay')}
+                        disabled={isSubmitting || isPossibleDuplicateOrder}
+                        className={styles.radioInput}
+                      />
+                      <div className={styles.paymentOptionContent}>
+                        <div className={styles.paymentOptionTitle}>
+                          <CreditCard size={18} aria-hidden="true" />
+                          <span>Cổng thanh toán VNPAY / VNPAY-QR</span>
+                        </div>
+                        <p className={styles.paymentOptionDesc}>
+                          Thanh toán qua thẻ ATM, Internet Banking hoặc mã QR ngân hàng.
+                        </p>
                       </div>
-                      <p className={styles.paymentOptionDesc}>
-                        Thanh toán qua thẻ ATM, Internet Banking hoặc mã QR ngân hàng.
-                      </p>
-                    </div>
-                  </label>
+                    </label>
+                  )}
                 </div>
               </section>
             </div>

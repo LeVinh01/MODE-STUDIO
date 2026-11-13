@@ -171,6 +171,15 @@ export const Header = ({ cartCount = 0 }: HeaderProps) => {
                   <div className={styles.dropdownDivider} role="separator" />
 
                   <Link
+                    to="/account"
+                    role="menuitem"
+                    className={styles.dropdownItem}
+                    onClick={() => setIsAccountMenuOpen(false)}
+                  >
+                    Thông tin tài khoản
+                  </Link>
+
+                  <Link
                     to="/orders"
                     role="menuitem"
                     className={styles.dropdownItem}
@@ -229,8 +238,8 @@ export const Header = ({ cartCount = 0 }: HeaderProps) => {
             )}
           </button>
 
-          {/* Dev-only shortcuts */}
-          {import.meta.env.DEV && (
+          {/* Dev-only shortcuts (chỉ hiện khi VITE_SHOW_DEV_SHORTCUTS=true) */}
+          {import.meta.env.VITE_SHOW_DEV_SHORTCUTS === 'true' && (
             <div className={styles.devBadgeGroup}>
               <Link to="/admin" className={styles.devLink} title="Admin Workspace">
                 Admin

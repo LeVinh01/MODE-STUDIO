@@ -1,11 +1,15 @@
 import { useState, useEffect, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import axios from 'axios'
-import { Input } from '@/components/common/Input'
-import { Button } from '@/components/common/Button'
+import { Input, Button, PasswordInput } from '@/components/common'
+import { AuthLoadingScreen } from '@/components/auth/AuthLoadingScreen'
 import { authService } from '@/services/api/authService'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
-import { setUser, selectIsAuthenticated } from '@/store/slices/authSlice'
+import {
+  setUser,
+  selectIsAuthenticated,
+  selectIsAuthInitialized,
+} from '@/store/slices/authSlice'
 import type { ApiValidationErrorResponse } from '@/types/auth'
 import styles from './RegisterPage.module.scss'
 
@@ -14,6 +18,7 @@ export const RegisterPage = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const isAuthenticated = useAppSelector(selectIsAuthenticated)
+  const isAuthInitialized = useAppSelector(selectIsAuthInitialized)
 
   // Preserve redirect target
   const fromState = (
@@ -42,10 +47,10 @@ export const RegisterPage = () => {
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthInitialized && isAuthenticated) {
       navigate(redirectTarget, { replace: true })
     }
-  }, [isAuthenticated, navigate, redirectTarget])
+  }, [isAuthInitialized, isAuthenticated, navigate, redirectTarget])
 
   // Countdown timer for 429
   useEffect(() => {
@@ -181,6 +186,11 @@ export const RegisterPage = () => {
   const isButtonDisabled =
     isSubmitting || (retryCountdown !== null && retryCountdown > 0)
 
+  // Không hiển thị form khi auth chưa khởi tạo xong hoặc khi đã đăng nhập (tránh nhảy giao diện)
+  if (!isAuthInitialized || isAuthenticated) {
+    return <AuthLoadingScreen />
+  }
+
   return (
     <div className={styles.container}>
       <div className={styles.card}>
@@ -255,9 +265,8 @@ export const RegisterPage = () => {
             placeholder="0912345678"
           />
 
-          <Input
+          <PasswordInput
             id="register-password"
-            type="password"
             label="Mật khẩu"
             value={password}
             onChange={(e) => {
@@ -274,9 +283,8 @@ export const RegisterPage = () => {
             placeholder="••••••••"
           />
 
-          <Input
+          <PasswordInput
             id="register-password-confirmation"
-            type="password"
             label="Xác nhận mật khẩu"
             value={passwordConfirmation}
             onChange={(e) => {

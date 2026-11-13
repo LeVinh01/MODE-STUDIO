@@ -39,6 +39,12 @@ Route::prefix('auth')->group(function () {
     });
 });
 
+// User Profile & Password API (yêu cầu đăng nhập)
+Route::middleware(['auth:sanctum', 'active'])->prefix('user')->group(function () {
+    Route::put('/profile', [AuthController::class, 'updateProfile'])->middleware('throttle:60,1');
+    Route::put('/password', [AuthController::class, 'updatePassword'])->middleware('throttle:30,1');
+});
+
 // Cart API
 // Báo giá giỏ hàng khách vãng lai (công khai, có rate limit)
 Route::post('/cart/quote', [CartController::class, 'quote'])
