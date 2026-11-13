@@ -20,6 +20,8 @@ class Order extends Model
         'recipient_name',
         'recipient_phone',
         'shipping_address',
+        'carrier',
+        'tracking_code',
         'note',
         'subtotal',
         'shipping_fee',

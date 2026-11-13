@@ -57,6 +57,13 @@ class AdminDashboardController extends Controller
             'cancelled' => (int) ($statusCounts[OrderStatus::Cancelled->value] ?? 0),
         ];
 
+        // Tỷ lệ hủy đơn: số đơn hủy trong kỳ (theo ngày tạo) / tổng đơn tạo trong kỳ * 100 (làm tròn 1 số lẻ)
+        $totalOrdersCreated = array_sum($ordersByStatus);
+        $cancelledOrdersCount = $ordersByStatus['cancelled'];
+        $cancellationRate = $totalOrdersCreated > 0
+            ? (float) round(($cancelledOrdersCount / $totalOrdersCreated) * 100, 1)
+            : 0.0;
+
         // 4. Khách hàng mới đăng ký tài khoản trong kỳ
         $newCustomersCount = User::query()
             ->whereHas('role', fn ($q) => $q->where('name', 'customer'))
@@ -75,6 +82,7 @@ class AdminDashboardController extends Controller
                 'delivered_orders_count'   => $deliveredOrdersCount,
                 'average_order_value'      => $averageOrderValue,
                 'orders_count'             => $ordersCount,
+                'cancellation_rate'        => $cancellationRate,
                 'orders_by_status'         => $ordersByStatus,
                 'new_customers_count'      => $newCustomersCount,
                 'low_stock_variants_count' => $lowStockVariantsCount,

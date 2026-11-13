@@ -44,7 +44,7 @@ class ProductIndexRequest extends FormRequest
             'search'     => ['sometimes', 'nullable', 'string', 'max:150'],
             'q'          => ['sometimes', 'nullable', 'string', 'max:150'],
             'featured'   => ['sometimes', 'boolean'],
-            'sort'       => ['sometimes', 'string', Rule::in(['newest', 'price_asc', 'price_desc'])],
+            'sort'       => ['sometimes', 'string', Rule::in(['newest', 'price_asc', 'price_desc', 'best_selling'])],
             'per_page'   => ['sometimes', 'integer', 'min:1', 'max:48'],
             'page'       => ['sometimes', 'integer', 'min:1'],
         ];

@@ -23,9 +23,10 @@ import {
   type AdminOrderActionItem,
 } from '@/config/orderStatus'
 import { formatCurrency, formatDateTime } from '@/utils/formatters'
-import { Button, Badge, Textarea } from '@/components/common'
+import { Button, Badge, Textarea, Input } from '@/components/common'
 import { Breadcrumbs } from '@/components/navigation'
 import { EmptyState, Modal, Skeleton } from '@/components/feedback'
+import { SHIPPING_CARRIERS } from '@/config/shipping'
 import styles from './AdminOrderDetailPage.module.scss'
 
 export const AdminOrderDetailPage = () => {
@@ -46,7 +47,11 @@ export const AdminOrderDetailPage = () => {
   // 2. State Modal Đổi trạng thái
   const [activeAction, setActiveAction] = useState<AdminOrderActionItem | null>(null)
   const [cancelReason, setCancelReason] = useState('')
+  const [carrier, setCarrier] = useState<string>(SHIPPING_CARRIERS[0])
+  const [trackingCode, setTrackingCode] = useState('')
   const [reasonError, setReasonError] = useState<string | null>(null)
+  const [carrierError, setCarrierError] = useState<string | null>(null)
+  const [trackingCodeError, setTrackingCodeError] = useState<string | null>(null)
   const [modalError, setModalError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const actionLockRef = useRef(false)
@@ -95,7 +100,11 @@ export const AdminOrderDetailPage = () => {
   const handleOpenActionModal = (action: AdminOrderActionItem) => {
     setActiveAction(action)
     setCancelReason('')
+    setCarrier(SHIPPING_CARRIERS[0])
+    setTrackingCode('')
     setReasonError(null)
+    setCarrierError(null)
+    setTrackingCodeError(null)
     setModalError(null)
   }
 
@@ -104,7 +113,11 @@ export const AdminOrderDetailPage = () => {
     if (isSubmitting) return
     setActiveAction(null)
     setCancelReason('')
+    setCarrier(SHIPPING_CARRIERS[0])
+    setTrackingCode('')
     setReasonError(null)
+    setCarrierError(null)
+    setTrackingCodeError(null)
     setModalError(null)
     actionLockRef.current = false
   }
@@ -116,6 +129,8 @@ export const AdminOrderDetailPage = () => {
 
     setModalError(null)
     setReasonError(null)
+    setCarrierError(null)
+    setTrackingCodeError(null)
 
     // Kiểm tra ràng buộc lý do hủy đơn
     if (activeAction.isCancel) {
@@ -130,6 +145,23 @@ export const AdminOrderDetailPage = () => {
       }
     }
 
+    // Kiểm tra ràng buộc đơn vị vận chuyển và mã vận đơn khi chuyển sang shipping
+    if (activeAction.targetStatus === 'shipping') {
+      let hasError = false
+      if (!carrier.trim()) {
+        setCarrierError('Vui lòng chọn đơn vị vận chuyển.')
+        hasError = true
+      }
+      if (!trackingCode.trim()) {
+        setTrackingCodeError('Mã vận đơn là bắt buộc khi chuyển sang giao hàng.')
+        hasError = true
+      } else if (trackingCode.trim().length > 100) {
+        setTrackingCodeError('Mã vận đơn không được vượt quá 100 ký tự.')
+        hasError = true
+      }
+      if (hasError) return
+    }
+
     actionLockRef.current = true
     setIsSubmitting(true)
 
@@ -137,6 +169,8 @@ export const AdminOrderDetailPage = () => {
       const result = await adminOrderService.updateAdminOrderStatus(orderCode, {
         status: activeAction.targetStatus,
         reason: activeAction.isCancel ? cancelReason.trim() : undefined,
+        carrier: activeAction.targetStatus === 'shipping' ? carrier.trim() : undefined,
+        tracking_code: activeAction.targetStatus === 'shipping' ? trackingCode.trim() : undefined,
       })
 
       setOrder(result.order)
@@ -161,9 +195,27 @@ export const AdminOrderDetailPage = () => {
       )?.response?.data
 
       if (status === 422) {
+        let hasSpecificError = false
+
         // Trường hợp lỗi validate trường reason
         if (responseData?.errors?.reason && responseData.errors.reason.length > 0) {
           setReasonError(responseData.errors.reason[0])
+          hasSpecificError = true
+        }
+
+        // Trường hợp lỗi validate trường carrier
+        if (responseData?.errors?.carrier && responseData.errors.carrier.length > 0) {
+          setCarrierError(responseData.errors.carrier[0])
+          hasSpecificError = true
+        }
+
+        // Trường hợp lỗi validate trường tracking_code
+        if (responseData?.errors?.tracking_code && responseData.errors.tracking_code.length > 0) {
+          setTrackingCodeError(responseData.errors.tracking_code[0])
+          hasSpecificError = true
+        }
+
+        if (hasSpecificError) {
           return
         }
 
@@ -499,6 +551,24 @@ export const AdminOrderDetailPage = () => {
                 <span className={styles.infoLabel}>Địa chỉ giao hàng:</span>
                 <span className={styles.infoValue}>{order.shippingAddress}</span>
               </div>
+              {order.carrier && (
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>Đơn vị vận chuyển:</span>
+                  <span className={styles.infoValue}>
+                    <strong>{order.carrier}</strong>
+                  </span>
+                </div>
+              )}
+              {order.trackingCode && (
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>Mã vận đơn:</span>
+                  <span className={styles.infoValue}>
+                    <Badge variant="luxury" size="sm">
+                      {order.trackingCode}
+                    </Badge>
+                  </span>
+                </div>
+              )}
               {order.note && (
                 <div className={styles.infoRow}>
                   <span className={styles.infoLabel}>Ghi chú đơn hàng:</span>
@@ -635,6 +705,76 @@ export const AdminOrderDetailPage = () => {
                   Tồn kho của các sản phẩm trong đơn sẽ được tự động hoàn lại số lượng khả dụng
                   trong kho hàng.
                 </span>
+              </div>
+            )}
+
+            {/* Trường nhập đơn vị vận chuyển và mã vận đơn khi giao hàng */}
+            {activeAction.targetStatus === 'shipping' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', margin: 'var(--space-3) 0' }}>
+                <div>
+                  <label
+                    htmlFor="carrier-select"
+                    style={{
+                      display: 'block',
+                      fontSize: '0.8125rem',
+                      fontWeight: 500,
+                      marginBottom: 'var(--space-1)',
+                      color: 'var(--color-text-secondary)',
+                    }}
+                  >
+                    Đơn vị vận chuyển *
+                  </label>
+                  <select
+                    id="carrier-select"
+                    value={carrier}
+                    onChange={(e) => {
+                      setCarrier(e.target.value)
+                      if (carrierError) setCarrierError(null)
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: 'var(--radius-sm)',
+                      border: carrierError ? '1px solid var(--color-error)' : '1px solid var(--color-border)',
+                      fontSize: '0.875rem',
+                      background: 'var(--color-white)',
+                      outline: 'none',
+                    }}
+                    disabled={isSubmitting}
+                  >
+                    {SHIPPING_CARRIERS.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                  {carrierError && (
+                    <span
+                      style={{
+                        color: 'var(--color-error)',
+                        fontSize: '0.75rem',
+                        marginTop: '4px',
+                        display: 'block',
+                      }}
+                    >
+                      {carrierError}
+                    </span>
+                  )}
+                </div>
+
+                <Input
+                  label="Mã vận đơn *"
+                  placeholder="Ví dụ: GHN-VN-12345678"
+                  value={trackingCode}
+                  onChange={(e) => {
+                    setTrackingCode(e.target.value)
+                    if (trackingCodeError) setTrackingCodeError(null)
+                  }}
+                  errorMessage={trackingCodeError || undefined}
+                  fullWidth
+                  disabled={isSubmitting}
+                  maxLength={100}
+                />
               </div>
             )}
 

@@ -39,6 +39,8 @@ export interface AdminOrderListItem {
   recipientName: string
   recipientPhone: string
   shippingAddress: string
+  carrier?: string | null
+  trackingCode?: string | null
   subtotal: number
   shippingFee: number
   discountAmount: number
@@ -79,6 +81,8 @@ export interface AdminOrderFilterParams {
 export interface UpdateAdminOrderStatusPayload {
   status: OrderStatus
   reason?: string
+  carrier?: string
+  tracking_code?: string
 }
 
 // ----------------------------------------------------------------------
@@ -114,6 +118,8 @@ export interface ApiAdminOrderListItem {
   recipient_name: string
   recipient_phone: string
   shipping_address: string
+  carrier?: string | null
+  tracking_code?: string | null
   subtotal: number
   shipping_fee: number
   discount_amount: number

@@ -45,6 +45,8 @@ class AdminOrderDetailResource extends JsonResource
             'recipient_name'   => $this->recipient_name,
             'recipient_phone'  => $this->recipient_phone,
             'shipping_address' => $this->shipping_address,
+            'carrier'          => $this->carrier,
+            'tracking_code'    => $this->tracking_code,
             'note'             => $this->note,
             'subtotal'         => (int) $this->subtotal,
             'shipping_fee'     => (int) $this->shipping_fee,

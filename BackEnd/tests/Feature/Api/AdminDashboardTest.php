@@ -447,4 +447,73 @@ class AdminDashboardTest extends TestCase
         $this->assertSame(5, $data[1]['total_quantity']);
         $this->assertSame(500000, $data[1]['total_revenue']);
     }
+
+    public function test_summary_cancellation_rate_zero_when_no_orders(): void
+    {
+        $admin = $this->createAdmin();
+        Sanctum::actingAs($admin);
+
+        $res = $this->getJson('/api/admin/dashboard/summary?from=2026-11-10&to=2026-11-10')
+            ->assertStatus(200);
+
+        $this->assertSame(0.0, (float) $res->json('data.cancellation_rate'));
+    }
+
+    public function test_summary_cancellation_rate_calculated_correctly_with_cancelled_orders(): void
+    {
+        $admin = $this->createAdmin();
+        $customer = $this->createCustomer();
+        Sanctum::actingAs($admin);
+
+        $dateVn = '2026-11-10';
+        $timeUtc = Carbon::createFromFormat('Y-m-d H:i:s', '2026-11-10 14:00:00', 'Asia/Ho_Chi_Minh')->setTimezone('UTC');
+
+        // Tạo 3 đơn Confirmed và 1 đơn Cancelled -> 1 / 4 * 100 = 25.0%
+        for ($i = 0; $i < 3; $i++) {
+            $o = $this->createOrder($customer, ['status' => OrderStatus::Confirmed]);
+            $o->created_at = $timeUtc;
+            $o->save();
+        }
+
+        $oCancelled = $this->createOrder($customer, ['status' => OrderStatus::Cancelled]);
+        $oCancelled->created_at = $timeUtc;
+        $oCancelled->save();
+
+        $res = $this->getJson("/api/admin/dashboard/summary?from={$dateVn}&to={$dateVn}")
+            ->assertStatus(200);
+
+        $this->assertEquals(25.0, (float) $res->json('data.cancellation_rate'));
+        $this->assertSame(3, $res->json('data.orders_count')); // đơn hợp lệ không tính đơn hủy
+    }
+
+    public function test_summary_cancellation_rate_respects_vietnam_timezone_date_boundaries(): void
+    {
+        $admin = $this->createAdmin();
+        $customer = $this->createCustomer();
+        Sanctum::actingAs($admin);
+
+        // 2026-11-10 00:30:00 VN = 2026-11-09 17:30:00 UTC (nằm trong ngày 10/11 VN)
+        $insideVnTime = Carbon::createFromFormat('Y-m-d H:i:s', '2026-11-10 00:30:00', 'Asia/Ho_Chi_Minh')->setTimezone('UTC');
+        $oCancelledInside = $this->createOrder($customer, ['status' => OrderStatus::Cancelled]);
+        $oCancelledInside->created_at = $insideVnTime;
+        $oCancelledInside->save();
+
+        // 2026-11-09 23:59:00 VN = 2026-11-09 16:59:00 UTC (nằm ngoài ngày 10/11 VN)
+        $outsideVnTime = Carbon::createFromFormat('Y-m-d H:i:s', '2026-11-09 23:59:00', 'Asia/Ho_Chi_Minh')->setTimezone('UTC');
+        $oCancelledOutside = $this->createOrder($customer, ['status' => OrderStatus::Cancelled]);
+        $oCancelledOutside->created_at = $outsideVnTime;
+        $oCancelledOutside->save();
+
+        // 1 đơn confirmed trong ngày 10/11 VN
+        $oConfirmed = $this->createOrder($customer, ['status' => OrderStatus::Confirmed]);
+        $oConfirmed->created_at = $insideVnTime;
+        $oConfirmed->save();
+
+        // Ngày 2026-11-10 VN có 2 đơn tạo (1 hủy, 1 confirmed) -> tỷ lệ 50.0%
+        $res = $this->getJson('/api/admin/dashboard/summary?from=2026-11-10&to=2026-11-10')
+            ->assertStatus(200);
+
+        $this->assertEquals(50.0, (float) $res->json('data.cancellation_rate'));
+        $this->assertSame(2, $res->json('data.orders_by_status.cancelled') + $res->json('data.orders_by_status.confirmed'));
+    }
 }

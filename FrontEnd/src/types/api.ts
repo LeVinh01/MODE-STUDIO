@@ -135,7 +135,7 @@ export interface ProductQueryFilter {
   gender?: 'women' | 'men' | 'unisex'
   search?: string
   featured?: boolean
-  sort?: 'newest' | 'price_asc' | 'price_desc'
+  sort?: 'newest' | 'price_asc' | 'price_desc' | 'best_selling'
   perPage?: number
   page?: number
 }
@@ -239,6 +239,8 @@ export interface ApiOrder {
   recipient_name: string
   recipient_phone: string
   shipping_address: string
+  carrier?: string | null
+  tracking_code?: string | null
   note: string | null
   subtotal: number
   shipping_fee: number
