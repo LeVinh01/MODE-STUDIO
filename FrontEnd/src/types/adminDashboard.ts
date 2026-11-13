@@ -7,6 +7,7 @@ export interface AdminDashboardSummaryData {
   delivered_orders_count: number
   average_order_value: number
   orders_count: number
+  cancellation_rate: number
   orders_by_status: Record<OrderStatus, number>
   new_customers_count: number
   low_stock_variants_count: number

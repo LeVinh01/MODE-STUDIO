@@ -315,6 +315,8 @@ export const mapApiOrderToOrder = (apiOrder: ApiOrder): Order => {
     recipientName: apiOrder.recipient_name,
     recipientPhone: apiOrder.recipient_phone,
     shippingAddress: apiOrder.shipping_address,
+    carrier: apiOrder.carrier ?? null,
+    trackingCode: apiOrder.tracking_code ?? null,
     note: apiOrder.note,
     subtotal: apiOrder.subtotal,
     shippingFee: apiOrder.shipping_fee,

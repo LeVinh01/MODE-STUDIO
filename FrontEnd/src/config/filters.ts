@@ -32,7 +32,7 @@ export interface FilterPriceRangeOption {
 
 export interface SortOption {
   label: string
-  value: 'newest' | 'price_asc' | 'price_desc'
+  value: 'newest' | 'best_selling' | 'price_asc' | 'price_desc'
 }
 
 /**
@@ -91,6 +91,7 @@ export const FILTER_PRICE_RANGES: FilterPriceRangeOption[] = [
  */
 export const SORT_OPTIONS: SortOption[] = [
   { label: 'Mới Nhất', value: 'newest' },
+  { label: 'Bán Chạy Nhất', value: 'best_selling' },
   { label: 'Giá: Thấp Đến Cao', value: 'price_asc' },
   { label: 'Giá: Cao Đến Thấp', value: 'price_desc' },
 ]

@@ -201,6 +201,149 @@ class ProductApiTest extends TestCase
         $this->assertEquals($sortedDesc, $descPrices);
     }
 
+    public function test_sort_best_selling_orders_items_count_in_last_90_days(): void
+    {
+        $role = \App\Models\Role::where('name', 'customer')->first();
+        $customer = \App\Models\User::create([
+            'role_id'   => $role->id,
+            'full_name' => 'Khách Mua Hàng',
+            'email'     => 'buyer_' . uniqid() . '@example.com',
+            'phone'     => '0901234567',
+            'password'  => \Illuminate\Support\Facades\Hash::make('Password@123'),
+            'status'    => \App\Enums\UserStatus::Active,
+        ]);
+
+        $products = \App\Models\Product::where('status', \App\Enums\ProductStatus::Active)->limit(4)->get();
+        $pA = $products[0];
+        $pB = $products[1];
+        $pCancelled = $products[2];
+        $pOld = $products[3];
+
+        $vA = $pA->variants()->first();
+        $vB = $pB->variants()->first();
+        $vC = $pCancelled->variants()->first();
+        $vD = $pOld->variants()->first();
+
+        // 1. Đơn 1: Đã giao 30 ngày trước, SP A mua 10 cái
+        $o1 = \App\Models\Order::create([
+            'order_code'       => 'ORD-BEST-1',
+            'user_id'          => $customer->id,
+            'status'           => \App\Enums\OrderStatus::Delivered,
+            'payment_method'   => \App\Enums\PaymentMethod::Cod,
+            'payment_status'   => \App\Enums\PaymentStatus::Paid,
+            'recipient_name'   => 'Test',
+            'recipient_phone'  => '0901234567',
+            'shipping_address' => 'Hà Nội',
+            'subtotal'         => 1000000,
+            'shipping_fee'     => 0,
+            'total_amount'     => 1000000,
+        ]);
+        \Illuminate\Support\Facades\DB::table('orders')->where('id', $o1->id)->update(['created_at' => now()->subDays(30)]);
+        \App\Models\OrderItem::create([
+            'order_id'     => $o1->id,
+            'product_id'   => $pA->id,
+            'variant_id'   => $vA->id,
+            'product_name' => $pA->name,
+            'sku'          => $vA->sku,
+            'color_name'   => 'Đen',
+            'size_name'    => 'M',
+            'unit_price'   => 100000,
+            'quantity'     => 10,
+            'line_total'   => 1000000,
+        ]);
+
+        // 2. Đơn 2: Đang giao 10 ngày trước, SP B mua 3 cái
+        $o2 = \App\Models\Order::create([
+            'order_code'       => 'ORD-BEST-2',
+            'user_id'          => $customer->id,
+            'status'           => \App\Enums\OrderStatus::Shipping,
+            'payment_method'   => \App\Enums\PaymentMethod::Cod,
+            'payment_status'   => \App\Enums\PaymentStatus::Unpaid,
+            'recipient_name'   => 'Test',
+            'recipient_phone'  => '0901234567',
+            'shipping_address' => 'Hà Nội',
+            'subtotal'         => 300000,
+            'shipping_fee'     => 0,
+            'total_amount'     => 300000,
+        ]);
+        \Illuminate\Support\Facades\DB::table('orders')->where('id', $o2->id)->update(['created_at' => now()->subDays(10)]);
+        \App\Models\OrderItem::create([
+            'order_id'     => $o2->id,
+            'product_id'   => $pB->id,
+            'variant_id'   => $vB->id,
+            'product_name' => $pB->name,
+            'sku'          => $vB->sku,
+            'color_name'   => 'Đen',
+            'size_name'    => 'M',
+            'unit_price'   => 100000,
+            'quantity'     => 3,
+            'line_total'   => 300000,
+        ]);
+
+        // 3. Đơn 3: HỦY 5 ngày trước, SP C mua 50 cái -> KHÔNG TÍNH vì đơn hủy
+        $o3 = \App\Models\Order::create([
+            'order_code'       => 'ORD-BEST-3',
+            'user_id'          => $customer->id,
+            'status'           => \App\Enums\OrderStatus::Cancelled,
+            'payment_method'   => \App\Enums\PaymentMethod::Cod,
+            'payment_status'   => \App\Enums\PaymentStatus::Unpaid,
+            'recipient_name'   => 'Test',
+            'recipient_phone'  => '0901234567',
+            'shipping_address' => 'Hà Nội',
+            'subtotal'         => 5000000,
+            'shipping_fee'     => 0,
+            'total_amount'     => 5000000,
+        ]);
+        \Illuminate\Support\Facades\DB::table('orders')->where('id', $o3->id)->update(['created_at' => now()->subDays(5)]);
+        \App\Models\OrderItem::create([
+            'order_id'     => $o3->id,
+            'product_id'   => $pCancelled->id,
+            'variant_id'   => $vC->id,
+            'product_name' => $pCancelled->name,
+            'sku'          => $vC->sku,
+            'color_name'   => 'Đen',
+            'size_name'    => 'M',
+            'unit_price'   => 100000,
+            'quantity'     => 50,
+            'line_total'   => 5000000,
+        ]);
+
+        // 4. Đơn 4: Đã giao 120 ngày trước (> 90 ngày), SP D mua 100 cái -> KHÔNG TÍNH vì quá 90 ngày
+        $o4 = \App\Models\Order::create([
+            'order_code'       => 'ORD-BEST-4',
+            'user_id'          => $customer->id,
+            'status'           => \App\Enums\OrderStatus::Delivered,
+            'payment_method'   => \App\Enums\PaymentMethod::Cod,
+            'payment_status'   => \App\Enums\PaymentStatus::Paid,
+            'recipient_name'   => 'Test',
+            'recipient_phone'  => '0901234567',
+            'shipping_address' => 'Hà Nội',
+            'subtotal'         => 10000000,
+            'shipping_fee'     => 0,
+            'total_amount'     => 10000000,
+        ]);
+        \Illuminate\Support\Facades\DB::table('orders')->where('id', $o4->id)->update(['created_at' => now()->subDays(120)]);
+        \App\Models\OrderItem::create([
+            'order_id'     => $o4->id,
+            'product_id'   => $pOld->id,
+            'variant_id'   => $vD->id,
+            'product_name' => $pOld->name,
+            'sku'          => $vD->sku,
+            'color_name'   => 'Đen',
+            'size_name'    => 'M',
+            'unit_price'   => 100000,
+            'quantity'     => 100,
+            'line_total'   => 10000000,
+        ]);
+
+        $res = $this->getJson('/api/products?sort=best_selling')->assertStatus(200);
+        $data = $res->json('data');
+
+        // SP A (10 cái) phải đứng đầu, SP B (3 cái) đứng thứ 2
+        $this->assertSame($pA->id, $data[0]['id']);
+        $this->assertSame($pB->id, $data[1]['id']);
+    }
+
     public function test_pagination_across_pages_has_no_duplicates_or_omissions(): void
     {
         // 11 active sản phẩm, per_page=4 => page 1 (4), page 2 (4), page 3 (3)

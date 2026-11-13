@@ -55,6 +55,8 @@ export const HomePage = () => {
   const [aiOutfitItems, setAiOutfitItems] = useState<Product[]>([])
   const [isLoadingAiOutfits, setIsLoadingAiOutfits] = useState<boolean>(true)
 
+  const [bestSellingProducts, setBestSellingProducts] = useState<Product[]>([])
+
   // 2. Retry trigger
   const [retryTrigger, setRetryTrigger] = useState<number>(0)
   const handleRetry = useCallback(() => {
@@ -134,6 +136,21 @@ export const HomePage = () => {
       } finally {
         if (!signal.aborted) {
           setIsLoadingAiOutfits(false)
+        }
+      }
+
+      // D. Fetch "Bán Chạy" (4 sản phẩm xếp theo best_selling)
+      try {
+        const bestRes = await productService.getProducts(
+          { sort: 'best_selling', perPage: 4 },
+          signal,
+        )
+        if (!signal.aborted) {
+          setBestSellingProducts(bestRes.items)
+        }
+      } catch {
+        if (!signal.aborted) {
+          setBestSellingProducts([])
         }
       }
     }
@@ -346,6 +363,44 @@ export const HomePage = () => {
           )}
         </div>
       </section>
+
+      {/* ====================================================================
+          3b. BEST SELLING PRODUCTS (Chỉ hiển thị khi có dữ liệu)
+          ==================================================================== */}
+      {bestSellingProducts.length > 0 && (
+        <section
+          className={styles.bestSellingSection}
+          aria-labelledby="best-selling-heading"
+        >
+          <div className={styles.container}>
+            <div className={styles.sectionHeader}>
+              <div>
+                <span className={styles.sectionTagline}>ĐƯỢC YÊU THÍCH NHẤT</span>
+                <h2 id="best-selling-heading" className={styles.sectionTitle}>
+                  Sản Phẩm Bán Chạy
+                </h2>
+                <p className={styles.sectionSubtitle}>
+                  Những thiết kế may đo được lựa chọn nhiều nhất trong thời gian qua
+                </p>
+              </div>
+              <Link to="/products?sort=best_selling" className={styles.viewAllLink}>
+                Xem Tất Cả <ArrowRight size={16} aria-hidden="true" />
+              </Link>
+            </div>
+
+            <div className={styles.productsGrid}>
+              {bestSellingProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  isWishlisted={Boolean(wishlist[product.id])}
+                  onWishlistToggle={handleToggleWishlist}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ====================================================================
           4. EDITORIAL LOOKBOOK / BRAND CAMPAIGN BANNER

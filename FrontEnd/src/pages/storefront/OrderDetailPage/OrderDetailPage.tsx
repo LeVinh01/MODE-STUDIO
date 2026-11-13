@@ -337,6 +337,26 @@ export const OrderDetailPage = () => {
                 <span className={styles.infoValue}>{order.shippingAddress}</span>
               </div>
 
+              {order.carrier && (
+                <div className={styles.infoItem}>
+                  <span className={styles.infoLabel}>Đơn vị vận chuyển</span>
+                  <span className={styles.infoValue}>
+                    <strong>{order.carrier}</strong>
+                  </span>
+                </div>
+              )}
+
+              {order.trackingCode && (
+                <div className={styles.infoItem}>
+                  <span className={styles.infoLabel}>Mã vận đơn</span>
+                  <span className={styles.infoValue}>
+                    <Badge variant="luxury" size="sm">
+                      {order.trackingCode}
+                    </Badge>
+                  </span>
+                </div>
+              )}
+
               {order.note && (
                 <div className={styles.infoItem} style={{ gridColumn: '1 / -1' }}>
                   <span className={styles.infoLabel}>Ghi chú đơn hàng</span>

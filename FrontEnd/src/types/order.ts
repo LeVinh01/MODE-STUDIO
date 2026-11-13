@@ -30,6 +30,8 @@ export interface Order {
   recipientName: string
   recipientPhone: string
   shippingAddress: string
+  carrier?: string | null
+  trackingCode?: string | null
   note?: string | null
   subtotal: number
   shippingFee: number

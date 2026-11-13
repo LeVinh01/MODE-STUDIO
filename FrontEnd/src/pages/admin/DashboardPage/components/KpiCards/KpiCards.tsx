@@ -1,15 +1,8 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import {
-  TrendingUp,
-  PackageCheck,
-  Receipt,
-  Users,
-  AlertTriangle,
-  ArrowRight,
-} from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import type { AdminDashboardSummaryData } from '@/types/adminDashboard'
-import { formatCurrency } from '@/utils/formatters'
+import { KPI_CARDS_CONFIG } from '@/config/kpiConfig'
 import styles from './KpiCards.module.scss'
 
 interface KpiCardsProps {
@@ -19,78 +12,44 @@ interface KpiCardsProps {
 export const KpiCards: React.FC<KpiCardsProps> = ({ summary }) => {
   return (
     <div className={styles.grid}>
-      {/* 1. Doanh thu */}
-      <div className={styles.card}>
-        <div className={styles.cardHeader}>
-          <span className={styles.cardTitle}>Doanh thu</span>
-          <div className={styles.iconWrapper}>
-            <TrendingUp />
-          </div>
-        </div>
-        <div className={styles.cardValue}>{formatCurrency(summary.revenue)}</div>
-        <div className={styles.cardFooter}>
-          <span>Đơn đã giao trong kỳ</span>
-        </div>
-      </div>
+      {KPI_CARDS_CONFIG.map((card) => {
+        const Icon = card.icon
+        const isWarning = card.isWarning?.(summary) ?? false
 
-      {/* 2. Đơn đã giao */}
-      <div className={styles.card}>
-        <div className={styles.cardHeader}>
-          <span className={styles.cardTitle}>Đơn đã giao</span>
-          <div className={styles.iconWrapper}>
-            <PackageCheck />
-          </div>
-        </div>
-        <div className={styles.cardValue}>{summary.delivered_orders_count.toLocaleString('vi-VN')}</div>
-        <div className={styles.cardFooter}>
-          <span>Tổng đặt: {summary.orders_count.toLocaleString('vi-VN')} đơn</span>
-        </div>
-      </div>
+        return (
+          <div
+            key={card.id}
+            className={`${styles.card} ${isWarning ? styles.warning : ''}`}
+          >
+            <div>
+              <div className={styles.cardHeader}>
+                <span className={styles.cardTitle}>{card.title}</span>
+                <div
+                  className={`${styles.iconWrapper} ${
+                    isWarning ? styles.warning : ''
+                  }`}
+                >
+                  <Icon size={16} />
+                </div>
+              </div>
+              <p className={styles.cardDefinition} title={card.definition}>
+                {card.definition}
+              </p>
+            </div>
 
-      {/* 3. Giá trị đơn TB */}
-      <div className={styles.card}>
-        <div className={styles.cardHeader}>
-          <span className={styles.cardTitle}>Giá trị đơn TB</span>
-          <div className={styles.iconWrapper}>
-            <Receipt />
-          </div>
-        </div>
-        <div className={styles.cardValue}>{formatCurrency(summary.average_order_value)}</div>
-        <div className={styles.cardFooter}>
-          <span>Doanh thu / đơn đã giao</span>
-        </div>
-      </div>
+            <div className={styles.cardValue}>{card.getValue(summary)}</div>
 
-      {/* 4. Khách hàng mới */}
-      <div className={styles.card}>
-        <div className={styles.cardHeader}>
-          <span className={styles.cardTitle}>Khách hàng mới</span>
-          <div className={styles.iconWrapper}>
-            <Users />
+            <div className={styles.cardFooter}>
+              <span>{card.getFooter(summary)}</span>
+              {card.link && (
+                <Link to={card.link.to} className={styles.cardLink}>
+                  {card.link.text} <ArrowRight size={12} />
+                </Link>
+              )}
+            </div>
           </div>
-        </div>
-        <div className={styles.cardValue}>{summary.new_customers_count.toLocaleString('vi-VN')}</div>
-        <div className={styles.cardFooter}>
-          <span>Đăng ký mới trong kỳ</span>
-        </div>
-      </div>
-
-      {/* 5. Tồn kho thấp */}
-      <div className={`${styles.card} ${summary.low_stock_variants_count > 0 ? styles.warning : ''}`}>
-        <div className={styles.cardHeader}>
-          <span className={styles.cardTitle}>Sắp hết hàng</span>
-          <div className={`${styles.iconWrapper} ${summary.low_stock_variants_count > 0 ? styles.warning : ''}`}>
-            <AlertTriangle />
-          </div>
-        </div>
-        <div className={styles.cardValue}>{summary.low_stock_variants_count.toLocaleString('vi-VN')}</div>
-        <div className={styles.cardFooter}>
-          <span>≤ ngưỡng tồn</span>
-          <Link to="/admin/inventory" className={styles.cardLink}>
-            Xem kho <ArrowRight size={12} />
-          </Link>
-        </div>
-      </div>
+        )
+      })}
     </div>
   )
 }

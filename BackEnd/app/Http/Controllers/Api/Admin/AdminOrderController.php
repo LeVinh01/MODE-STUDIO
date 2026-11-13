@@ -156,7 +156,9 @@ class AdminOrderController extends Controller
                     break;
             }
 
-            // 5. Xử lý trường hợp hủy đơn hàng (pending hoặc confirmed -> cancelled)
+            // 5. Xử lý theo từng loại trạng thái đích
+            $historyReason = $request->filled('reason') ? trim((string) $request->input('reason')) : null;
+
             if ($targetStatus === OrderStatus::Cancelled) {
                 $reason = trim((string) $request->input('reason'));
                 if ($reason === '') {
@@ -192,6 +194,39 @@ class AdminOrderController extends Controller
                     'cancelled_at'  => now(),
                     'cancel_reason' => $reason,
                 ]);
+            } elseif ($targetStatus === OrderStatus::Shipping) {
+                $allowedCarriers = config('shop.shipping.carriers', ['GHN', 'GHTK', 'Viettel Post', 'J&T Express', 'Khác']);
+                $carrier = trim((string) $request->input('carrier'));
+                $trackingCode = trim((string) $request->input('tracking_code'));
+
+                $shippingErrors = [];
+                if ($carrier === '') {
+                    $shippingErrors['carrier'] = ['Đơn vị vận chuyển là bắt buộc khi chuyển sang trạng thái đang giao hàng.'];
+                } elseif (!in_array($carrier, $allowedCarriers, true)) {
+                    $shippingErrors['carrier'] = ['Đơn vị vận chuyển không hợp lệ. Vui lòng chọn trong danh sách được hỗ trợ.'];
+                }
+
+                if ($trackingCode === '') {
+                    $shippingErrors['tracking_code'] = ['Mã vận đơn là bắt buộc khi chuyển sang trạng thái đang giao hàng.'];
+                } elseif (mb_strlen($trackingCode) > 100) {
+                    $shippingErrors['tracking_code'] = ['Mã vận đơn không được vượt quá 100 ký tự.'];
+                }
+
+                if (!empty($shippingErrors)) {
+                    throw new HttpResponseException(response()->json([
+                        'message' => 'Thông tin đơn vị vận chuyển và mã vận đơn không hợp lệ.',
+                        'errors'  => $shippingErrors,
+                    ], 422));
+                }
+
+                $order->update([
+                    'status'        => OrderStatus::Shipping,
+                    'carrier'       => $carrier,
+                    'tracking_code' => $trackingCode,
+                ]);
+
+                $shippingNote = "Đơn vị vận chuyển: {$carrier} | Mã vận đơn: {$trackingCode}";
+                $historyReason = $historyReason ? "{$shippingNote} - {$historyReason}" : $shippingNote;
             } elseif ($targetStatus === OrderStatus::Delivered) {
                 // Khi chuyển sang delivered: nếu là COD thì tự động cập nhật payment_status = paid
                 $updateData = [
@@ -205,7 +240,7 @@ class AdminOrderController extends Controller
 
                 $order->update($updateData);
             } else {
-                // Các chuyển đổi khác (confirmed, shipping)
+                // Các chuyển đổi khác (confirmed)
                 $order->update([
                     'status' => $targetStatus,
                 ]);
@@ -217,7 +252,7 @@ class AdminOrderController extends Controller
                 'from_status' => $currentStatus->value,
                 'to_status'   => $targetStatus->value,
                 'changed_by'  => $user->id,
-                'reason'      => $request->filled('reason') ? trim((string) $request->input('reason')) : null,
+                'reason'      => $historyReason,
                 'created_at'  => now(),
             ]);
 

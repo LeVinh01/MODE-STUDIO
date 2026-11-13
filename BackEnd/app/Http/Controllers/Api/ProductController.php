@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\OrderStatus;
 use App\Enums\ProductStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ProductIndexRequest;
@@ -9,7 +10,9 @@ use App\Http\Resources\ProductDetailResource;
 use App\Http\Resources\ProductListResource;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\OrderItem;
 use App\Models\Product;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -161,9 +164,21 @@ class ProductController extends Controller
 
         if ($hasCustomSort) {
             match ($sort) {
-                'price_asc'  => $query->orderBy('base_price', 'asc'),
-                'price_desc' => $query->orderBy('base_price', 'desc'),
-                default      => $query->orderBy('published_at', 'desc'),
+                'price_asc'    => $query->orderBy('base_price', 'asc'),
+                'price_desc'   => $query->orderBy('base_price', 'desc'),
+                'best_selling' => (function () use ($query) {
+                    $cutoff = Carbon::now()->subDays(90);
+                    $query->select('products.*')
+                        ->addSelect([
+                            'total_sold' => OrderItem::selectRaw('COALESCE(SUM(order_items.quantity), 0)')
+                                ->join('orders', 'orders.id', '=', 'order_items.order_id')
+                                ->whereColumn('order_items.product_id', 'products.id')
+                                ->where('orders.status', '!=', OrderStatus::Cancelled->value)
+                                ->where('orders.created_at', '>=', $cutoff),
+                        ])
+                        ->orderBy('total_sold', 'desc');
+                })(),
+                default        => $query->orderBy('published_at', 'desc'),
             };
         } else {
             // Nếu có từ khóa tìm kiếm và khách không chọn sắp xếp riêng:
