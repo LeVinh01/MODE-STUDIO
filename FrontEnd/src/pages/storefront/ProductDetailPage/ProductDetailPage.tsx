@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { AlertCircle, CheckCircle2, Minus, Plus } from 'lucide-react'
+import { AlertCircle, Minus, Plus } from 'lucide-react'
 import { Breadcrumbs, type BreadcrumbItem } from '@/components/navigation/Breadcrumbs'
 import { Button } from '@/components/common/Button'
+import { Toast } from '@/components/feedback'
 import { ProductGallery } from '@/components/storefront/ProductGallery'
 import { VariantSelector } from '@/components/storefront/VariantSelector'
 import { ProductCard } from '@/components/storefront/ProductCard'
@@ -34,7 +35,6 @@ export const ProductDetailPage = () => {
   const [sizeWarning, setSizeWarning] = useState<string | null>(null)
   const [isAddingToCart, setIsAddingToCart] = useState<boolean>(false)
   const [addToCartError, setAddToCartError] = useState<string | null>(null)
-  const [cartSuccessMessage, setCartSuccessMessage] = useState<string | null>(null)
 
   // Reset toàn bộ state lựa chọn khi slug đổi
   const [prevSlug, setPrevSlug] = useState(slug)
@@ -46,7 +46,6 @@ export const ProductDetailPage = () => {
     setSizeWarning(null)
     setIsAddingToCart(false)
     setAddToCartError(null)
-    setCartSuccessMessage(null)
     setErrorMessage(null)
     setIsNotFound(false)
     setIsLoading(true)
@@ -254,7 +253,6 @@ export const ProductDetailPage = () => {
   const handleAddToCart = async () => {
     if (!product) return
     setAddToCartError(null)
-    setCartSuccessMessage(null)
 
     // Bắt buộc chọn màu sắc
     if (selectedColorId === null) {
@@ -307,9 +305,7 @@ export const ProductDetailPage = () => {
         setAddToCartError(`Chỉ còn ${activeVariant.stock} sản phẩm`)
       }
 
-      setCartSuccessMessage(
-        `Đã thêm ${quantity} sản phẩm (${activeVariant.color} / Size ${activeVariant.size}) vào giỏ hàng.`,
-      )
+      // Giỏ hàng drawer sẽ tự động mở lên, không hiển thị Toast thành công thừa thãi
       dispatch(setCartDrawerOpen(true))
     } catch (err: unknown) {
       const apiError = err as {
@@ -546,23 +542,19 @@ export const ProductDetailPage = () => {
                 </Button>
               </div>
 
-              {/* Lỗi tồn kho hoặc lỗi 422 từ server */}
+              {/* Toast thông báo lỗi thêm vào giỏ hàng */}
+              <Toast
+                isOpen={Boolean(addToCartError)}
+                message={addToCartError || ''}
+                type="error"
+                onClose={() => setAddToCartError(null)}
+              />
+
+              {/* Lỗi tồn kho hoặc lỗi 422 từ server (hiển thị trực quan tại form) */}
               {addToCartError && (
                 <div className={styles.errorAlert} role="alert">
                   <AlertCircle size={18} aria-hidden="true" />
                   <span>{addToCartError}</span>
-                </div>
-              )}
-
-              {/* Phản hồi khi thêm vào giỏ thành công */}
-              {cartSuccessMessage && (
-                <div
-                  className={styles.successAlert}
-                  role="status"
-                  aria-live="polite"
-                >
-                  <CheckCircle2 size={18} aria-hidden="true" />
-                  <span>{cartSuccessMessage}</span>
                 </div>
               )}
             </div>

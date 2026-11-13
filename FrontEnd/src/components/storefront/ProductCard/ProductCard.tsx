@@ -72,6 +72,9 @@ export const ProductCard = ({
           [],
         ) ?? []
 
+  // Kiểm tra cờ tính năng Wishlist (mặc định tắt)
+  const isWishlistEnabled = import.meta.env.VITE_ENABLE_WISHLIST === 'true'
+
   return (
     <article className={cn(styles.card, className)} {...props}>
       {/* 1. Image Container (3:4 ratio) */}
@@ -115,19 +118,21 @@ export const ProductCard = ({
         </div>
 
         {/* 3. Wishlist button: independent button, overlay on top of image, NOT inside <a> */}
-        <button
-          type="button"
-          onClick={() => onWishlistToggle?.(product.id)}
-          className={cn(styles.wishlistButton, isWishlisted && styles.wishlistActive)}
-          aria-label={
-            isWishlisted
-              ? `Bỏ yêu thích sản phẩm ${product.name}`
-              : `Thêm ${product.name} vào danh sách yêu thích`
-          }
-          aria-pressed={isWishlisted}
-        >
-          <Heart size={18} className={styles.heartIcon} />
-        </button>
+        {isWishlistEnabled && (
+          <button
+            type="button"
+            onClick={() => onWishlistToggle?.(product.id)}
+            className={cn(styles.wishlistButton, isWishlisted && styles.wishlistActive)}
+            aria-label={
+              isWishlisted
+                ? `Bỏ yêu thích sản phẩm ${product.name}`
+                : `Thêm ${product.name} vào danh sách yêu thích`
+            }
+            aria-pressed={isWishlisted}
+          >
+            <Heart size={18} className={styles.heartIcon} />
+          </button>
+        )}
       </div>
 
       {/* 4. Product Details */}

@@ -31,7 +31,7 @@ export const NotFoundPage = () => {
           marginBottom: 'var(--space-4)',
         }}
       >
-        Không Tìm Thấy Trang / Page Not Found
+        Không Tìm Thấy Trang
       </h2>
       <p
         style={{
