@@ -11,6 +11,19 @@ export const STORE_POLICIES = {
   slogan: 'Thời trang may đo & thiết kế tối giản',
 } as const
 
+/**
+ * Thông tin liên hệ và showroom chính thức của MODE STUDIO
+ * Nguồn chân lý duy nhất (Single Source of Truth) phục vụ Footer và các trang liên hệ
+ * CHÚ THÍCH: Dưới đây là dữ liệu mẫu giả lập an toàn, bạn có thể tự chỉnh sửa thông tin thật khi triển khai chính thức.
+ */
+export const STORE_INFO = {
+  address: 'Tầng 5, Tòa nhà Mode Heritage, 123 Phố Tràng Tiền, Quận Hoàn Kiếm, Hà Nội',
+  hotline: '0900 000 000', // Dữ liệu giả lập (định dạng 0900 000 000)
+  hotlineTel: '0900000000',
+  email: 'support@modestudio.test', // Dữ liệu giả lập
+  workingHours: '09:00 - 21:00 (Thứ 2 - Chủ Nhật, bao gồm cả ngày lễ)',
+} as const
+
 export interface ServiceHighlight {
   id: string
   title: string
