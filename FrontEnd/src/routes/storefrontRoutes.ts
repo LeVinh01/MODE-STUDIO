@@ -121,5 +121,62 @@ export const storefrontRoutes: RouteObject[] = [
       return { Component: RegisterPage }
     },
   },
+  // Các trang thông tin tĩnh storefront
+  {
+    path: 'policy/returns',
+    lazy: async () => {
+      const { InfoPage } = await import('@/pages/storefront/InfoPage')
+      return { Component: InfoPage }
+    },
+  },
+  {
+    path: 'size-guide',
+    lazy: async () => {
+      const { InfoPage } = await import('@/pages/storefront/InfoPage')
+      return { Component: InfoPage }
+    },
+  },
+  {
+    path: 'shipping',
+    lazy: async () => {
+      const { InfoPage } = await import('@/pages/storefront/InfoPage')
+      return { Component: InfoPage }
+    },
+  },
+  {
+    path: 'faq',
+    lazy: async () => {
+      const { InfoPage } = await import('@/pages/storefront/InfoPage')
+      return { Component: InfoPage }
+    },
+  },
+  {
+    path: 'about',
+    lazy: async () => {
+      const { InfoPage } = await import('@/pages/storefront/InfoPage')
+      return { Component: InfoPage }
+    },
+  },
+  {
+    path: 'editorial',
+    lazy: async () => {
+      const { InfoPage } = await import('@/pages/storefront/InfoPage')
+      return { Component: InfoPage }
+    },
+  },
+  {
+    path: 'stores',
+    lazy: async () => {
+      const { InfoPage } = await import('@/pages/storefront/InfoPage')
+      return { Component: InfoPage }
+    },
+  },
+  {
+    path: 'contact',
+    lazy: async () => {
+      const { InfoPage } = await import('@/pages/storefront/InfoPage')
+      return { Component: InfoPage }
+    },
+  },
 ]
 

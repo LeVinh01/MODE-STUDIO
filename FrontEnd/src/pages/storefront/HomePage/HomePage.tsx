@@ -25,6 +25,9 @@ interface CategoryCounts {
 }
 
 export const HomePage = () => {
+  // Feature flag AI Styling
+  const isAiStylingEnabled = import.meta.env.VITE_ENABLE_AI_STYLING === 'true'
+
   // Wishlist state (local storage / in-memory mockup)
   const [wishlist, setWishlist] = useState<Record<string, boolean>>({
     '1': true,
@@ -165,7 +168,7 @@ export const HomePage = () => {
                 Vẻ Đẹp Vượt Thời Gian Trong Từng Đường May
               </h1>
               <p className={styles.heroLead}>
-                Khám phá bộ sưu tập thời trang may đo mang tinh thần Modern Luxury.
+                Khám phá bộ sưu tập thời trang may đo mang tinh thần sang trọng tối giản.
                 Từng đường kim, mũi chỉ và chất liệu tự nhiên thượng hạng được chế tác
                 tinh xảo để tôn vinh sự thanh lịch trường tồn.
               </p>
@@ -173,7 +176,7 @@ export const HomePage = () => {
                 <Button to="/products" variant="primary" size="lg">
                   Khám Phá Bộ Sưu Tập
                 </Button>
-                <Button to="/products?category=women" variant="secondary" size="lg">
+                <Button to="/products" variant="secondary" size="lg">
                   Xem Lookbook Mùa Thu
                 </Button>
               </div>
@@ -182,9 +185,9 @@ export const HomePage = () => {
             <div className={styles.heroVisual} aria-hidden="true">
               <div className={styles.heroVisualInner}>
                 <span className={styles.heroMonogram}>MODE STUDIO</span>
-                <span className={styles.heroSeason}>AUTUMN / WINTER 2026</span>
+                <span className={styles.heroSeason}>THU / ĐÔNG 2026</span>
                 <span className={styles.heroVisualCaption}>
-                  Haute Couture &amp; Ready-to-Wear
+                  May Đo &amp; Thiết Kế Cao Cấp
                 </span>
               </div>
             </div>
@@ -213,7 +216,7 @@ export const HomePage = () => {
             {/* Category 1: Women */}
             <Link to="/products?category=women" className={styles.categoryCard}>
               <div className={styles.categoryVisual} aria-hidden="true">
-                <span className={styles.categoryPlaceholderIcon}>WOMEN</span>
+                <span className={styles.categoryPlaceholderIcon}>NỮ</span>
               </div>
               <div className={styles.categoryContent}>
                 <span className={styles.categoryCount}>
@@ -233,7 +236,7 @@ export const HomePage = () => {
             {/* Category 2: Men */}
             <Link to="/products?category=men" className={styles.categoryCard}>
               <div className={styles.categoryVisual} aria-hidden="true">
-                <span className={styles.categoryPlaceholderIcon}>MEN</span>
+                <span className={styles.categoryPlaceholderIcon}>NAM</span>
               </div>
               <div className={styles.categoryContent}>
                 <span className={styles.categoryCount}>
@@ -253,7 +256,7 @@ export const HomePage = () => {
             {/* Category 3: Accessories */}
             <Link to="/products?category=accessories" className={styles.categoryCard}>
               <div className={styles.categoryVisual} aria-hidden="true">
-                <span className={styles.categoryPlaceholderIcon}>ACC</span>
+                <span className={styles.categoryPlaceholderIcon}>PHỤ KIỆN</span>
               </div>
               <div className={styles.categoryContent}>
                 <span className={styles.categoryCount}>
@@ -283,7 +286,7 @@ export const HomePage = () => {
         <div className={styles.container}>
           <div className={styles.sectionHeader}>
             <div>
-              <span className={styles.sectionTagline}>SEASONAL HIGHLIGHTS</span>
+              <span className={styles.sectionTagline}>ĐIỂM NHẤN MÙA MỚI</span>
               <h2 id="new-arrivals-heading" className={styles.sectionTitle}>
                 Hàng Mới Về
               </h2>
@@ -353,9 +356,9 @@ export const HomePage = () => {
       >
         <div className={styles.container}>
           <div className={styles.lookbookContainer}>
-            <span className={styles.lookbookTagline}>THE EDITORIAL ESSAY</span>
+            <span className={styles.lookbookTagline}>GÓC NHÌN THIẾT KẾ</span>
             <h2 id="lookbook-heading" className={styles.lookbookTitle}>
-              The Autumn Transcendence 2026
+              Bộ Sưu Tập Thu Đông 2026
             </h2>
             <blockquote className={styles.lookbookQuote}>
               &ldquo;Thời trang không chỉ là trang phục bạn khoác lên mình, mà là
@@ -374,10 +377,11 @@ export const HomePage = () => {
       {/* ====================================================================
           5. AI STYLING RECOMMENDATION (DYNAMIC PLACEHOLDER DÙNG FEATURED PRODUCTS)
           ==================================================================== */}
-      <section
-        className={styles.aiStylingSection}
-        aria-labelledby="ai-styling-heading"
-      >
+      {isAiStylingEnabled && (
+        <section
+          className={styles.aiStylingSection}
+          aria-labelledby="ai-styling-heading"
+        >
         <div className={styles.container}>
           <div className={styles.aiHeader}>
             <div className={styles.aiBadgeRow}>
@@ -402,15 +406,15 @@ export const HomePage = () => {
             {/* Left: Complete Look Preview */}
             <div className={styles.aiLookPreview}>
               <div className={styles.aiLookVisual} aria-hidden="true">
-                <span className={styles.aiLookVisualMonogram}>LOOK 01</span>
+                <span className={styles.aiLookVisualMonogram}>GỢI Ý 01</span>
                 <span className={styles.aiLookVisualSub}>
-                  The Monochrome Elegance
+                  Thanh Lịch Đơn Sắc
                 </span>
               </div>
               <div className={styles.aiLookMeta}>
                 <div className={styles.aiMetaRow}>
                   <span className={styles.aiMetaLabel}>Phong cách:</span>
-                  <span className={styles.aiMetaValue}>Minimalist Luxury</span>
+                  <span className={styles.aiMetaValue}>Sang trọng tối giản</span>
                 </div>
                 <div className={styles.aiMetaRow}>
                   <span className={styles.aiMetaLabel}>Tông màu:</span>
@@ -500,6 +504,7 @@ export const HomePage = () => {
           </div>
         </div>
       </section>
+      )}
 
       {/* ====================================================================
           6. SERVICE HIGHLIGHTS (BRAND VALUE PROPOSITION)

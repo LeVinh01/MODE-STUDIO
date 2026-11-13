@@ -14,7 +14,7 @@ export const AdminLayout = () => {
       {isAdminSidebarOpen && (
         <aside className={styles.sidebar}>
           <div className={styles.brand}>
-            <span className={styles.brandText}>MODE ADMIN</span>
+            <span className={styles.brandText}>MODE QUẢN TRỊ</span>
           </div>
 
           <nav className={styles.nav}>
@@ -26,7 +26,7 @@ export const AdminLayout = () => {
               }
             >
               <LayoutDashboard size={18} />
-              <span>Dashboard</span>
+              <span>Tổng quan</span>
             </NavLink>
             <NavLink
               to="/admin/products"
