@@ -13,6 +13,7 @@ export interface ProductCardProps extends HTMLAttributes<HTMLElement> {
   isNew?: boolean
   isWishlisted?: boolean
   onWishlistToggle?: (productId: string) => void
+  compact?: boolean
 }
 
 export const ProductCard = ({
@@ -20,6 +21,7 @@ export const ProductCard = ({
   isNew,
   isWishlisted = false,
   onWishlistToggle,
+  compact = false,
   className,
   ...props
 }: ProductCardProps) => {
@@ -76,7 +78,7 @@ export const ProductCard = ({
   const isWishlistEnabled = import.meta.env.VITE_ENABLE_WISHLIST === 'true'
 
   return (
-    <article className={cn(styles.card, className)} {...props}>
+    <article className={cn(styles.card, compact && styles.compact, className)} {...props}>
       {/* 1. Image Container (3:4 ratio) */}
       <div className={styles.imageContainer}>
         {imageSrc ? (
@@ -137,7 +139,9 @@ export const ProductCard = ({
 
       {/* 4. Product Details */}
       <div className={styles.details}>
-        <span className={styles.categoryName}>{product.category.name}</span>
+        {!compact && (
+          <span className={styles.categoryName}>{product.category.name}</span>
+        )}
 
         {/* Title is the only link, stretches over the whole card via ::after */}
         <h3 className={styles.title}>
@@ -156,8 +160,8 @@ export const ProductCard = ({
           )}
         </div>
 
-        {/* Color swatches */}
-        {uniqueColors.length > 0 && (
+        {/* Color swatches (Ẩn ở chế độ compact để thẻ gọn gàng) */}
+        {!compact && uniqueColors.length > 0 && (
           <div className={styles.swatchList} aria-label="Màu sắc sẵn có">
             {uniqueColors.map((colorItem) => (
               <span

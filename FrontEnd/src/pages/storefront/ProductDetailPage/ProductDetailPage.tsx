@@ -6,7 +6,7 @@ import { Button } from '@/components/common/Button'
 import { Toast } from '@/components/feedback'
 import { ProductGallery } from '@/components/storefront/ProductGallery'
 import { VariantSelector } from '@/components/storefront/VariantSelector'
-import { ProductCard } from '@/components/storefront/ProductCard'
+import { ProductCompactGrid } from '@/components/storefront'
 import { productService } from '@/services/api/productService'
 import type { Product } from '@/types/product'
 import { formatCurrency } from '@/utils/formatters'
@@ -125,16 +125,16 @@ export const ProductDetailPage = () => {
           }
         }
 
-        // C. Tải sản phẩm liên quan (cùng category, perPage 5 để trừ sản phẩm hiện tại ra 4)
+        // C. Tải sản phẩm liên quan (cùng category, tối đa 6 sản phẩm cho lưới compact)
         if (data.category?.slug) {
           try {
             const relatedRes = await productService.getProducts(
-              { category: data.category.slug, perPage: 5 },
+              { category: data.category.slug, perPage: 12 },
               signal,
             )
             const filtered = relatedRes.items
               .filter((item) => item.id !== data.id)
-              .slice(0, 4)
+              .slice(0, 6)
             setRelatedProducts(filtered)
           } catch {
             // Không làm gián đoạn trang chi tiết nếu tải sản phẩm liên quan thất bại
@@ -588,19 +588,13 @@ export const ProductDetailPage = () => {
           </div>
         </div>
 
-        {/* 3. SẢN PHẨM LIÊN QUAN (ẨN NẾU RỖNG) */}
+        {/* 3. KHỐI CÓ THỂ BẠN QUAN TÂM (Lưới compact dùng chung) */}
         {relatedProducts.length > 0 && (
-          <section
+          <ProductCompactGrid
+            title="CÓ THỂ BẠN QUAN TÂM"
+            products={relatedProducts}
             className={styles.relatedSection}
-            aria-label="Thiết kế cùng bộ sưu tập"
-          >
-            <h2 className={styles.relatedTitle}>Thiết Kế Cùng Bộ Sưu Tập</h2>
-            <div className={styles.relatedGrid}>
-              {relatedProducts.map((relProduct) => (
-                <ProductCard key={relProduct.id} product={relProduct} />
-              ))}
-            </div>
-          </section>
+          />
         )}
       </div>
     </div>

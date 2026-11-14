@@ -5,7 +5,6 @@ import {
   AnnouncementBar,
   Header,
   MobileMenu,
-  SearchModal,
   Footer,
   CartDrawer,
 } from '@/components/storefront'
@@ -35,10 +34,7 @@ export const MainLayout = ({ children }: MainLayoutProps = {}) => {
       {/* 4. Mobile Drawer Navigation */}
       <MobileMenu />
 
-      {/* 5. Search Modal Dialog */}
-      <SearchModal />
-
-      {/* 6. Main Landmark Content */}
+      {/* 5. Main Landmark Content */}
       <main id="main-content" tabIndex={-1} className={styles.mainContent}>
         {children ?? <Outlet />}
       </main>

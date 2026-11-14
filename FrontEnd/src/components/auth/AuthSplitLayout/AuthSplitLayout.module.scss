@@ -1,0 +1,253 @@
+@use '@/styles/abstracts' as *;
+
+.authContainer {
+  display: flex;
+  width: 100%;
+  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
+  background-color: var(--color-background, #ffffff);
+  position: relative;
+}
+
+/* ==========================================================================
+   1. FORM PANEL (Desktop >= 900px: 50% width, text-left, max-width 380-400px)
+   ========================================================================== */
+.formPanel {
+  flex: 0 0 50%;
+  width: 50%;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background-color: var(--color-background, #ffffff);
+  z-index: 1;
+  overflow: hidden;
+  transition: transform 450ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+
+  // imagePosition = 'right' (Đăng nhập): Form nằm bên TRÁI (translateX: 0)
+  .authContainer[data-image-position='right'] & {
+    transform: translateX(0);
+  }
+
+  // imagePosition = 'left' (Đăng ký): Form trượt sang bên PHẢI (translateX: 100%)
+  .authContainer[data-image-position='left'] & {
+    transform: translateX(100%);
+  }
+
+  // Mobile (< 900px): Chiếm toàn bộ chiều rộng, không transform
+  @media (max-width: 899px) {
+    flex: 1 1 100%;
+    width: 100%;
+    transform: none !important;
+  }
+}
+
+.formScrollContainer {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-10) var(--space-8);
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-subtle, #e5e5e5) transparent;
+
+  @media (max-width: 899px) {
+    padding: var(--space-8) var(--space-6);
+    justify-content: flex-start;
+  }
+
+  @media (max-width: 480px) {
+    padding: var(--space-6) var(--space-4);
+  }
+}
+
+.formContent {
+  width: 100%;
+  max-width: 390px; // Cột chứa form luôn có max-width khoảng 380px-400px
+  margin: auto;
+  text-align: left; // Căn lề trái (text-left) để tạo khoảng trống (whitespace) sang trọng
+  animation: formContentFade 350ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes formContentFade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================================================
+   2. IMAGE PANEL (Desktop >= 900px: 50% width)
+   ========================================================================== */
+.imagePanel {
+  flex: 0 0 50%;
+  width: 50%;
+  height: 100dvh;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--color-sand, #f4efe6);
+  z-index: 2;
+  transition: transform 450ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+
+  // imagePosition = 'right' (Đăng nhập): Ảnh nằm bên PHẢI (translateX: 0)
+  .authContainer[data-image-position='right'] & {
+    transform: translateX(0);
+  }
+
+  // imagePosition = 'left' (Đăng ký): Ảnh trượt sang bên TRÁI (translateX: -100%)
+  .authContainer[data-image-position='left'] & {
+    transform: translateX(-100%);
+  }
+}
+
+.imageInner {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.authImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+/* ==========================================================================
+   FALLBACK THƯƠNG HIỆU KHI CHƯA CÓ FILE ẢNH
+   ========================================================================== */
+.brandFallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8);
+  background: radial-gradient(
+    circle at center,
+    var(--color-cream, #fdfbf7) 0%,
+    var(--color-sand, #f4efe6) 100%
+  );
+  border-left: 1px solid var(--color-border-subtle, rgba(0, 0, 0, 0.08));
+
+  .authContainer[data-image-position='left'] & {
+    border-left: none;
+    border-right: 1px solid var(--color-border-subtle, rgba(0, 0, 0, 0.08));
+  }
+}
+
+.brandFallbackFrame {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-12) var(--space-8);
+  border: 1px solid var(--color-border-strong, #1a1816);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  border-radius: var(--radius-sm, 2px);
+  max-width: 400px;
+  width: 100%;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ==========================================================================
+   3. NÚT QUAY LẠI (Cố định góc trên bên trái, z-index cao, vùng bấm >= 44px)
+   ========================================================================== */
+.backButton {
+  position: fixed;
+  top: 24px;
+  left: 24px;
+  z-index: 100;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #111111;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  transition: background-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+
+  &:hover {
+    background-color: #ffffff;
+    transform: scale(1.04);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #111111;
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 768px) {
+    top: 16px;
+    left: 16px;
+  }
+}
+
+.brandMonogram {
+  font-family: $font-serif;
+  font-size: clamp(2.2rem, 3.5vw, 3.2rem); // MODE STUDIO lớn nhất ở khung ảnh
+  font-weight: $font-weight-regular;
+  letter-spacing: 0.18em;
+  color: var(--color-black, #111111);
+  margin-bottom: var(--space-3);
+  line-height: 1.1;
+}
+
+.brandTagline {
+  font-family: $font-sans;
+  font-size: 0.6875rem;
+  font-weight: $font-weight-semibold;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary, #666666);
+  margin-bottom: var(--space-6);
+}
+
+.brandSeason {
+  font-family: $font-sans;
+  font-size: 0.625rem;
+  font-weight: $font-weight-medium;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary, #999999);
+}
+
+/* ==========================================================================
+   PREFERS REDUCED MOTION (A11Y)
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .formPanel,
+  .imagePanel,
+  .formContent {
+    transition: none !important;
+    animation: none !important;
+  }
+}
