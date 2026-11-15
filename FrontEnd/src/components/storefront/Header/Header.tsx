@@ -261,9 +261,9 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
 
                   <div className={styles.dropdownDivider} role="separator" />
 
-                  {user.role === 'admin' && (
+                  {(user.role === 'admin' || user.role === 'operator') && (
                     <Link
-                      to="/admin/products"
+                      to="/admin"
                       className={styles.dropdownItem}
                       role="menuitem"
                       onClick={() => setIsAccountMenuOpen(false)}
