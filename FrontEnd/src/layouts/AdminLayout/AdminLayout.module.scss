@@ -1,81 +1,296 @@
 @use '../../styles/abstracts' as *;
 
+// =============================================================================
+// ADMIN DESIGN TOKENS (Scoped strictly to .layoutAdmin)
+// Values:
+// - Page background: #F8F7F4
+// - Sidebar: #111111
+// - Card: #FFFFFF
+// - Primary text: #171614
+// - Secondary text: #81786F
+// - Border: #E9E3DB
+// - Accent: #A18A70
+// - Warning: muted amber (#b57324)
+// - Error: muted red (#a83232)
+// =============================================================================
+
 .layoutAdmin {
+  // Scoped Custom Properties
+  --admin-bg-page: #{$admin-bg-page};
+  --admin-bg-sidebar: #{$admin-bg-sidebar};
+  --admin-bg-card: #{$admin-bg-card};
+  --admin-text-primary: #{$admin-text-primary};
+  --admin-text-secondary: #{$admin-text-secondary};
+  --admin-border: #{$admin-border};
+  --admin-border-subtle: #{$admin-border-subtle};
+  --admin-border-strong: #{$admin-border-strong};
+  --admin-accent: #{$admin-accent};
+  --admin-accent-hover: #{$admin-accent-hover};
+  --admin-warning: #{$admin-warning};
+  --admin-warning-bg: #{$admin-warning-bg};
+  --admin-warning-border: #{$admin-warning-border};
+  --admin-error: #{$admin-error};
+  --admin-error-bg: #{$admin-error-bg};
+  --admin-error-border: #{$admin-error-border};
+
+  // Map to common theme tokens within Admin shell
+  --color-bg-primary: var(--admin-bg-page);
+  --color-bg-secondary: var(--admin-bg-page);
+  --color-gray-50: var(--admin-bg-page);
+  --color-gray-100: #F3EFEA;
+  --color-gray-200: var(--admin-border);
+  --color-gray-300: #DDD5CA;
+  --color-surface: var(--admin-bg-card);
+  --color-surface-hover: #FAF9F6;
+  --color-white: #FFFFFF;
+  --color-black: #171614;
+  --color-text-primary: var(--admin-text-primary);
+  --color-text-secondary: var(--admin-text-secondary);
+  --color-text-muted: var(--admin-text-secondary);
+  --color-border: var(--admin-border);
+  --color-border-subtle: var(--admin-border);
+  --color-border-primary: var(--admin-border);
+  --color-border-secondary: var(--admin-border);
+  --color-border-strong: var(--admin-border-strong);
+  --color-primary: var(--admin-accent);
+  --color-warning: var(--admin-warning);
+  --color-error: var(--admin-error);
+
   display: flex;
   min-height: 100vh;
-  background-color: var(--color-gray-50);
-  color: var(--color-text-primary);
+  background-color: var(--admin-bg-page);
+  color: var(--admin-text-primary);
+  font-family: $admin-font-sans;
+  font-variant-numeric: tabular-nums;
+  position: relative;
 }
 
+// Ensure cards inside admin inherit token styling seamlessly
+.layoutAdmin :global(.card),
+.layoutAdmin :global([class*="Card"]),
+.layoutAdmin :global([class*="tableCard"]),
+.layoutAdmin :global([class*="filtersCard"]) {
+  background-color: var(--admin-bg-card);
+  border-color: var(--admin-border);
+  color: var(--admin-text-primary);
+}
+
+// Backdrop on mobile when drawer is open
+.backdrop {
+  display: none;
+
+  @media (max-width: 768px) {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background-color: rgba(17, 17, 17, 0.6);
+    z-index: calc(#{$z-drawer} - 1);
+    backdrop-filter: blur(2px);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Sidebar
+// -----------------------------------------------------------------------------
 .sidebar {
-  width: 250px;
-  background-color: var(--color-black);
-  color: var(--color-white);
+  width: 260px;
+  background-color: var(--admin-bg-sidebar);
+  color: #F8F7F4;
   padding: var(--space-6) var(--space-4);
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
   flex-shrink: 0;
+  border-right: 1px solid rgba(233, 227, 219, 0.08);
+
+  @media (max-width: 768px) {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: $z-drawer;
+    width: 270px;
+    box-shadow: 6px 0 24px rgba(0, 0, 0, 0.5);
+    padding: var(--space-5) var(--space-4);
+    overflow-y: auto;
+  }
 }
 
+// Brand Text
 .brand {
-  padding: 0 var(--space-2);
+  padding: 0 var(--space-2) var(--space-4);
+  border-bottom: 1px solid rgba(233, 227, 219, 0.08);
 }
 
-.brandText {
-  font-family: $font-serif;
+.brandLink {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-decoration: none;
+}
+
+.brandTitle {
+  font-family: $admin-font-serif;
   font-size: 1.125rem;
   font-weight: $font-weight-regular;
-  letter-spacing: 0.1em;
-  color: var(--color-sand);
+  letter-spacing: 0.16em;
+  color: #FFFFFF;
+  line-height: 1.2;
 }
 
+.brandSubtitle {
+  font-family: $admin-font-sans;
+  font-size: 0.625rem;
+  font-weight: $font-weight-medium;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--admin-accent);
+}
+
+// Navigation
 .nav {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-4);
+}
+
+.navGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.groupLabel {
+  font-size: 0.625rem;
+  font-weight: $font-weight-semibold;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--admin-text-secondary);
+  padding: var(--space-2) var(--space-3) var(--space-1);
 }
 
 .navItem {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  color: var(--color-sand);
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-sm);
+  color: var(--admin-text-secondary);
+  padding: 0.625rem var(--space-3);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  border-left: 2px solid transparent;
   font-size: 0.875rem;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
+  text-decoration: none;
   transition: all $transition-fast;
 
-  &.active,
   &:hover {
-    background-color: rgba(255, 255, 255, 0.12);
-    color: var(--color-white);
+    color: #F8F7F4;
+    background-color: rgba(255, 255, 255, 0.03);
+  }
+
+  // Active state: subtle left indicator & slightly lighter text, no heavy filled block
+  &.active {
+    color: #F8F7F4;
     font-weight: $font-weight-medium;
+    border-left-color: var(--admin-accent);
+    background-color: rgba(161, 138, 112, 0.08);
   }
 }
 
+// Sidebar Footer: Account & Logout
 .sidebarFooter {
   margin-top: auto;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 1px solid rgba(233, 227, 219, 0.08);
   padding-top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
-.backLink {
+.userCard {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  color: var(--color-gray-400);
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(233, 227, 219, 0.06);
+}
+
+.userAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background-color: #1F1E1B;
+  border: 1px solid var(--admin-accent);
+  color: var(--admin-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: $admin-font-serif;
   font-size: 0.8125rem;
-  letter-spacing: 0.03em;
-  transition: color $transition-fast;
+  font-weight: $font-weight-medium;
+  flex-shrink: 0;
+}
+
+.userMeta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.userName {
+  font-size: 0.8125rem;
+  font-weight: $font-weight-medium;
+  color: #F8F7F4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.userRole {
+  font-size: 0.6875rem;
+  color: var(--admin-text-secondary);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.footerLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.backLink,
+.logoutButton {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--admin-text-secondary);
+  padding: 0.5rem var(--space-3);
+  font-size: 0.8125rem;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all $transition-fast;
+  width: 100%;
+  text-align: left;
 
   &:hover {
-    color: var(--color-white);
+    color: #F8F7F4;
+    background-color: rgba(255, 255, 255, 0.04);
   }
 }
 
+.logoutButton:hover {
+  color: #C25E5E;
+}
+
+// -----------------------------------------------------------------------------
+// Content Wrapper & Header
+// -----------------------------------------------------------------------------
 .contentWrapper {
   flex: 1;
   display: flex;
@@ -84,25 +299,180 @@
 }
 
 .header {
-  background-color: var(--color-bg-primary);
-  border-bottom: 1px solid var(--color-border-subtle);
-  padding: var(--space-4) var(--space-6);
+  background-color: var(--admin-bg-card);
+  border-bottom: 1px solid var(--admin-border);
+  padding: var(--space-3) var(--space-6);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-4);
+  min-height: 64px;
+  position: sticky;
+  top: 0;
+  z-index: $z-sticky;
 
   @include respond-to('md') {
-    padding: var(--space-4) var(--space-8);
+    padding: var(--space-3) var(--space-8);
   }
 }
 
-.headerSubtitle {
-  font-size: 0.8125rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-width: 0;
 }
 
+.menuToggleBtn {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-sm);
+  color: var(--admin-text-primary);
+  cursor: pointer;
+  transition: all $transition-fast;
+  flex-shrink: 0;
+
+  &:hover {
+    background-color: var(--admin-bg-page);
+    border-color: var(--admin-accent);
+  }
+}
+
+.headerTitleBlock {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--admin-text-secondary);
+  line-height: 1.2;
+}
+
+.crumbLink {
+  color: var(--admin-text-secondary);
+  text-decoration: none;
+  transition: color $transition-fast;
+
+  &:hover {
+    color: var(--admin-text-primary);
+  }
+}
+
+.crumbSeparator {
+  color: var(--admin-border-strong);
+  flex-shrink: 0;
+}
+
+.crumbCurrent {
+  color: var(--admin-accent);
+  font-weight: $font-weight-medium;
+}
+
+.headerPageTitle {
+  font-family: $admin-font-serif;
+  font-size: 1.25rem;
+  font-weight: $font-weight-regular;
+  letter-spacing: -0.01em;
+  color: var(--admin-text-primary);
+  margin: 2px 0 0;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-shrink: 0;
+}
+
+.dateBadge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  color: var(--admin-text-secondary);
+  font-variant-numeric: tabular-nums;
+
+  @media (max-width: 640px) {
+    display: none;
+  }
+}
+
+.dateIcon {
+  color: var(--admin-accent);
+  flex-shrink: 0;
+}
+
+.headerDivider {
+  width: 1px;
+  height: 24px;
+  background-color: var(--admin-border);
+
+  @media (max-width: 640px) {
+    display: none;
+  }
+}
+
+.headerProfile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.headerAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background-color: var(--admin-bg-page);
+  border: 1px solid var(--admin-border);
+  color: var(--admin-text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: $admin-font-serif;
+  font-size: 0.8125rem;
+  font-weight: $font-weight-medium;
+  flex-shrink: 0;
+}
+
+.headerProfileText {
+  display: flex;
+  flex-direction: column;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+}
+
+.headerUserName {
+  font-size: 0.8125rem;
+  font-weight: $font-weight-medium;
+  color: var(--admin-text-primary);
+  line-height: 1.2;
+}
+
+.headerUserRole {
+  font-size: 0.6875rem;
+  color: var(--admin-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+}
+
+// Main Page Body Container
 .mainBody {
   padding: var(--space-6);
   flex: 1;
@@ -110,5 +480,8 @@
   @include respond-to('md') {
     padding: var(--space-8);
   }
-}
 
+  @media (max-width: 768px) {
+    padding: var(--space-4);
+  }
+}
