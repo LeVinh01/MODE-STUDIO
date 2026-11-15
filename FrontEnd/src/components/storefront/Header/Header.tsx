@@ -23,13 +23,26 @@ export const Header = ({ cartCount = 0 }: HeaderProps) => {
   const location = useLocation()
   const user = useAppSelector(selectCurrentUser)
   const isMobileMenuOpen = useAppSelector((state) => state.ui.isMobileMenuOpen)
+  const isCartDrawerOpen = useAppSelector((state) => state.ui.isCartDrawerOpen)
+
+  const isHomePage = location.pathname === '/'
+  const [isScrolled, setIsScrolled] = useState(false)
+  const [isScrolledPast80, setIsScrolledPast80] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false)
+
+  const isTransparent =
+    isHomePage &&
+    !isScrolledPast80 &&
+    !isHovered &&
+    !isMobileMenuOpen &&
+    !isAccountMenuOpen &&
+    !isCartDrawerOpen
 
   const searchLink =
     location.pathname === '/search'
       ? `${location.pathname}${location.search}`
       : '/search'
-  const [isScrolled, setIsScrolled] = useState(false)
-  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false)
 
   const accountMenuRef = useRef<HTMLDivElement>(null)
   const accountTriggerRef = useRef<HTMLButtonElement>(null)
@@ -37,6 +50,7 @@ export const Header = ({ cartCount = 0 }: HeaderProps) => {
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 15)
+      setIsScrolledPast80(window.scrollY > 80)
     }
 
     window.addEventListener('scroll', handleScroll, { passive: true })
@@ -90,7 +104,13 @@ export const Header = ({ cartCount = 0 }: HeaderProps) => {
 
   return (
     <header
-      className={cn(styles.header, isScrolled && styles.scrolled)}
+      className={cn(
+        styles.header,
+        isTransparent ? styles.transparent : styles.solid,
+        (isScrolled || isScrolledPast80) && styles.scrolled,
+      )}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       role="banner"
     >
       <div className={styles.inner}>

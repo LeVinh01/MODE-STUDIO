@@ -68,6 +68,11 @@ export interface ApiProductListItem {
     name: string
     hex_code: string | null
   }>
+  colors?: Array<{
+    name: string
+    hex: string | null
+    image_url: string | null
+  }>
 }
 
 export interface ApiProductVariantItem {

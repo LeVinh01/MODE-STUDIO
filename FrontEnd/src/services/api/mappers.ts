@@ -89,6 +89,11 @@ export const mapProductListItemToProduct = (item: ApiProductListItem): Product =
       name: c.name,
       hexCode: c.hex_code ?? undefined,
     })),
+    colors: item.colors?.map((c) => ({
+      name: c.name,
+      hex: c.hex ?? undefined,
+      imageUrl: c.image_url ?? undefined,
+    })) ?? [],
     isNew,
     isOutOfStock,
   }

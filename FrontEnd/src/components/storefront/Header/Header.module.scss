@@ -7,10 +7,50 @@
   width: 100%;
   background-color: var(--color-bg-primary);
   border-bottom: 1px solid transparent;
-  transition: background-color $transition-fast, border-color $transition-fast, box-shadow $transition-fast;
+  transition: background 200ms ease, background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease, color 200ms ease;
 
   @media (prefers-reduced-motion: reduce) {
     transition: none;
+  }
+}
+
+.transparent {
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0) 100%);
+  border-bottom-color: transparent;
+  box-shadow: none;
+
+  .logo {
+    color: var(--color-white);
+  }
+
+  .navLink {
+    color: var(--color-white);
+    opacity: 0.9;
+
+    &:hover,
+    &.active {
+      color: var(--color-white);
+      opacity: 1;
+    }
+
+    &::after {
+      background-color: var(--color-white);
+    }
+  }
+
+  .mobileMenuToggle,
+  .actionButton {
+    color: var(--color-white);
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.15);
+      color: var(--color-white);
+    }
+  }
+
+  .cartBadge {
+    background-color: var(--color-white);
+    color: var(--color-black);
   }
 }
 

@@ -56,6 +56,13 @@ class ProductApiTest extends TestCase
                              'brand',
                              'main_image',
                              'available_colors',
+                             'colors' => [
+                                 '*' => [
+                                     'name',
+                                     'hex',
+                                     'image_url',
+                                 ],
+                             ],
                          ],
                      ],
                      'links',
@@ -70,6 +77,26 @@ class ProductApiTest extends TestCase
         $this->assertEquals(11, $response->json('meta.total'));
         $slugs = collect($response->json('data'))->pluck('slug')->all();
         $this->assertNotContains('ao-blazer-nu-len-mong', $slugs);
+    }
+
+    public function test_list_returns_at_most_8_distinct_colors_with_image_url(): void
+    {
+        $response = $this->getJson('/api/products');
+        $response->assertStatus(200);
+
+        $firstProduct = $response->json('data.0');
+        $this->assertArrayHasKey('colors', $firstProduct);
+        $this->assertLessThanOrEqual(8, count($firstProduct['colors']));
+
+        // Every item has name, hex, and nullable image_url
+        foreach ($firstProduct['colors'] as $colorItem) {
+            $this->assertArrayHasKey('name', $colorItem);
+            $this->assertArrayHasKey('hex', $colorItem);
+            $this->assertArrayHasKey('image_url', $colorItem);
+        }
+
+        // available_colors is preserved for backward compatibility
+        $this->assertArrayHasKey('available_colors', $firstProduct);
     }
 
     public function test_filter_by_category_includes_subcategories(): void
