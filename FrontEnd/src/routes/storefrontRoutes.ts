@@ -19,6 +19,15 @@ export const storefrontRoutes: RouteObject[] = [
     },
   },
   {
+    path: 'search',
+    lazy: async () => {
+      const { SearchPage } = await import(
+        '@/pages/storefront/SearchPage/SearchPage'
+      )
+      return { Component: SearchPage }
+    },
+  },
+  {
     path: 'products/:slug',
     lazy: async () => {
       const { ProductDetailPage } = await import(
@@ -105,20 +114,6 @@ export const storefrontRoutes: RouteObject[] = [
             createElement(OrderDetailPage),
           ),
       }
-    },
-  },
-  {
-    path: 'login',
-    lazy: async () => {
-      const { LoginPage } = await import('@/pages/storefront/LoginPage')
-      return { Component: LoginPage }
-    },
-  },
-  {
-    path: 'register',
-    lazy: async () => {
-      const { RegisterPage } = await import('@/pages/storefront/RegisterPage')
-      return { Component: RegisterPage }
     },
   },
   // Các trang thông tin tĩnh storefront

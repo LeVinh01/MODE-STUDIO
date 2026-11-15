@@ -18,6 +18,28 @@ const devRoutes: RouteObject[] = import.meta.env.DEV
 
 export const router = createBrowserRouter([
   {
+    lazy: async () => {
+      const { AuthLayout } = await import('@/layouts/AuthLayout')
+      return { Component: AuthLayout }
+    },
+    children: [
+      {
+        path: 'login',
+        lazy: async () => {
+          const { LoginPage } = await import('@/pages/storefront/LoginPage')
+          return { Component: LoginPage }
+        },
+      },
+      {
+        path: 'register',
+        lazy: async () => {
+          const { RegisterPage } = await import('@/pages/storefront/RegisterPage')
+          return { Component: RegisterPage }
+        },
+      },
+    ],
+  },
+  {
     path: '/',
     lazy: async () => {
       const { MainLayout } = await import('@/layouts/MainLayout/MainLayout')

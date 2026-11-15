@@ -1,7 +1,7 @@
 import { useState, useEffect, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import axios from 'axios'
-import { Input, Button, PasswordInput } from '@/components/common'
+import { Button, PasswordInput, FloatingInput } from '@/components/common'
 import { AuthLoadingScreen } from '@/components/auth/AuthLoadingScreen'
 import { authService } from '@/services/api/authService'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
@@ -20,7 +20,7 @@ export const LoginPage = () => {
   const isAuthenticated = useAppSelector(selectIsAuthenticated)
   const isAuthInitialized = useAppSelector(selectIsAuthInitialized)
 
-  // Determine redirection target (preserving pathname and search query)
+  // Lưu và chuyển tiếp target redirect (giữ nguyên pathname và search query)
   const fromState = (
     location.state as { from?: { pathname: string; search?: string } } | undefined
   )?.from
@@ -45,7 +45,7 @@ export const LoginPage = () => {
     }
   }, [isAuthInitialized, isAuthenticated, navigate, redirectTarget])
 
-  // Countdown timer for 429 Too Many Requests
+  // Countdown timer cho 429 Too Many Requests
   useEffect(() => {
     if (retryCountdown === null || retryCountdown <= 0) return
 
@@ -151,93 +151,95 @@ export const LoginPage = () => {
   const isButtonDisabled =
     isSubmitting || (retryCountdown !== null && retryCountdown > 0)
 
-  // Không hiển thị form khi auth chưa khởi tạo xong hoặc khi đã đăng nhập (tránh nhảy giao diện)
+  // Tránh nhấp nháy UI khi auth đang khởi tạo hoặc đã đăng nhập
   if (!isAuthInitialized || isAuthenticated) {
     return <AuthLoadingScreen />
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.card}>
-        <div className={styles.header}>
-          <span className={styles.subheading}>MODE STUDIO</span>
-          <h1 className={styles.title}>Đăng Nhập</h1>
-          <p className={styles.description}>
-            Nhập email và mật khẩu để truy cập tài khoản của bạn
-          </p>
+    <div className={styles.formWrapper}>
+      {/* 1. Logo thương hiệu quay về trang chủ */}
+      <div className={styles.logoWrapper}>
+        <Link to="/" className={styles.brandLogo} aria-label="MODE STUDIO - Về trang chủ">
+          MODE STUDIO
+        </Link>
+      </div>
+
+      {/* 2. Tiêu đề form */}
+      <h1 className={styles.tagline}>ĐĂNG NHẬP</h1>
+
+      {/* 3. Cảnh báo lỗi chung */}
+      {generalError && (
+        <div className={styles.errorAlert} role="alert" aria-live="polite">
+          <span className={styles.errorDot} aria-hidden="true" />
+          <span>{generalError}</span>
         </div>
+      )}
 
-        {generalError && (
-          <div className={styles.errorAlert} role="alert">
-            <span className={styles.errorDot} aria-hidden="true" />
-            <span>{generalError}</span>
-          </div>
-        )}
+      {/* 4. Form đăng nhập */}
+      <form onSubmit={handleSubmit} className={styles.form} noValidate>
+        <FloatingInput
+          id="login-email"
+          type="email"
+          label="Email"
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value)
+            if (fieldErrors.email) {
+              setFieldErrors((prev) => ({ ...prev, email: undefined }))
+            }
+          }}
+          errorMessage={fieldErrors.email}
+          autoComplete="email"
+          autoFocus
+          fullWidth
+          disabled={isSubmitting}
+        />
 
-        <form onSubmit={handleSubmit} className={styles.form} noValidate>
-          <Input
-            id="login-email"
-            type="email"
-            label="Địa chỉ email"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value)
-              if (fieldErrors.email) {
-                setFieldErrors((prev) => ({ ...prev, email: undefined }))
-              }
-            }}
-            errorMessage={fieldErrors.email}
-            autoComplete="email"
-            autoFocus
-            fullWidth
-            disabled={isSubmitting}
-            placeholder="ten@example.com"
-          />
+        <PasswordInput
+          id="login-password"
+          label="Mật khẩu"
+          variant="floating"
+          value={password}
+          onChange={(e) => {
+            setPassword(e.target.value)
+            if (fieldErrors.password) {
+              setFieldErrors((prev) => ({ ...prev, password: undefined }))
+            }
+          }}
+          errorMessage={fieldErrors.password}
+          autoComplete="current-password"
+          fullWidth
+          disabled={isSubmitting}
+        />
 
-          <PasswordInput
-            id="login-password"
-            label="Mật khẩu"
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value)
-              if (fieldErrors.password) {
-                setFieldErrors((prev) => ({ ...prev, password: undefined }))
-              }
-            }}
-            errorMessage={fieldErrors.password}
-            autoComplete="current-password"
-            fullWidth
-            disabled={isSubmitting}
-            placeholder="••••••••"
-          />
+        <Button
+          type="submit"
+          variant="primary"
+          size="sm"
+          fullWidth
+          isLoading={isSubmitting}
+          disabled={isButtonDisabled}
+          className={styles.submitBtn}
+        >
+          {retryCountdown !== null && retryCountdown > 0
+            ? `Thử lại sau (${retryCountdown}s)`
+            : 'ĐĂNG NHẬP'}
+        </Button>
+      </form>
 
-          <Button
-            type="submit"
-            variant="primary"
-            size="lg"
-            fullWidth
-            isLoading={isSubmitting}
-            disabled={isButtonDisabled}
-            className={styles.submitBtn}
+      {/* 5. Chuyển đổi sang đăng ký (Đã bỏ dòng chữ Trở về trang chủ) */}
+      <div className={styles.footerActions}>
+        <p className={styles.promptText}>
+          Chưa có tài khoản?{' '}
+          <Link
+            to="/register"
+            state={{ from: fromState }}
+            className={styles.switchLink}
           >
-            {retryCountdown !== null && retryCountdown > 0
-              ? `Thử lại sau (${retryCountdown}s)`
-              : 'Đăng Nhập'}
-          </Button>
-        </form>
-
-        <div className={styles.footer}>
-          <p className={styles.registerPrompt}>
-            Chưa có tài khoản?{' '}
-            <Link
-              to="/register"
-              state={{ from: fromState }}
-              className={styles.registerLink}
-            >
-              Đăng ký ngay
-            </Link>
-          </p>
-        </div>
+            Đăng ký
+          </Link>
+        </p>
       </div>
     </div>
   )

@@ -1,7 +1,7 @@
 import { useState, useEffect, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import axios from 'axios'
-import { Input, Button, PasswordInput } from '@/components/common'
+import { Button, PasswordInput, FloatingInput } from '@/components/common'
 import { AuthLoadingScreen } from '@/components/auth/AuthLoadingScreen'
 import { authService } from '@/services/api/authService'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
@@ -20,7 +20,7 @@ export const RegisterPage = () => {
   const isAuthenticated = useAppSelector(selectIsAuthenticated)
   const isAuthInitialized = useAppSelector(selectIsAuthInitialized)
 
-  // Preserve redirect target
+  // Lưu và chuyển tiếp target redirect
   const fromState = (
     location.state as { from?: { pathname: string; search?: string } } | undefined
   )?.from
@@ -52,7 +52,7 @@ export const RegisterPage = () => {
     }
   }, [isAuthInitialized, isAuthenticated, navigate, redirectTarget])
 
-  // Countdown timer for 429
+  // Countdown timer cho 429
   useEffect(() => {
     if (retryCountdown === null || retryCountdown <= 0) return
 
@@ -153,7 +153,7 @@ export const RegisterPage = () => {
           setFieldErrors(newFieldErrors)
           setGeneralError(
             (data as ApiValidationErrorResponse).message ||
-              'Dữ liệu đăng ký chưa hợp lệ.',
+              'Dữ liệu nhập vào chưa chính xác.',
           )
         } else if (status === 429) {
           let seconds = 60
@@ -167,12 +167,12 @@ export const RegisterPage = () => {
           setRetryCountdown(seconds)
           setGeneralError(
             (data as { message?: string })?.message ||
-              `Quá nhiều lượt đăng ký từ mạng của bạn. Vui lòng thử lại sau ${seconds} giây.`,
+              `Bạn đã gửi yêu cầu quá nhiều lần. Vui lòng thử lại sau ${seconds} giây.`,
           )
         } else {
           setGeneralError(
             (data as { message?: string })?.message ||
-              'Đã có lỗi xảy ra khi tạo tài khoản. Vui lòng thử lại.',
+              'Đã có lỗi xảy ra trong quá trình đăng ký. Vui lòng thử lại.',
           )
         }
       } else {
@@ -186,150 +186,155 @@ export const RegisterPage = () => {
   const isButtonDisabled =
     isSubmitting || (retryCountdown !== null && retryCountdown > 0)
 
-  // Không hiển thị form khi auth chưa khởi tạo xong hoặc khi đã đăng nhập (tránh nhảy giao diện)
+  // Tránh nhấp nháy UI khi auth đang khởi tạo hoặc đã đăng nhập
   if (!isAuthInitialized || isAuthenticated) {
     return <AuthLoadingScreen />
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.card}>
-        <div className={styles.header}>
-          <span className={styles.subheading}>MODE STUDIO</span>
-          <h1 className={styles.title}>Tạo Tài Khoản</h1>
-          <p className={styles.description}>
-            Tham gia MODE STUDIO để nhận các ưu đãi và quản lý đơn hàng
-          </p>
+    <div className={styles.formWrapper}>
+      {/* 1. Logo thương hiệu quay về trang chủ */}
+      <div className={styles.logoWrapper}>
+        <Link to="/" className={styles.brandLogo} aria-label="MODE STUDIO - Về trang chủ">
+          MODE STUDIO
+        </Link>
+      </div>
+
+      {/* 2. Tiêu đề form */}
+      <h1 className={styles.tagline}>ĐĂNG KÝ</h1>
+
+      {/* 3. Cảnh báo lỗi chung */}
+      {generalError && (
+        <div className={styles.errorAlert} role="alert" aria-live="polite">
+          <span className={styles.errorDot} aria-hidden="true" />
+          <span>{generalError}</span>
         </div>
+      )}
 
-        {generalError && (
-          <div className={styles.errorAlert} role="alert">
-            <span className={styles.errorDot} aria-hidden="true" />
-            <span>{generalError}</span>
-          </div>
-        )}
+      {/* 4. Form đăng ký 5 trường với Floating Label */}
+      <form onSubmit={handleSubmit} className={styles.form} noValidate>
+        {/* Trường 1: Họ và tên */}
+        <FloatingInput
+          id="register-fullname"
+          label="Họ và tên"
+          value={fullName}
+          onChange={(e) => {
+            setFullName(e.target.value)
+            if (fieldErrors.fullName) {
+              setFieldErrors((prev) => ({ ...prev, fullName: undefined }))
+            }
+          }}
+          errorMessage={fieldErrors.fullName}
+          autoComplete="name"
+          autoFocus
+          fullWidth
+          disabled={isSubmitting}
+        />
 
-        <form onSubmit={handleSubmit} className={styles.form} noValidate>
-          <Input
-            id="register-fullname"
-            type="text"
-            label="Họ và tên"
-            value={fullName}
-            onChange={(e) => {
-              setFullName(e.target.value)
-              if (fieldErrors.fullName) {
-                setFieldErrors((prev) => ({ ...prev, fullName: undefined }))
-              }
-            }}
-            errorMessage={fieldErrors.fullName}
-            autoComplete="name"
-            autoFocus
-            fullWidth
-            disabled={isSubmitting}
-            placeholder="Nguyễn Văn A"
-          />
+        {/* Trường 2: Email */}
+        <FloatingInput
+          id="register-email"
+          type="email"
+          label="Email"
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value)
+            if (fieldErrors.email) {
+              setFieldErrors((prev) => ({ ...prev, email: undefined }))
+            }
+          }}
+          errorMessage={fieldErrors.email}
+          autoComplete="email"
+          fullWidth
+          disabled={isSubmitting}
+        />
 
-          <Input
-            id="register-email"
-            type="email"
-            label="Địa chỉ email"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value)
-              if (fieldErrors.email) {
-                setFieldErrors((prev) => ({ ...prev, email: undefined }))
-              }
-            }}
-            errorMessage={fieldErrors.email}
-            autoComplete="email"
-            fullWidth
-            disabled={isSubmitting}
-            placeholder="ten@example.com"
-          />
+        {/* Trường 3: Số điện thoại (tùy chọn) */}
+        <FloatingInput
+          id="register-phone"
+          type="tel"
+          label="Số điện thoại"
+          value={phone}
+          onChange={(e) => {
+            setPhone(e.target.value)
+            if (fieldErrors.phone) {
+              setFieldErrors((prev) => ({ ...prev, phone: undefined }))
+            }
+          }}
+          errorMessage={fieldErrors.phone}
+          helperText="Tùy chọn - Dùng để cập nhật giao nhận đơn hàng"
+          autoComplete="tel"
+          fullWidth
+          disabled={isSubmitting}
+        />
 
-          <Input
-            id="register-phone"
-            type="tel"
-            label="Số điện thoại (tùy chọn)"
-            value={phone}
-            onChange={(e) => {
-              setPhone(e.target.value)
-              if (fieldErrors.phone) {
-                setFieldErrors((prev) => ({ ...prev, phone: undefined }))
-              }
-            }}
-            errorMessage={fieldErrors.phone}
-            autoComplete="tel"
-            fullWidth
-            disabled={isSubmitting}
-            placeholder="0912345678"
-          />
+        {/* Trường 4: Mật khẩu */}
+        <PasswordInput
+          id="register-password"
+          label="Mật khẩu"
+          variant="floating"
+          value={password}
+          onChange={(e) => {
+            setPassword(e.target.value)
+            if (fieldErrors.password) {
+              setFieldErrors((prev) => ({ ...prev, password: undefined }))
+            }
+          }}
+          errorMessage={fieldErrors.password}
+          helperText="Tối thiểu 8 ký tự"
+          autoComplete="new-password"
+          fullWidth
+          disabled={isSubmitting}
+        />
 
-          <PasswordInput
-            id="register-password"
-            label="Mật khẩu"
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value)
-              if (fieldErrors.password) {
-                setFieldErrors((prev) => ({ ...prev, password: undefined }))
-              }
-            }}
-            errorMessage={fieldErrors.password}
-            helperText={!fieldErrors.password ? 'Tối thiểu 8 ký tự' : undefined}
-            autoComplete="new-password"
-            fullWidth
-            disabled={isSubmitting}
-            placeholder="••••••••"
-          />
+        {/* Trường 5: Xác nhận mật khẩu (BẮT BUỘC GIỮ) */}
+        <PasswordInput
+          id="register-password-confirmation"
+          label="Xác nhận mật khẩu"
+          variant="floating"
+          value={passwordConfirmation}
+          onChange={(e) => {
+            setPasswordConfirmation(e.target.value)
+            if (fieldErrors.passwordConfirmation) {
+              setFieldErrors((prev) => ({
+                ...prev,
+                passwordConfirmation: undefined,
+              }))
+            }
+          }}
+          errorMessage={fieldErrors.passwordConfirmation}
+          autoComplete="new-password"
+          fullWidth
+          disabled={isSubmitting}
+        />
 
-          <PasswordInput
-            id="register-password-confirmation"
-            label="Xác nhận mật khẩu"
-            value={passwordConfirmation}
-            onChange={(e) => {
-              setPasswordConfirmation(e.target.value)
-              if (fieldErrors.passwordConfirmation) {
-                setFieldErrors((prev) => ({
-                  ...prev,
-                  passwordConfirmation: undefined,
-                }))
-              }
-            }}
-            errorMessage={fieldErrors.passwordConfirmation}
-            autoComplete="new-password"
-            fullWidth
-            disabled={isSubmitting}
-            placeholder="••••••••"
-          />
+        <Button
+          type="submit"
+          variant="primary"
+          size="sm"
+          fullWidth
+          isLoading={isSubmitting}
+          disabled={isButtonDisabled}
+          className={styles.submitBtn}
+        >
+          {retryCountdown !== null && retryCountdown > 0
+            ? `Thử lại sau (${retryCountdown}s)`
+            : 'ĐĂNG KÝ THÀNH VIÊN'}
+        </Button>
+      </form>
 
-          <Button
-            type="submit"
-            variant="primary"
-            size="lg"
-            fullWidth
-            isLoading={isSubmitting}
-            disabled={isButtonDisabled}
-            className={styles.submitBtn}
+      {/* 5. Chuyển đổi sang đăng nhập (Đã bỏ dòng chữ Trở về trang chủ) */}
+      <div className={styles.footerActions}>
+        <p className={styles.promptText}>
+          Đã có tài khoản?{' '}
+          <Link
+            to="/login"
+            state={{ from: fromState }}
+            className={styles.switchLink}
           >
-            {retryCountdown !== null && retryCountdown > 0
-              ? `Thử lại sau (${retryCountdown}s)`
-              : 'Đăng Ký Tài Khoản'}
-          </Button>
-        </form>
-
-        <div className={styles.footer}>
-          <p className={styles.loginPrompt}>
-            Đã có tài khoản?{' '}
-            <Link
-              to="/login"
-              state={{ from: fromState }}
-              className={styles.loginLink}
-            >
-              Đăng nhập ngay
-            </Link>
-          </p>
-        </div>
+            Đăng nhập
+          </Link>
+        </p>
       </div>
     </div>
   )

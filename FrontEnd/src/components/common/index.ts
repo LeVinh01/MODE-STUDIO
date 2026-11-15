@@ -5,4 +5,5 @@ export * from './Select'
 export * from './Checkbox'
 export * from './Badge'
 export * from './PasswordInput'
+export * from './FloatingInput'
 

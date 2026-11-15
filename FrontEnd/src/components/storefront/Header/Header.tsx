@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { Menu, Search, ShoppingBag, User } from 'lucide-react'
 import { MAIN_NAVIGATION } from '@/config/navigation'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import {
   toggleMobileMenu,
-  toggleSearch,
   toggleCartDrawer,
 } from '@/store/slices/uiSlice'
 import { selectCurrentUser, resetAuth } from '@/store/slices/authSlice'
@@ -21,8 +20,14 @@ export interface HeaderProps {
 export const Header = ({ cartCount = 0 }: HeaderProps) => {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
+  const location = useLocation()
   const user = useAppSelector(selectCurrentUser)
   const isMobileMenuOpen = useAppSelector((state) => state.ui.isMobileMenuOpen)
+
+  const searchLink =
+    location.pathname === '/search'
+      ? `${location.pathname}${location.search}`
+      : '/search'
   const [isScrolled, setIsScrolled] = useState(false)
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false)
 
@@ -128,14 +133,13 @@ export const Header = ({ cartCount = 0 }: HeaderProps) => {
 
         {/* Right Section: Quick Action Icons */}
         <div className={styles.rightSection}>
-          <button
-            type="button"
-            onClick={() => dispatch(toggleSearch())}
+          <Link
+            to={searchLink}
             aria-label="Tìm kiếm sản phẩm"
             className={styles.actionButton}
           >
             <Search size={20} />
-          </button>
+          </Link>
 
           {user ? (
             <div className={styles.accountWrapper} ref={accountMenuRef}>

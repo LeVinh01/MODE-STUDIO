@@ -1,0 +1,200 @@
+@use '@/styles/abstracts' as *;
+
+.authContainer {
+  display: flex;
+  width: 100%;
+  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
+  background-color: var(--color-background, #ffffff);
+  position: relative;
+}
+
+/* ==========================================================================
+   IMAGE PANEL (Desktop >= 900px)
+   ========================================================================== */
+.imagePanel {
+  flex: 0 0 50%;
+  width: 50%;
+  height: 100dvh;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--color-sand, #f4efe6);
+  z-index: 2;
+  transition: transform 450ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+
+  // Login: Image nằm bên trái (translateX: 0)
+  // Register: Image trượt sang bên phải (translateX: 100%)
+  .authContainer[data-mode='login'] & {
+    transform: translateX(0);
+  }
+
+  .authContainer[data-mode='register'] & {
+    transform: translateX(100%);
+  }
+}
+
+.imageInner {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.authImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+/* ==========================================================================
+   FALLBACK KHI CHƯA CÓ FILE ẢNH (NỀN KEM + CHỮ MODE STUDIO)
+   ========================================================================== */
+.brandFallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8);
+  background: radial-gradient(
+    circle at center,
+    var(--color-cream, #fdfbf7) 0%,
+    var(--color-sand, #f4efe6) 100%
+  );
+  border-right: 1px solid var(--color-border-subtle, rgba(0, 0, 0, 0.08));
+
+  .authContainer[data-mode='register'] & {
+    border-right: none;
+    border-left: 1px solid var(--color-border-subtle, rgba(0, 0, 0, 0.08));
+  }
+}
+
+.brandFallbackFrame {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-12) var(--space-8);
+  border: 1px solid var(--color-border-strong, #1a1816);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  border-radius: var(--radius-sm, 2px);
+  max-width: 400px;
+  width: 100%;
+  box-shadow: var(--shadow-sm);
+}
+
+.brandMonogram {
+  font-family: $font-serif;
+  font-size: 2.25rem;
+  font-weight: $font-weight-regular;
+  letter-spacing: 0.18em;
+  color: var(--color-black, #111111);
+  margin-bottom: var(--space-3);
+}
+
+.brandTagline {
+  font-family: $font-sans;
+  font-size: 0.6875rem;
+  font-weight: $font-weight-semibold;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary, #666666);
+  margin-bottom: var(--space-6);
+}
+
+.brandSeason {
+  font-family: $font-sans;
+  font-size: 0.625rem;
+  font-weight: $font-weight-medium;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary, #999999);
+}
+
+/* ==========================================================================
+   FORM PANEL
+   ========================================================================== */
+.formPanel {
+  flex: 0 0 50%;
+  width: 50%;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background-color: var(--color-background, #ffffff);
+  z-index: 1;
+  overflow: hidden;
+  transition: transform 450ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+
+  // Login: Form nằm bên phải (translateX: 0)
+  // Register: Form trượt sang bên trái (translateX: -100%)
+  .authContainer[data-mode='login'] & {
+    transform: translateX(0);
+  }
+
+  .authContainer[data-mode='register'] & {
+    transform: translateX(-100%);
+  }
+
+  @media (max-width: 899px) {
+    flex: 1 1 100%;
+    width: 100%;
+    transform: none !important;
+  }
+}
+
+.formScrollContainer {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-10) var(--space-8);
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-subtle) transparent;
+
+  @media (max-width: 899px) {
+    padding: var(--space-8) var(--space-4);
+    justify-content: flex-start;
+  }
+}
+
+.formContentFade {
+  width: 100%;
+  max-width: 440px;
+  margin: auto;
+  animation: formFadeIn 350ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes formFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================================================
+   PREFERS REDUCED MOTION (A11Y)
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .imagePanel,
+  .formPanel,
+  .formContentFade {
+    transition: none !important;
+    animation: none !important;
+  }
+}
