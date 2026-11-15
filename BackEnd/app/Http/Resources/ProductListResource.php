@@ -11,18 +11,32 @@ class ProductListResource extends JsonResource
     {
         // available_colors lọc trùng màu từ variants active đã eager load
         $availableColors = [];
+        $colors = [];
         if ($this->relationLoaded('variants')) {
-            $uniqueColors = $this->variants
+            $imagesByColor = $this->relationLoaded('images')
+                ? $this->images->whereNotNull('color_id')->groupBy('color_id')
+                : collect();
+
+            $uniqueVariants = $this->variants
                 ->filter(fn($v) => (bool) $v->is_active && $v->color)
-                ->pluck('color')
-                ->unique('id')
+                ->unique('color_id')
                 ->values();
 
-            $availableColors = $uniqueColors->map(fn($c) => [
-                'id'       => $c->id,
-                'name'     => $c->name,
-                'hex_code' => $c->hex_code,
+            $availableColors = $uniqueVariants->map(fn($v) => [
+                'id'       => $v->color->id,
+                'name'     => $v->color->name,
+                'hex_code' => $v->color->hex_code,
             ])->all();
+
+            $colors = $uniqueVariants->take(8)->map(function ($v) use ($imagesByColor) {
+                $c = $v->color;
+                $firstImg = $imagesByColor->get($c->id)?->first();
+                return [
+                    'name'      => $c->name,
+                    'hex'       => $c->hex_code,
+                    'image_url' => $firstImg?->image_url,
+                ];
+            })->all();
         }
 
         // Tính in_stock từ variants active đã load hoặc total_stock nếu dùng withSum
@@ -65,6 +79,7 @@ class ProductListResource extends JsonResource
                 ] : null;
             }),
             'available_colors' => $availableColors,
+            'colors'           => $colors,
         ];
     }
 }

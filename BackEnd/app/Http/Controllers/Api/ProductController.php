@@ -27,6 +27,7 @@ class ProductController extends Controller
                 'category',
                 'brand',
                 'mainImage',
+                'images',
                 'variants' => fn($q) => $q->where('is_active', true)->with('color'),
             ]);
 
