@@ -9,67 +9,63 @@ export interface CategoryIconGridProps {
   config: CategoryGridSectionConfig
 }
 
-interface FlattenedCategoryItem {
-  id: string
+interface DisplayCategoryItem {
   name: string
   slug: string
   imageUrl?: string | null
 }
 
 export const CategoryIconGrid = ({ config }: CategoryIconGridProps) => {
-  const [categories, setCategories] = useState<FlattenedCategoryItem[]>([])
+  const [categories, setCategories] = useState<DisplayCategoryItem[]>(() =>
+    config.categories.map((c) => ({ name: c.name, slug: c.slug }))
+  )
   const [categoryImages, setCategoryImages] = useState<Record<string, string>>({})
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({})
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const controller = new AbortController()
     const { signal } = controller
 
-    const loadCategories = async () => {
+    const loadCategoryImages = async () => {
       setIsLoading(true)
-      setError(null)
       try {
         const rootCategories = await categoryService.getCategories(signal)
 
-        // Flatten all 7 categories: 3 root parents + 4 children
-        const flattened: FlattenedCategoryItem[] = []
+        // Flatten all categories from backend to find image_urls
+        const backendMap = new Map<string, string | null>()
         rootCategories.forEach((parent) => {
-          flattened.push({
-            id: parent.id,
-            name: parent.name,
-            slug: parent.slug,
-            imageUrl: parent.imageUrl,
-          })
-          if (parent.children && parent.children.length > 0) {
+          backendMap.set(parent.slug, parent.imageUrl || null)
+          if (parent.children) {
             parent.children.forEach((child) => {
-              flattened.push({
-                id: child.id,
-                name: child.name,
-                slug: child.slug,
-                imageUrl: child.imageUrl,
-              })
+              backendMap.set(child.slug, child.imageUrl || null)
             })
           }
         })
 
+        // Merge backend images with configured categories in order
+        const mergedCategories: DisplayCategoryItem[] = config.categories.map((cfg) => ({
+          name: cfg.name,
+          slug: cfg.slug,
+          imageUrl: backendMap.get(cfg.slug) || null,
+        }))
+
         if (!signal.aborted) {
-          setCategories(flattened)
+          setCategories(mergedCategories)
         }
 
-        // For categories without an image, fetch first product image in parallel
-        const missingImageCats = flattened.filter((c) => !c.imageUrl)
+        // For categories without backend imageUrl, fetch first product image
+        const missingImageCats = mergedCategories.filter((c) => !c.imageUrl)
         const imageResults = await Promise.allSettled(
           missingImageCats.map(async (cat) => {
             const res = await productService.getProducts(
               { category: cat.slug, perPage: 1 },
-              signal,
+              signal
             )
             const firstImg =
               res.items[0]?.mainImage?.url || res.items[0]?.featuredImage || null
             return { slug: cat.slug, img: firstImg }
-          }),
+          })
         )
 
         if (!signal.aborted) {
@@ -81,12 +77,8 @@ export const CategoryIconGrid = ({ config }: CategoryIconGridProps) => {
           })
           setCategoryImages(imgMap)
         }
-      } catch (err: unknown) {
-        if (!signal.aborted) {
-          setError(
-            err instanceof Error ? err.message : 'Không thể tải danh mục.',
-          )
-        }
+      } catch {
+        // Fallback to configured list without images
       } finally {
         if (!signal.aborted) {
           setIsLoading(false)
@@ -94,79 +86,71 @@ export const CategoryIconGrid = ({ config }: CategoryIconGridProps) => {
       }
     }
 
-    loadCategories()
+    loadCategoryImages()
 
     return () => {
       controller.abort()
     }
-  }, [])
+  }, [config.categories])
 
   const handleImageError = (slug: string) => {
     setImageErrors((prev) => ({ ...prev, [slug]: true }))
   }
 
   return (
-    <section className={styles.section} aria-labelledby="category-grid-heading">
-      <div className={styles.container}>
+    <section
+      className={styles.section}
+      aria-labelledby="category-grid-heading"
+      data-header-theme="light"
+    >
+      <div className={styles.wrapper}>
         <h2 id="category-grid-heading" className={styles.heading}>
           {config.title}
         </h2>
 
-        {isLoading ? (
-          <div className={styles.grid}>
-            {Array.from({ length: 7 }).map((_, i) => (
-              <div key={i} className={styles.skeletonCell}>
-                <div className={styles.skeletonCircle} />
-                <div className={styles.skeletonText} />
-              </div>
-            ))}
-          </div>
-        ) : error ? (
-          <div className={styles.errorNotice}>
-            <p>Không thể hiển thị danh mục ({error}).</p>
-          </div>
-        ) : (
-          <div className={styles.grid}>
-            {categories.map((cat) => {
-              const directImage = cat.imageUrl
-              const fallbackProductImg = categoryImages[cat.slug]
-              const finalImageSrc = directImage || fallbackProductImg
-              const hasError = imageErrors[cat.slug]
+        <div className={styles.grid}>
+          {categories.map((cat, index) => {
+            const directImage = cat.imageUrl
+            const fallbackProductImg = categoryImages[cat.slug]
+            const finalImageSrc = directImage || fallbackProductImg
+            const hasError = imageErrors[cat.slug]
+            const initial = cat.name.trim().charAt(0).toUpperCase()
 
-              const initial = cat.name.trim().charAt(0).toUpperCase()
+            return (
+              <Link
+                key={cat.slug}
+                to={`/products?category=${cat.slug}`}
+                className={styles.cell}
+              >
+                <div className={styles.iconBox}>
+                  {isLoading ? (
+                    <div className={styles.skeletonIcon} />
+                  ) : finalImageSrc && !hasError ? (
+                    <img
+                      src={finalImageSrc}
+                      alt={cat.name}
+                      className={styles.iconImage}
+                      onError={() => handleImageError(cat.slug)}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div
+                      className={styles.initialFallback}
+                      aria-hidden="true"
+                      data-index={index}
+                    >
+                      {initial}
+                    </div>
+                  )}
+                </div>
+                <span className={styles.caption}>{cat.name}</span>
+              </Link>
+            )
+          })}
+        </div>
 
-              return (
-                <Link
-                  key={cat.slug}
-                  to={`/products?category=${cat.slug}`}
-                  className={styles.cell}
-                  aria-label={`Danh mục: ${cat.name}`}
-                >
-                  <div className={styles.iconWrapper}>
-                    {finalImageSrc && !hasError ? (
-                      <img
-                        src={finalImageSrc}
-                        alt=""
-                        loading="lazy"
-                        className={styles.iconImage}
-                        onError={() => handleImageError(cat.slug)}
-                      />
-                    ) : (
-                      <div className={styles.letterCircle} aria-hidden="true">
-                        <span>{initial}</span>
-                      </div>
-                    )}
-                  </div>
-                  <span className={styles.caption}>{cat.name}</span>
-                </Link>
-              )
-            })}
-          </div>
-        )}
-
-        {/* Pill outline button under grid */}
-        <div className={styles.buttonWrapper}>
-          <Link to={config.ctaHref} className={styles.allCategoriesButton}>
+        <div className={styles.ctaWrapper}>
+          <Link to={config.ctaHref} className={styles.pillButton}>
             {config.ctaLabel}
           </Link>
         </div>
@@ -174,3 +158,5 @@ export const CategoryIconGrid = ({ config }: CategoryIconGridProps) => {
     </section>
   )
 }
+
+export default CategoryIconGrid

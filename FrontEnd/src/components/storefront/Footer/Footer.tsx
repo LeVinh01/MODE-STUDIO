@@ -38,7 +38,7 @@ export const Footer = () => {
   }
 
   return (
-    <footer className={styles.footer} role="contentinfo">
+    <footer className={styles.footer} role="contentinfo" data-header-theme="light">
       <div className={styles.container}>
         {/* Newsletter Subscription Section (ẩn khi VITE_ENABLE_NEWSLETTER=false) */}
         {showNewsletter && (

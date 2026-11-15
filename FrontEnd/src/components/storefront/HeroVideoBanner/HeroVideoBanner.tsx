@@ -56,7 +56,11 @@ export const HeroVideoBanner = ({ config }: HeroVideoBannerProps) => {
   const showVideo = !shouldDisableVideo && !videoError && Boolean(config.videoSrc)
 
   return (
-    <section className={styles.heroSection} aria-label="Banner nổi bật">
+    <section
+      className={styles.heroSection}
+      aria-label="Banner nổi bật"
+      data-header-theme="dark"
+    >
       {/* Background Media */}
       <div className={styles.mediaContainer}>
         {showVideo ? (

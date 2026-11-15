@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { Menu, Search, ShoppingBag, User } from 'lucide-react'
 import { MAIN_NAVIGATION } from '@/config/navigation'
@@ -17,7 +17,7 @@ export interface HeaderProps {
   cartCount?: number
 }
 
-export const Header = ({ cartCount = 0 }: HeaderProps) => {
+export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const location = useLocation()
@@ -26,41 +26,96 @@ export const Header = ({ cartCount = 0 }: HeaderProps) => {
   const isCartDrawerOpen = useAppSelector((state) => state.ui.isCartDrawerOpen)
 
   const isHomePage = location.pathname === '/'
-  const [isScrolled, setIsScrolled] = useState(false)
-  const [isScrolledPast80, setIsScrolledPast80] = useState(false)
-  const [isHovered, setIsHovered] = useState(false)
+  const [headerTheme, setHeaderTheme] = useState<'dark' | 'light'>('dark')
+  const [headerTop, setHeaderTop] = useState(0)
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false)
 
-  const isTransparent =
-    isHomePage &&
-    !isScrolledPast80 &&
-    !isHovered &&
-    !isMobileMenuOpen &&
-    !isAccountMenuOpen &&
-    !isCartDrawerOpen
-
-  const searchLink =
-    location.pathname === '/search'
-      ? `${location.pathname}${location.search}`
-      : '/search'
-
+  const headerRef = useRef<HTMLElement>(null)
   const accountMenuRef = useRef<HTMLDivElement>(null)
   const accountTriggerRef = useRef<HTMLButtonElement>(null)
 
+  const isOverlayOpen = isMobileMenuOpen || isCartDrawerOpen || isAccountMenuOpen
+
+  // Section theme & announcement bar detection (HOME PAGE ONLY)
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 15)
-      setIsScrolledPast80(window.scrollY > 80)
+    if (!isHomePage) return
+
+    let rafId: number | null = null
+
+    const detectThemeAndPosition = () => {
+      // 1. Calculate top offset based on normal-flow announcement bar
+      const announcementBar = document.querySelector(
+        'aside[aria-label="Thông báo ưu đãi"]'
+      )
+      let topOffset = 0
+      if (announcementBar) {
+        const barRect = announcementBar.getBoundingClientRect()
+        topOffset = Math.max(0, barRect.bottom)
+      }
+      setHeaderTop(topOffset)
+
+      // 2. Detect section under header vertical center
+      const headerEl = headerRef.current
+      const headerHeight = headerEl ? headerEl.offsetHeight : 68
+      const headerCenterY = topOffset + headerHeight / 2
+
+      const sections = document.querySelectorAll<HTMLElement>('[data-header-theme]')
+      let detectedTheme: 'dark' | 'light' = 'dark'
+      let closestSection: HTMLElement | null = null
+      let closestDist = -Infinity
+
+      for (let i = 0; i < sections.length; i++) {
+        const sec = sections[i]
+        const rect = sec.getBoundingClientRect()
+        if (rect.top <= headerCenterY && rect.bottom > headerCenterY) {
+          closestSection = sec
+          break
+        }
+        if (rect.top <= headerCenterY && rect.top > closestDist) {
+          closestDist = rect.top
+          closestSection = sec
+        }
+      }
+
+      if (closestSection) {
+        const theme = closestSection.getAttribute('data-header-theme')
+        if (theme === 'dark' || theme === 'light') {
+          detectedTheme = theme
+        }
+      }
+
+      setHeaderTheme(detectedTheme)
     }
 
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    handleScroll()
+    const scheduleUpdate = () => {
+      if (rafId !== null) return
+      rafId = requestAnimationFrame(() => {
+        detectThemeAndPosition()
+        rafId = null
+      })
+    }
+
+    window.addEventListener('scroll', scheduleUpdate, { passive: true })
+    window.addEventListener('resize', scheduleUpdate, { passive: true })
+
+    // MutationObserver to immediately detect when AnnouncementBar is dismissed
+    const observer = new MutationObserver(() => {
+      scheduleUpdate()
+    })
+    observer.observe(document.body, { childList: true, subtree: true })
+
+    // Initial check
+    detectThemeAndPosition()
 
     return () => {
-      window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('scroll', scheduleUpdate)
+      window.removeEventListener('resize', scheduleUpdate)
+      observer.disconnect()
+      if (rafId !== null) cancelAnimationFrame(rafId)
     }
-  }, [])
+  }, [isHomePage])
 
+  // Click outside & Escape for account dropdown
   useEffect(() => {
     if (!isAccountMenuOpen) return
 
@@ -95,22 +150,37 @@ export const Header = ({ cartCount = 0 }: HeaderProps) => {
     try {
       await authService.logout()
     } catch {
-      // Ignored: Token is cleared in finally block of authService.logout
+      // Ignored
     } finally {
       dispatch(resetAuth())
       navigate('/')
     }
   }
 
+  const searchLink =
+    location.pathname === '/search'
+      ? `${location.pathname}${location.search}`
+      : '/search'
+
+  // Header class configuration
+  const headerClassNames = cn(
+    styles.header,
+    isHomePage ? styles.homeHeader : styles.solidSticky,
+    isHomePage &&
+      !isOverlayOpen &&
+      (headerTheme === 'dark' ? styles.themeDark : styles.themeLight),
+    isOverlayOpen && styles.overlayOpen
+  )
+
+  const headerInlineStyle: React.CSSProperties = isHomePage
+    ? { top: `${headerTop}px` }
+    : {}
+
   return (
     <header
-      className={cn(
-        styles.header,
-        isTransparent ? styles.transparent : styles.solid,
-        (isScrolled || isScrolledPast80) && styles.scrolled,
-      )}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      ref={headerRef}
+      className={headerClassNames}
+      style={headerInlineStyle}
       role="banner"
     >
       <div className={styles.inner}>
@@ -126,10 +196,7 @@ export const Header = ({ cartCount = 0 }: HeaderProps) => {
             <Menu size={22} />
           </button>
 
-          <nav
-            className={styles.desktopNav}
-            aria-label="Điều hướng chính"
-          >
+          <nav className={styles.desktopNav} aria-label="Điều hướng chính">
             {MAIN_NAVIGATION.map((item) => (
               <NavLink
                 key={item.to}
@@ -172,7 +239,7 @@ export const Header = ({ cartCount = 0 }: HeaderProps) => {
                 aria-haspopup="menu"
                 className={cn(
                   styles.actionButton,
-                  isAccountMenuOpen && styles.actionButtonActive,
+                  isAccountMenuOpen && styles.actionButtonActive
                 )}
               >
                 <User size={20} />
@@ -180,56 +247,58 @@ export const Header = ({ cartCount = 0 }: HeaderProps) => {
 
               {isAccountMenuOpen && (
                 <div
-                  role="menu"
-                  aria-label="Tùy chọn tài khoản"
                   className={styles.accountDropdown}
+                  role="menu"
+                  aria-label="Menu tài khoản"
                 >
-                  <div className={styles.accountDropdownHeader}>
-                    <p className={styles.userName}>{user.fullName}</p>
-                    <p className={styles.userEmail}>{user.email}</p>
-                    <div className={styles.userRoleBadge}>
+                  <div className={styles.dropdownHeader}>
+                    <div className={styles.userNameRow}>
+                      <span className={styles.userName}>{user.fullName}</span>
                       <UserRoleBadge role={user.role} />
                     </div>
+                    <span className={styles.userEmail}>{user.email}</span>
                   </div>
 
                   <div className={styles.dropdownDivider} role="separator" />
 
-                  <Link
-                    to="/account"
-                    role="menuitem"
-                    className={styles.dropdownItem}
-                    onClick={() => setIsAccountMenuOpen(false)}
-                  >
-                    Thông tin tài khoản
-                  </Link>
-
-                  <Link
-                    to="/orders"
-                    role="menuitem"
-                    className={styles.dropdownItem}
-                    onClick={() => setIsAccountMenuOpen(false)}
-                  >
-                    Đơn hàng của tôi
-                  </Link>
-
-                  {(user.role === 'admin' || user.role === 'operator') && (
+                  {user.role === 'admin' && (
                     <Link
-                      to="/admin"
-                      role="menuitem"
+                      to="/admin/products"
                       className={styles.dropdownItem}
+                      role="menuitem"
                       onClick={() => setIsAccountMenuOpen(false)}
                     >
-                      Trang quản trị
+                      Trang Quản Trị
                     </Link>
                   )}
 
+                  <Link
+                    to="/account"
+                    className={styles.dropdownItem}
+                    role="menuitem"
+                    onClick={() => setIsAccountMenuOpen(false)}
+                  >
+                    Thông Tin Tài Khoản
+                  </Link>
+
+                  <Link
+                    to="/account/orders"
+                    className={styles.dropdownItem}
+                    role="menuitem"
+                    onClick={() => setIsAccountMenuOpen(false)}
+                  >
+                    Đơn Hàng Của Tôi
+                  </Link>
+
+                  <div className={styles.dropdownDivider} role="separator" />
+
                   <button
                     type="button"
-                    role="menuitem"
-                    className={cn(styles.dropdownItem, styles.logoutItem)}
                     onClick={handleLogout}
+                    className={cn(styles.dropdownItem, styles.logoutButton)}
+                    role="menuitem"
                   >
-                    Đăng xuất
+                    Đăng Xuất
                   </button>
                 </div>
               )}
@@ -237,7 +306,7 @@ export const Header = ({ cartCount = 0 }: HeaderProps) => {
           ) : (
             <Link
               to="/login"
-              aria-label="Tài khoản khách hàng"
+              aria-label="Đăng nhập tài khoản"
               className={styles.actionButton}
             >
               <User size={20} />
@@ -247,32 +316,16 @@ export const Header = ({ cartCount = 0 }: HeaderProps) => {
           <button
             type="button"
             onClick={() => dispatch(toggleCartDrawer())}
-            aria-label={
-              cartCount > 0
-                ? `Giỏ hàng, ${cartCount} loại sản phẩm`
-                : 'Giỏ hàng'
-            }
-            className={styles.actionButton}
+            aria-label={`Giỏ hàng (${cartCount} sản phẩm)`}
+            className={cn(styles.actionButton, styles.cartButton)}
           >
             <ShoppingBag size={20} />
             {cartCount > 0 && (
               <span className={styles.cartBadge} aria-hidden="true">
-                {cartCount}
+                {cartCount > 99 ? '99+' : cartCount}
               </span>
             )}
           </button>
-
-          {/* Dev-only shortcuts (chỉ hiện khi VITE_SHOW_DEV_SHORTCUTS=true) */}
-          {import.meta.env.VITE_SHOW_DEV_SHORTCUTS === 'true' && (
-            <div className={styles.devBadgeGroup}>
-              <Link to="/admin" className={styles.devLink} title="Admin Workspace">
-                Admin
-              </Link>
-              <Link to="/design-system" className={styles.devLink} title="Design System Showcase">
-                DS
-              </Link>
-            </div>
-          )}
         </div>
       </div>
     </header>
@@ -280,4 +333,3 @@ export const Header = ({ cartCount = 0 }: HeaderProps) => {
 }
 
 export default Header
-

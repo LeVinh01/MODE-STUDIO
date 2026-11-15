@@ -13,11 +13,17 @@ export interface HeroSectionConfig {
   ctaHref: string
 }
 
+export interface CategoryGridItemConfig {
+  name: string
+  slug: string
+}
+
 export interface CategoryGridSectionConfig {
   type: 'category_grid'
   title: string
   ctaLabel: string
   ctaHref: string
+  categories: CategoryGridItemConfig[]
 }
 
 export interface PromoCategorySectionConfig {
@@ -63,6 +69,14 @@ export const HOME_CONFIG: HomeConfig = {
     title: 'Tìm theo danh mục',
     ctaLabel: 'XEM TẤT CẢ DANH MỤC',
     ctaHref: '/products',
+    categories: [
+      { name: 'Thời Trang Nữ', slug: 'women' },
+      { name: 'Thời Trang Nam', slug: 'men' },
+      { name: 'Phụ Kiện', slug: 'accessories' },
+      { name: 'Áo Khoác & Blazer', slug: 'jackets-blazers' },
+      { name: 'Đầm & Váy', slug: 'dresses' },
+      { name: 'Túi Xách', slug: 'bags' },
+    ],
   },
 
   // S3 & S4: 4 Featured Categories in explicit order

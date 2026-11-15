@@ -44,7 +44,11 @@ export const PromoBanner: React.FC<PromoBannerProps> = ({ config }) => {
   )
 
   return (
-    <section className={styles.section} aria-label={config.title}>
+    <section
+      className={styles.section}
+      aria-label={config.title}
+      data-header-theme="dark"
+    >
       <Link to={config.ctaHref} className={styles.bannerLink}>
         {/* Background Image / Fallback */}
         <div className={styles.imageWrapper}>

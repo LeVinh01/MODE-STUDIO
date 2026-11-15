@@ -76,8 +76,8 @@ const ProductTile: React.FC<ProductTileProps> = ({ product }) => {
           />
         </Link>
 
-        {/* Badge "Bán chạy" bottom-left of image */}
-        <span className={styles.bestSellerBadge}>Bán chạy</span>
+        {/* Badge "BÁN CHẠY" bottom-left of image */}
+        <span className={styles.bestSellerBadge}>BÁN CHẠY</span>
 
         {/* Wishlist Heart (ONLY if VITE_ENABLE_WISHLIST === 'true') */}
         {isWishlistEnabled && (
@@ -156,7 +156,9 @@ export const ProductRow: React.FC<ProductRowProps> = ({
 }) => {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
-  const trackRef = useRef<HTMLDivElement>(null)
+  const [pageIndex, setPageIndex] = useState(0)
+  const [imageCenterY, setImageCenterY] = useState<number>(245)
+  const wrapperRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     let isMounted = true
@@ -188,62 +190,111 @@ export const ProductRow: React.FC<ProductRowProps> = ({
     }
   }, [categorySlug])
 
-  const scrollLeft = () => {
-    if (trackRef.current) {
-      const scrollAmount = trackRef.current.clientWidth * 0.75
-      trackRef.current.scrollBy({ left: -scrollAmount, behavior: 'smooth' })
+  // Measure first image height to center navigation buttons vertically on image
+  useEffect(() => {
+    const updateCenterY = () => {
+      if (wrapperRef.current) {
+        const firstImg = wrapperRef.current.querySelector('img')
+        if (firstImg && firstImg.offsetHeight > 0) {
+          setImageCenterY(firstImg.offsetHeight / 2)
+        }
+      }
     }
-  }
 
-  const scrollRight = () => {
-    if (trackRef.current) {
-      const scrollAmount = trackRef.current.clientWidth * 0.75
-      trackRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' })
+    updateCenterY()
+    const timer = setTimeout(updateCenterY, 300)
+    window.addEventListener('resize', updateCenterY)
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener('resize', updateCenterY)
     }
-  }
+  }, [products, loading])
 
   if (!loading && products.length === 0) {
     return null
   }
 
-  return (
-    <section className={styles.section} aria-label={title || 'Sản phẩm nổi bật'}>
-      <div className={styles.container}>
-        {/* Navigation Arrow Left */}
-        <button
-          type="button"
-          className={`${styles.navButton} ${styles.navPrev}`}
-          onClick={scrollLeft}
-          aria-label="Cuộn sang trái"
-        >
-          <ChevronLeft size={24} />
-        </button>
+  // Chunk products into pages of 4 items
+  const PAGE_SIZE = 4
+  const pages: Product[][] = []
+  for (let i = 0; i < products.length; i += PAGE_SIZE) {
+    pages.push(products.slice(i, i + PAGE_SIZE))
+  }
+  const totalPages = Math.max(1, pages.length)
 
-        {/* Product Track */}
-        <div className={styles.track} ref={trackRef}>
-          {loading
-            ? Array.from({ length: 4 }).map((_, index) => (
-                <div key={index} className={styles.skeletonTile}>
-                  <div className={styles.skeletonImage} />
-                  <div className={styles.skeletonText} />
-                  <div className={styles.skeletonPrice} />
+  const handlePrev = () => {
+    setPageIndex((prev) => (prev > 0 ? prev - 1 : totalPages - 1))
+  }
+
+  const handleNext = () => {
+    setPageIndex((prev) => (prev < totalPages - 1 ? prev + 1 : 0))
+  }
+
+  const showNavButtons = !loading && totalPages > 1
+
+  return (
+    <section
+      className={styles.section}
+      aria-label={title || 'Sản phẩm nổi bật'}
+      data-header-theme="light"
+    >
+      <div className={styles.wrapper} ref={wrapperRef}>
+        {/* Navigation Arrow Left */}
+        {showNavButtons && (
+          <button
+            type="button"
+            className={`${styles.navButton} ${styles.navPrev}`}
+            style={{ top: `${imageCenterY}px` }}
+            onClick={handlePrev}
+            aria-label="Xem sản phẩm trước"
+          >
+            <ChevronLeft size={22} />
+          </button>
+        )}
+
+        {/* Carousel / Grid container */}
+        <div className={styles.slider}>
+          <div
+            className={styles.sliderTrack}
+            style={{ transform: `translateX(-${pageIndex * 100}%)` }}
+          >
+            {loading ? (
+              <div className={styles.grid}>
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <div key={index} className={styles.skeletonTile}>
+                    <div className={styles.skeletonImage} />
+                    <div className={styles.skeletonText} />
+                    <div className={styles.skeletonPrice} />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              pages.map((pageItems, pIdx) => (
+                <div key={pIdx} className={styles.grid}>
+                  {pageItems.map((product) => (
+                    <ProductTile key={product.id} product={product} />
+                  ))}
                 </div>
               ))
-            : products.map((product) => (
-                <ProductTile key={product.id} product={product} />
-              ))}
+            )}
+          </div>
         </div>
 
         {/* Navigation Arrow Right */}
-        <button
-          type="button"
-          className={`${styles.navButton} ${styles.navNext}`}
-          onClick={scrollRight}
-          aria-label="Cuộn sang phải"
-        >
-          <ChevronRight size={24} />
-        </button>
+        {showNavButtons && (
+          <button
+            type="button"
+            className={`${styles.navButton} ${styles.navNext}`}
+            style={{ top: `${imageCenterY}px` }}
+            onClick={handleNext}
+            aria-label="Xem sản phẩm tiếp theo"
+          >
+            <ChevronRight size={22} />
+          </button>
+        )}
       </div>
     </section>
   )
 }
+
+export default ProductRow

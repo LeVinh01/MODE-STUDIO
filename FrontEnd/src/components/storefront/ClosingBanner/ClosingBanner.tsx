@@ -12,7 +12,11 @@ export const ClosingBanner: React.FC<ClosingBannerProps> = ({ config }) => {
   const [imageError, setImageError] = useState(false)
 
   return (
-    <section className={styles.section} aria-label={config.title}>
+    <section
+      className={styles.section}
+      aria-label={config.title}
+      data-header-theme="dark"
+    >
       {/* Background Image & Overlay */}
       <div className={styles.imageWrapper}>
         {!imageError && (
