@@ -356,9 +356,109 @@ $pdp-block-width: 1100px;
   margin-top: 6px;
 }
 
+/* ==========================================================================
+   BỘ CHỌN SỐ LƯỢNG
+   ========================================================================== */
+.quantitySection {
+  margin-top: 24px;
+}
+
+.quantityHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.quantityLabel {
+  font-family: $font-sans;
+  font-size: 12px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-primary, #111111);
+}
+
+.quantityRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.quantityControl {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--color-border, #d1d5db);
+  border-radius: 0;
+  background-color: var(--color-white, #ffffff);
+  height: 36px;
+  transition: border-color 0.2s ease;
+
+  &:focus-within {
+    border-color: var(--color-black, #111111);
+  }
+}
+
+.quantityDisabled {
+  opacity: 0.45;
+  background-color: #f9f9f9;
+}
+
+.qtyBtn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--color-text-primary, #111111);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background-color: #f3f3f3;
+  }
+
+  &:disabled {
+    color: #cccccc;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-black, #111111);
+    outline-offset: -2px;
+  }
+}
+
+.qtyInput {
+  width: 44px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  font-family: $font-sans;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
+  color: var(--color-text-primary, #111111);
+  outline: none;
+  -moz-appearance: textfield;
+
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  &:disabled {
+    color: #999999;
+    cursor: not-allowed;
+  }
+}
+
 /* Thông báo tồn kho thấp (12px)
    - size buttons -> "Chỉ còn N sản phẩm": 14px
-   - stock note -> add-to-cart button: 26px (margin-top 26px của nút)
+   - stock note -> add-to-cart button: 20px
 */
 .stockLowText {
   font-family: $font-sans;
@@ -378,7 +478,7 @@ $pdp-block-width: 1100px;
    - Chữ: 12px, in hoa, letter-spacing 0.06em, căn giữa, weight 400
    - Hover: đổi nền đen chữ trắng
    - Disabled: opacity 0.5
-   - Margin-top: 26px (stock note -> button: 26px)
+   - Margin-top: 24px
    - Margin-bottom: 28px (button -> first accordion row: 28px)
    ========================================================================== */
 .addToCartBtn {
@@ -399,7 +499,7 @@ $pdp-block-width: 1100px;
   align-items: center;
   justify-content: center;
   text-align: center;
-  margin-top: 26px;
+  margin-top: 24px;
   margin-bottom: 28px;
   transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
 
