@@ -4,11 +4,11 @@
   min-height: 100vh;
   background-color: var(--color-bg-primary, #ffffff);
   padding-bottom: 96px; // Khoảng cách từ lưới gợi ý đến footer >= 96px
-  overflow-x: hidden;
+  overflow-x: clip; // Sử dụng clip để không phá vỡ sticky context
 }
 
-// Chiều rộng tổng của cả khối (ảnh + gap + thông tin) để căn lề đồng bộ
-$pdp-block-width: calc(clamp(560px, 40vw, 720px) + clamp(48px, 5vw, 80px) + clamp(400px, 28vw, 520px));
+// Chiều rộng tổng của cả khối (ảnh 650px + gap 90px + thông tin 360px = 1100px)
+$pdp-block-width: 1100px;
 
 .container {
   width: 100%;
@@ -20,20 +20,18 @@ $pdp-block-width: calc(clamp(560px, 40vw, 720px) + clamp(48px, 5vw, 80px) + clam
     padding: 0 24px;
   }
 
-  @media (min-width: 1024px) {
-    // Giảm padding-inline để ảnh lấn ra lề trái, lề mỗi bên ~14-15vw ở 1885px
-    padding: 0;
-    padding-inline: clamp(16px, 2vw, 40px);
+  @media (min-width: 900px) {
+    padding: 0 24px;
   }
 }
 
 .breadcrumbsWrapper {
-  margin-top: 24px;
-  margin-bottom: 40px;
+  margin-top: 20px;
+  margin-bottom: 24px;
   padding: 0;
   width: 100%;
 
-  @media (min-width: 1024px) {
+  @media (min-width: 900px) {
     max-width: $pdp-block-width;
     margin-left: auto;
     margin-right: auto;
@@ -41,8 +39,8 @@ $pdp-block-width: calc(clamp(560px, 40vw, 720px) + clamp(48px, 5vw, 80px) + clam
 
   :global(.breadcrumbs) {
     font-family: $font-sans !important;
-    font-size: 11px !important;
-    letter-spacing: 0.05em;
+    font-size: 12px !important;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--color-text-muted, #7d766c) !important;
 
@@ -57,59 +55,65 @@ $pdp-block-width: calc(clamp(560px, 40vw, 720px) + clamp(48px, 5vw, 80px) + clam
 }
 
 /* ==========================================================================
-   MAIN 2-COLUMN LAYOUT (DESKTOP >= 1024px)
-   1. Cột ảnh rộng: clamp(560px, 40vw, 720px) (ở 1885px ~ 720px, ở 1440px ~ 576px)
-   2. Khoảng cách giữa ảnh và thông tin: column-gap clamp(48px, 5vw, 80px) (ở 1885px ~ 80px, ở 1440px ~ 72px)
-   3. Cột thông tin rộng: clamp(400px, 28vw, 520px), canh trái (justify-self: start)
-   4. Cả khối (ảnh + gap + thông tin) căn giữa trang (justify-content: center)
+   MAIN 2-COLUMN LAYOUT (DESKTOP >= 900px)
+   - Cả khối căn giữa trang: max-width 1100px, margin: 0 auto
+   - Cột ảnh rộng: 650px
+   - Khoảng cách giữa ảnh và thông tin: gap 90px
+   - Cột thông tin rộng: 360px, sticky top: 100px
    ========================================================================== */
 .mainLayout {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
   width: 100%;
 
-  @media (min-width: 1024px) {
-    grid-template-columns: minmax(0, clamp(560px, 40vw, 720px)) minmax(0, clamp(400px, 28vw, 520px));
-    column-gap: clamp(48px, 5vw, 80px);
-    align-items: start;
-    justify-content: center; // Cả khối căn giữa trang
+  @media (min-width: 900px) {
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 90px;
+    width: 100%;
+    max-width: $pdp-block-width;
+    margin: 0 auto;
   }
 }
 
 .galleryColumn {
   width: 100%;
   min-width: 0;
-  max-width: 720px;
+
+  @media (min-width: 900px) {
+    width: 650px;
+    flex: 0 0 650px;
+    max-width: 650px;
+  }
 }
 
 /* ==========================================================================
    BẢNG THÔNG TIN (Sticky, font sans-serif)
-   - Cột thông tin rộng clamp(400px, 28vw, 520px)
-   - Canh trái (justify-self: start), KHÔNG căn giữa hoặc đẩy về phải
-   - Bắt đầu thấp hơn đỉnh ảnh khoảng 56-80px
-   - Giữa các khối cách nhau 28-32px (mobile 24px)
+   - Cột thông tin rộng: 360px
+   - align-self: flex-start (start)
+   - position: sticky, top: 140px
+   - initial offset: margin-top 140px (khoảng 140px dưới đỉnh ảnh)
+   - Viewport < 900px: không offset, không sticky (layout xếp chồng)
    ========================================================================== */
 .detailsColumn {
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: clamp(400px, 28vw, 520px);
-  justify-self: start; // Canh trái, sát ảnh hơn
+  min-width: 0;
   font-family: $font-sans;
   padding: 0 16px; // Mobile padding
 
-  @media (min-width: 1024px) {
-    padding: clamp(56px, 4vw, 80px) 0 0 0; // Thấp hơn đỉnh ảnh khoảng 56-80px
+  @media (min-width: 900px) {
+    padding: 0;
+    width: 360px;
+    flex: 0 0 360px;
+    max-width: 360px;
+    align-self: flex-start;
     position: sticky;
-    top: 80px;
-    max-height: calc(100vh - 80px);
-    overflow-y: auto;
-    scrollbar-width: none;
-
-    &::-webkit-scrollbar {
-      display: none;
-    }
+    top: 140px;
+    margin-top: 140px;
   }
 }
 
@@ -126,66 +130,70 @@ $pdp-block-width: calc(clamp(560px, 40vw, 720px) + clamp(48px, 5vw, 80px) + clam
   font-family: $font-sans;
   font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--color-text-secondary, #5c564e);
-  font-weight: $font-weight-regular;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted, #7d766c);
+  font-weight: 400;
 }
 
-/* Tên sản phẩm (14px, chữ hoa, weight 400, line-height 1.4) */
+/* Tên sản phẩm (13px, weight 400, uppercase, letter-spacing ~0.02em, line-height 1.3) */
 .productName {
   font-family: $font-sans;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 400;
-  line-height: 1.4;
+  line-height: 1.3;
   text-transform: uppercase;
   color: var(--color-text-primary, #111111);
-  margin: 0 0 8px 0;
-  letter-spacing: 0.04em;
+  margin: 0 0 6px 0;
+  letter-spacing: 0.02em;
 }
 
-/* Giá sản phẩm (14px ngay dưới tên) */
+/* Giá sản phẩm (13px, weight 400, giá cũ gạch ngang 12px) - price -> divider: 24px */
 .priceRow {
   display: flex;
   align-items: baseline;
   gap: 8px;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .currentPrice {
   font-family: $font-sans;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 400;
   color: var(--color-text-primary, #111111);
 }
 
 .originalPrice {
   font-family: $font-sans;
   font-size: 12px;
+  font-weight: 400;
   color: var(--color-text-muted, #7d766c);
   text-decoration: line-through;
 }
 
-/* Đường kẻ mỏng 1px - kết thúc khối tên/giá với khoảng cách 28-32px */
+/* Đường kẻ phân cách sắc nét 1px solid #1a1a1a - divider -> color label: 32px */
 .divider {
   border: none;
-  height: 1px;
-  background-color: var(--color-border-subtle, #e8e4dd);
-  margin: 0 0 24px 0;
+  border-bottom: 1px solid #1a1a1a;
+  height: 0;
+  background-color: transparent;
+  margin: 0 0 32px 0;
   width: 100%;
 
   @media (min-width: 1024px) {
-    margin-bottom: 30px;
+    margin-bottom: 32px;
   }
 }
 
 /* ==========================================================================
-   MÀU SẮC (Dòng chữ 12px chữ hoa, ô màu 28px, khoảng cách khối 28-32px)
+   MÀU SẮC (Dòng chữ 11-12px chữ hoa, ô màu 18x18px vuông, gap 10px, padding 5px)
+   - color label -> swatches: 18px (margin-bottom 13px + padding-top 5px)
+   - swatches -> size label: 28px (padding-bottom 5px + margin-bottom 23px)
    ========================================================================== */
 .colorSection {
-  margin-bottom: 24px;
+  margin-bottom: 23px;
 
   @media (min-width: 1024px) {
-    margin-bottom: 30px;
+    margin-bottom: 23px;
   }
 }
 
@@ -194,9 +202,10 @@ $pdp-block-width: calc(clamp(560px, 40vw, 720px) + clamp(48px, 5vw, 80px) + clam
   font-family: $font-sans;
   font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   color: var(--color-text-primary, #111111);
-  margin-bottom: 10px;
+  margin-bottom: 13px;
+  font-weight: 400;
 }
 
 .colorList {
@@ -204,39 +213,42 @@ $pdp-block-width: calc(clamp(560px, 40vw, 720px) + clamp(48px, 5vw, 80px) + clam
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
+  padding: 5px;
 }
 
 .colorSwatch {
-  width: 28px; // Ô màu 28px theo yêu cầu
-  height: 28px;
-  border-radius: 0; // Ô vuông sắc nét
-  border: 1px solid var(--color-border-subtle, #d6d0c7);
+  width: 14px;
+  height: 14px;
+  border-radius: 0;
+  border: 1px solid rgba(0, 0, 0, 0.15);
   padding: 0;
   cursor: pointer;
   background-color: transparent;
   transition: all 0.15s ease;
+  box-sizing: border-box;
 
   &:hover {
     border-color: var(--color-black, #111111);
   }
 
   &.colorActive {
-    border: 1px solid var(--color-black, #111111);
-    outline: 1px solid var(--color-black, #111111);
-    outline-offset: 2px;
+    border-color: rgba(0, 0, 0, 0.15);
+    outline: 1px solid #111111;
+    outline-offset: 4px;
   }
 
   &:focus-visible {
-    outline: 2px solid var(--color-black, #111111);
-    outline-offset: 2px;
+    outline: 1px solid #111111;
+    outline-offset: 3px;
   }
 }
 
 /* ==========================================================================
-   KÍCH CỠ (12px chữ hoa, ô size cao ~44px, link bảng size)
+   KÍCH CỠ (11-12px chữ hoa, ô size cao 34px, min-width 40px, text 12px)
+   - size label -> size buttons: 14px (margin-bottom 10px + padding-top 4px)
    ========================================================================== */
 .sizeSection {
-  margin-bottom: 0; // Khoảng cách tới nút thêm giỏ được đảm bảo bởi margin-top của nút
+  margin-bottom: 0;
 }
 
 .sizeHeader {
@@ -250,8 +262,9 @@ $pdp-block-width: calc(clamp(560px, 40vw, 720px) + clamp(48px, 5vw, 80px) + clam
   font-family: $font-sans;
   font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   color: var(--color-text-primary, #111111);
+  font-weight: 400;
 }
 
 .sizeGuideLink {
@@ -278,25 +291,28 @@ $pdp-block-width: calc(clamp(560px, 40vw, 720px) + clamp(48px, 5vw, 80px) + clam
 .sizeList {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
+  padding: 4px 4px 0 4px;
 }
 
 .sizeBtn {
-  height: 44px; // Ô size cao ~44px theo yêu cầu
-  min-width: 44px;
-  padding: 0 14px;
+  height: 34px;
+  min-height: 34px;
+  min-width: 40px;
+  padding: 0 12px;
   border: 1px solid var(--color-border-subtle, #d6d0c7);
-  border-radius: 0; // Ô chữ nhật phẳng
+  border-radius: 0;
   background-color: var(--color-bg-primary, #ffffff);
   color: var(--color-text-primary, #111111);
   font-family: $font-sans;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 400;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   transition: all 0.15s ease;
+  box-sizing: border-box;
 
   &:hover:not(:disabled):not(.sizeActive) {
     border-color: var(--color-black, #111111);
@@ -325,7 +341,7 @@ $pdp-block-width: calc(clamp(560px, 40vw, 720px) + clamp(48px, 5vw, 80px) + clam
 
 .oneSizeBadge {
   display: inline-block;
-  padding: 8px 14px;
+  padding: 6px 12px;
   font-family: $font-sans;
   font-size: 12px;
   background-color: var(--color-gray-100, #f5f3ef);
@@ -337,40 +353,45 @@ $pdp-block-width: calc(clamp(560px, 40vw, 720px) + clamp(48px, 5vw, 80px) + clam
   font-family: $font-sans;
   font-size: 12px;
   color: var(--color-error, #a83232);
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
-/* Thông báo tồn kho thấp (12px) */
+/* Thông báo tồn kho thấp (12px)
+   - size buttons -> "Chỉ còn N sản phẩm": 14px
+   - stock note -> add-to-cart button: 26px (margin-top 26px của nút)
+*/
 .stockLowText {
   font-family: $font-sans;
   font-size: 12px;
   color: var(--color-text-secondary, #5c564e);
-  margin-top: 8px;
+  margin-top: 14px;
+  margin-bottom: 0;
   font-style: italic;
 }
 
 /* ==========================================================================
    NÚT "THÊM VÀO GIỎ HÀNG"
-   - Width: 100% cột thông tin
-   - Height: 52-56px (54px)
+   - Width: 100% cột thông tin (~360px)
+   - Height: 40px chính xác
    - Border: 1px solid màu chữ (#111111)
    - Nền: trắng
-   - Chữ: 14px, in hoa, letter-spacing 0.06em, căn giữa
+   - Chữ: 12px, in hoa, letter-spacing 0.06em, căn giữa, weight 400
    - Hover: đổi nền đen chữ trắng
-   - Disabled (hết hàng / đang xử lý): giảm độ đậm (opacity 0.5)
-   - Margin-top: 24px, margin-bottom: 32px
+   - Disabled: opacity 0.5
+   - Margin-top: 26px (stock note -> button: 26px)
+   - Margin-bottom: 28px (button -> first accordion row: 28px)
    ========================================================================== */
 .addToCartBtn {
   width: 100%;
-  height: 54px; // 52-56px theo yêu cầu
-  min-height: 54px;
+  height: 40px;
+  min-height: 40px;
   border: 1px solid var(--color-black, #111111);
   border-radius: 0;
   background-color: var(--color-white, #ffffff);
   color: var(--color-black, #111111);
   font-family: $font-sans;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 400;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   cursor: pointer;
@@ -378,8 +399,8 @@ $pdp-block-width: calc(clamp(560px, 40vw, 720px) + clamp(48px, 5vw, 80px) + clam
   align-items: center;
   justify-content: center;
   text-align: center;
-  margin-top: 24px;
-  margin-bottom: 32px;
+  margin-top: 26px;
+  margin-bottom: 28px;
   transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
 
   &:hover:not(:disabled) {
@@ -413,21 +434,21 @@ $pdp-block-width: calc(clamp(560px, 40vw, 720px) + clamp(48px, 5vw, 80px) + clam
   margin-bottom: 20px;
 }
 
-/* Mô tả sản phẩm (13px, line-height 1.6, màu chữ thường) */
+/* Mô tả sản phẩm (12px, line-height 1.5, màu chữ thường) */
 .descriptionText {
   font-family: $font-sans;
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: 12px;
+  line-height: 1.5;
   color: var(--color-text-secondary, #443f38);
-  margin-bottom: 32px;
+  margin-bottom: 20px;
 }
 
 /* ==========================================================================
-   ACCORDION THU GỌN (12px chữ hoa, kẻ mỏng giữa các mục, mở bằng click)
+   ACCORDION THU GỌN (12px chữ hoa, chiều cao hàng ~40px, kẻ mỏng giữa các mục)
    ========================================================================== */
 .accordionSection {
   border-top: 1px solid var(--color-border-subtle, #e8e4dd);
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
 .accordionItem {
@@ -436,16 +457,19 @@ $pdp-block-width: calc(clamp(560px, 40vw, 720px) + clamp(48px, 5vw, 80px) + clam
 
 .accordionHeader {
   width: 100%;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 0;
   background: transparent;
   border: none;
   font-family: $font-sans;
   font-size: 12px;
+  font-weight: 400;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   color: var(--color-text-primary, #111111);
   cursor: pointer;
   text-align: left;
@@ -461,16 +485,16 @@ $pdp-block-width: calc(clamp(560px, 40vw, 720px) + clamp(48px, 5vw, 80px) + clam
 }
 
 .accordionContent {
-  padding: 0 0 14px 0;
+  padding: 0 0 12px 0;
   font-family: $font-sans;
   font-size: 12px;
-  line-height: 1.6;
+  line-height: 1.5;
   color: var(--color-text-secondary, #5c564e);
 }
 
 .accordionLink {
   display: inline-block;
-  margin-top: 8px;
+  margin-top: 6px;
   color: var(--color-text-primary, #111111);
   text-decoration: underline;
   font-size: 12px;
@@ -481,27 +505,144 @@ $pdp-block-width: calc(clamp(560px, 40vw, 720px) + clamp(48px, 5vw, 80px) + clam
 }
 
 /* ==========================================================================
-   KHỐI "CÓ THỂ BẠN QUAN TÂM" (Dưới cùng, tiêu đề 12px chữ hoa)
-   - Khoảng cách từ thư viện ảnh đến khối này >= 96px
+   KHỐI "CÓ THỂ BẠN QUAN TÂM" (Dưới cùng, tiêu đề 12px chữ hoa letter-spaced)
+   - Max-width: 1100px (đồng bộ với khối ảnh + info)
+   - Lưới: 6 cột desktop (>= 1100px), 4 cột tablet (768-1099px), 2 cột mobile (< 768px)
+   - Ô sản phẩm: ảnh tỷ lệ 3:4 ở giữa ô chiếm ~70% chiều rộng ô, object-fit: contain, không khung nền
+   - Tên sản phẩm 12px (1 dòng, ellipsis), giá 12px căn giữa
+   - Không huy hiệu giảm giá / mới
    ========================================================================== */
 .relatedSection {
   margin-top: 96px;
   padding-top: 48px;
   border-top: 1px solid var(--color-border-subtle, #e8e4dd);
   width: 100%;
+  max-width: $pdp-block-width;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
 
-  @media (min-width: 1024px) {
-    max-width: $pdp-block-width;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  :global(h2) {
+  h2 {
     font-family: $font-sans !important;
     font-size: 12px !important;
+    font-weight: 400 !important;
     letter-spacing: 0.16em !important;
     text-transform: uppercase !important;
     color: var(--color-text-primary, #111111) !important;
+    text-align: left;
+    margin: 0 0 24px 0;
+  }
+
+  /* Ẩn badge nếu có lọt vào */
+  [class*="badgeGroup"] {
+    display: none !important;
+  }
+
+  /* Định hình ô sản phẩm theo phong cách tối giản thanh thoát (Zara reference) */
+  article {
+    background-color: transparent !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    width: 100%;
+    min-width: 0;
+
+    /* Khối ảnh chiếm ~70% chiều rộng ô */
+    > div:first-child {
+      width: 70% !important;
+      max-width: 70% !important;
+      margin: 0 auto;
+      aspect-ratio: 3 / 4;
+      background: transparent !important;
+      background-color: transparent !important;
+      border: none !important;
+      border-radius: 0;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain !important;
+        background: transparent !important;
+        border-radius: 0;
+        transition: transform 0.25s ease-out;
+      }
+
+      > div {
+        background: transparent !important;
+        background-color: transparent !important;
+        border: none !important;
+      }
+    }
+
+    &:hover > div:first-child img {
+      transform: scale(1.03);
+    }
+
+    /* Khối thông tin: Tên 12px (1 dòng ellipsis) + Giá 12px căn giữa */
+    > div:last-child {
+      padding-top: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      width: 100%;
+      min-width: 0;
+
+      h3 {
+        margin: 0;
+        width: 100%;
+        text-align: center;
+        font-size: 12px !important;
+        font-weight: 400 !important;
+        line-height: 1.35;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        a {
+          font-family: $font-sans !important;
+          font-size: 12px !important;
+          font-weight: 400 !important;
+          color: var(--color-text-primary, #111111) !important;
+          text-align: center;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          display: block;
+          width: 100%;
+        }
+      }
+
+      div {
+        justify-content: center;
+        text-align: center;
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        margin-top: 3px;
+        width: 100%;
+
+        span {
+          font-family: $font-sans !important;
+          font-size: 12px !important;
+          font-weight: 400 !important;
+          color: var(--color-text-primary, #111111) !important;
+
+          &[class*="originalPrice"] {
+            color: var(--color-text-muted, #7d766c) !important;
+            text-decoration: line-through;
+            font-size: 11px !important;
+          }
+        }
+      }
+    }
   }
 }
 
@@ -597,7 +738,7 @@ $pdp-block-width: calc(clamp(560px, 40vw, 720px) + clamp(48px, 5vw, 80px) + clam
    ========================================================================== */
 .skeletonGallery {
   width: 100%;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 3 / 4;
   background-color: var(--color-sand, #efece6);
   animation: pulse 1.5s infinite;
 }
@@ -619,9 +760,10 @@ $pdp-block-width: calc(clamp(560px, 40vw, 720px) + clamp(48px, 5vw, 80px) + clam
   }
 
   &.btn {
-    height: 54px;
+    height: 40px;
     width: 100%;
-    margin-top: 24px;
+    margin-top: 16px;
+    margin-bottom: 20px;
   }
 }
 

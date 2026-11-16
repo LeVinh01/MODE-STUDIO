@@ -725,6 +725,8 @@ export const ProductDetailPage = () => {
             title="CÓ THỂ BẠN QUAN TÂM"
             products={relatedProducts}
             className={styles.relatedSection}
+            hideBadges
+            columns={6}
           />
         )}
       </div>
