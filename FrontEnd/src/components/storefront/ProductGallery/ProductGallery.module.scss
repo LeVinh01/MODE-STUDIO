@@ -5,61 +5,33 @@
 }
 
 /* ==========================================================================
-   DESKTOP (>= 1024px)
-   - Ảnh đầu tiên: Giới hạn chiều cao max-height: calc(100vh - 80px)
-   - aspect-ratio: 4 / 5 giữ nguyên
-   - Nếu có đúng 2 ảnh: Ảnh thứ 2 cùng độ rộng với ảnh đầu
-   - Nếu có từ 3 ảnh trở lên: Các ảnh sau xếp 2 cột nhỏ hơn (~50% cột ảnh, khoảng cách 8px)
+   DESKTOP (>= 900px)
+   - Tất cả ảnh xếp dọc trong 1 cột duy nhất
+   - width: 100%, aspect-ratio: 3 / 4
+   - gap: 4px giữa các ảnh
+   - Không viền, không bo góc
    ========================================================================== */
 .desktopGallery {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
   width: 100%;
 }
 
-.firstImageItem {
+.imageItem {
   position: relative;
   width: 100%;
-  aspect-ratio: 4 / 5;
-  max-height: calc(100vh - 80px);
+  aspect-ratio: 3 / 4;
   background-color: var(--color-sand, #efece6);
   overflow: hidden;
-  display: flex;
-  justify-content: center;
-}
-
-.firstImage {
-  width: 100%;
-  height: 100%;
-  max-height: calc(100vh - 80px);
-  aspect-ratio: 4 / 5;
-  object-fit: cover;
-  object-position: center top;
-  display: block;
-  border-radius: 0; // Không bo góc
-  border: none; // Không viền
-}
-
-.secondaryGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  width: 100%;
-}
-
-.secondaryImageItem {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 4 / 5;
-  background-color: var(--color-sand, #efece6);
-  overflow: hidden;
+  border: none;
+  border-radius: 0;
 }
 
 .image {
   width: 100%;
   height: 100%;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 3 / 4;
   object-fit: cover;
   object-position: center top;
   display: block;
@@ -68,7 +40,7 @@
 }
 
 /* ==========================================================================
-   MOBILE (< 1024px): Vuốt ngang scroll-snap, 1 ảnh/màn hình
+   MOBILE (< 900px): Vuốt ngang scroll-snap, 1 ảnh/màn hình
    ========================================================================== */
 .mobileSliderContainer {
   width: 100%;
@@ -91,7 +63,7 @@
 .mobileSlide {
   flex: 0 0 100%;
   width: 100%;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 3 / 4;
   scroll-snap-align: start;
   scroll-snap-stop: always;
   background-color: var(--color-sand, #efece6);
@@ -122,7 +94,7 @@
 
 .noImageFallback {
   width: 100%;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 3 / 4;
   display: flex;
   align-items: center;
   justify-content: center;

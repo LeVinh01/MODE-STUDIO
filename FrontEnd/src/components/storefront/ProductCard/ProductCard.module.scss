@@ -22,7 +22,7 @@
   overflow: hidden;
   flex-shrink: 0; // Luôn giữ tỉ lệ 3:4, không bị nén dọc
   background-color: var(--color-sand);
-  border-radius: var(--radius-sm);
+  border-radius: 0;
 }
 
 .image {
@@ -170,20 +170,28 @@
 
 .title {
   font-family: $font-sans;
-  font-size: 0.9375rem;
+  font-size: 0.875rem; // ~14px
   font-weight: $font-weight-medium;
   line-height: 1.4;
   margin: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  display: block;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  width: 100%;
 }
 
 .titleLink {
   color: var(--color-text-primary);
   text-decoration: none;
   transition: color $transition-fast;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  width: 100%;
 
   /* Stretched link covers the entire card */
   &::after {
@@ -191,7 +199,7 @@
     position: absolute;
     inset: 0;
     z-index: 1;
-    border-radius: var(--radius-sm);
+    border-radius: 0;
   }
 
   &:hover {
@@ -216,7 +224,7 @@
 
 .currentPrice {
   font-family: $font-sans;
-  font-size: 0.9375rem;
+  font-size: 0.875rem; // ~14px
   font-weight: $font-weight-semibold;
   color: var(--color-text-primary);
 }

@@ -316,7 +316,7 @@ export const SearchPage = () => {
         {/* 5. LƯỚI KẾT QUẢ TÌM KIẾM (COMPACT) */}
         {!isLoading && !searchError && searchResults.length > 0 && (
           <>
-            <ProductCompactGrid products={searchResults} />
+            <ProductCompactGrid products={searchResults} columns={6} />
 
             {/* Nút Xem thêm khi còn trang kế tiếp */}
             {hasMore && (
@@ -355,6 +355,7 @@ export const SearchPage = () => {
             products={recommendations.slice(0, 8)}
             isLoading={isRecLoading}
             skeletonCount={6}
+            columns={6}
             className={styles.recommendationWrapper}
           />
         )}

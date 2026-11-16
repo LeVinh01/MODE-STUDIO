@@ -15,7 +15,7 @@ export const ProductGallery = ({
   selectedColorId,
   productName,
 }: ProductGalleryProps) => {
-  const isDesktop = useMediaQuery('(min-width: 1024px)')
+  const isDesktop = useMediaQuery('(min-width: 900px)')
   const [activeIndex, setActiveIndex] = useState(0)
   const sliderRef = useRef<HTMLDivElement>(null)
 
@@ -68,56 +68,25 @@ export const ProductGallery = ({
 
   return (
     <div className={styles.galleryContainer} aria-label="Thư viện hình ảnh sản phẩm">
-      {/* DESKTOP (>= 1024px):
-          - Ảnh đầu tiên: Giới hạn chiều cao max-height để nhìn trọn ảnh đầu không phải cuộn.
-          - Nếu có đúng 2 ảnh: Ảnh thứ 2 cùng độ rộng với ảnh đầu.
-          - Nếu có từ 3 ảnh trở lên: Các ảnh sau xếp 2 cột nhỏ hơn (~50% cột ảnh, khoảng cách 8px).
+      {/* DESKTOP (>= 900px):
+          Hiển thị toàn bộ ảnh của màu đã chọn xếp dọc theo 1 cột duy nhất (width 100%, tỉ lệ 3:4, gap 4px).
       */}
       {isDesktop ? (
         <div className={styles.desktopGallery}>
-          {/* Ảnh đầu tiên: Giới hạn max-height để thấy trọn vẹn mà không phải cuộn */}
-          <div className={styles.firstImageItem}>
-            <img
-              src={displayImages[0].url}
-              alt={displayImages[0].altText || `${productName} – Góc nhìn 1`}
-              className={styles.firstImage}
-              loading="eager"
-              decoding="async"
-            />
-          </div>
-
-          {/* Nếu có đúng 2 ảnh: Ảnh thứ 2 cùng độ rộng với ảnh đầu */}
-          {displayImages.length === 2 && (
-            <div className={styles.firstImageItem}>
+          {displayImages.map((img, idx) => (
+            <div key={img.id || idx} className={styles.imageItem}>
               <img
-                src={displayImages[1].url}
-                alt={displayImages[1].altText || `${productName} – Góc nhìn 2`}
+                src={img.url}
+                alt={img.altText || `${productName} – Góc nhìn ${idx + 1}`}
                 className={styles.image}
-                loading="lazy"
+                loading={idx === 0 ? 'eager' : 'lazy'}
                 decoding="async"
               />
             </div>
-          )}
-
-          {/* Nếu có từ 3 ảnh trở lên: Các ảnh sau xếp 2 cột nhỏ hơn (khoảng cách 8px) */}
-          {displayImages.length >= 3 && (
-            <div className={styles.secondaryGrid}>
-              {displayImages.slice(1).map((img, idx) => (
-                <div key={img.id || idx} className={styles.secondaryImageItem}>
-                  <img
-                    src={img.url}
-                    alt={img.altText || `${productName} – Góc nhìn ${idx + 2}`}
-                    className={styles.image}
-                    loading="lazy"
-                    decoding="async"
-                  />
-                </div>
-              ))}
-            </div>
-          )}
+          ))}
         </div>
       ) : (
-        /* MOBILE (< 1024px): Vuốt ngang scroll-snap 1 ảnh/màn hình kèm chấm chỉ số */
+        /* MOBILE (< 900px): Vuốt ngang scroll-snap 1 ảnh/màn hình kèm chấm chỉ số */
         <div className={styles.mobileSliderContainer}>
           <div
             ref={sliderRef}

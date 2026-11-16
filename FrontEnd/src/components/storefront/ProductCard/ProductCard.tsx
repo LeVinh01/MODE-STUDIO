@@ -14,6 +14,7 @@ export interface ProductCardProps extends HTMLAttributes<HTMLElement> {
   isWishlisted?: boolean
   onWishlistToggle?: (productId: string) => void
   compact?: boolean
+  hideBadges?: boolean
 }
 
 export const ProductCard = ({
@@ -22,6 +23,7 @@ export const ProductCard = ({
   isWishlisted = false,
   onWishlistToggle,
   compact = false,
+  hideBadges = false,
   className,
   ...props
 }: ProductCardProps) => {
@@ -98,26 +100,28 @@ export const ProductCard = ({
         )}
 
         {/* 2. Badges */}
-        <div className={styles.badgeGroup}>
-          {isOutOfStock ? (
-            <Badge variant="default" size="sm">
-              HẾT HÀNG
-            </Badge>
-          ) : (
-            <>
-              {discountPercent > 0 && (
-                <Badge variant="error" size="sm">
-                  -{discountPercent}%
-                </Badge>
-              )}
-              {isNewProduct && (
-                <Badge variant="luxury" size="sm">
-                  MỚI
-                </Badge>
-              )}
-            </>
-          )}
-        </div>
+        {!hideBadges && (
+          <div className={styles.badgeGroup}>
+            {isOutOfStock ? (
+              <Badge variant="default" size="sm">
+                HẾT HÀNG
+              </Badge>
+            ) : (
+              <>
+                {discountPercent > 0 && (
+                  <Badge variant="error" size="sm">
+                    -{discountPercent}%
+                  </Badge>
+                )}
+                {isNewProduct && (
+                  <Badge variant="luxury" size="sm">
+                    MỚI
+                  </Badge>
+                )}
+              </>
+            )}
+          </div>
+        )}
 
         {/* 3. Wishlist button: independent button, overlay on top of image, NOT inside <a> */}
         {isWishlistEnabled && (
