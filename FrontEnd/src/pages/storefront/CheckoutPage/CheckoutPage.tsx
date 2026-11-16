@@ -21,6 +21,7 @@ import {
   fetchCart,
 } from '@/store/slices/cartSlice'
 import { orderService } from '@/services/api/orderService'
+import { paymentService } from '@/services/api/paymentService'
 import type {
   CreateOrderPayload,
 } from '@/types/order'
@@ -131,6 +132,7 @@ export const CheckoutPage = () => {
   const [isPossibleDuplicateOrder, setIsPossibleDuplicateOrder] =
     useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isRedirectingToVnPay, setIsRedirectingToVnPay] = useState(false)
 
   // QUY TẮC KHỞI TẠO & ĐIỀU HƯỚNG:
   // - Khi isMerging === true hoặc giỏ chưa fetch xong lần đầu (!hasLoaded): giữ trạng thái chờ, tuyệt đối không redirect
@@ -273,10 +275,31 @@ export const CheckoutPage = () => {
       // Xóa bản nháp sau khi đặt hàng thành công
       clearCheckoutDraft()
 
-      // Đặt cờ ref ngăn redirect về /cart khi giỏ rỗng
-      justOrderedRef.current = true
+      if (paymentMethod === 'vnpay') {
+        setIsRedirectingToVnPay(true)
+        try {
+          const vnpayRes = await paymentService.createVnPayPayment(createdOrderCode)
+          justOrderedRef.current = true
+          dispatch(fetchCart())
+          window.location.assign(vnpayRes.payment_url)
+          return
+        } catch {
+          // Đơn hàng đã được tạo thành công trên backend nhưng tạo URL thanh toán thất bại
+          justOrderedRef.current = true
+          dispatch(fetchCart())
+          navigate(`/orders/${createdOrderCode}`, {
+            replace: true,
+            state: {
+              paymentError:
+                'Đơn hàng đã được tạo thành công nhưng chưa thể mở cổng thanh toán. Quý khách vui lòng bấm "Thanh toán lại" để tiếp tục.',
+            },
+          })
+          return
+        }
+      }
 
-      // Chuyển sang trang đặt hàng thành công trước, rồi mới dispatch fetchCart
+      // Thanh toán COD thông thường
+      justOrderedRef.current = true
       navigate(`/order-success/${createdOrderCode}`, { replace: true })
       dispatch(fetchCart())
     } catch (err: unknown) {
@@ -536,9 +559,12 @@ export const CheckoutPage = () => {
                         <div className={styles.paymentOptionTitle}>
                           <CreditCard size={18} aria-hidden="true" />
                           <span>Cổng thanh toán VNPAY / VNPAY-QR</span>
+                          <Badge variant="success" size="sm">
+                            Trực tuyến
+                          </Badge>
                         </div>
                         <p className={styles.paymentOptionDesc}>
-                          Thanh toán qua thẻ ATM, Internet Banking hoặc mã QR ngân hàng.
+                          Thanh toán bảo mật qua thẻ ATM nội địa, Internet Banking hoặc mã VNPAY-QR.
                         </p>
                       </div>
                     </label>
@@ -697,7 +723,11 @@ export const CheckoutPage = () => {
                       items.length === 0
                     }
                   >
-                    {isSubmitting ? 'Đang Xử Lý Đơn Hàng...' : 'Đặt Hàng Ngay'}
+                    {isRedirectingToVnPay
+                      ? 'Đang Chuyển Đến VNPay...'
+                      : isSubmitting
+                        ? 'Đang Xử Lý Đơn Hàng...'
+                        : 'Đặt Hàng Ngay'}
                   </Button>
 
                   <p className={styles.policyConsent}>

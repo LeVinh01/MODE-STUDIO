@@ -50,5 +50,15 @@ class AppServiceProvider extends ServiceProvider
                 ], 429, $headers);
             });
         });
+
+        // Rate limiter cho thanh toán VNPay: 20 lần/phút theo user ID hoặc IP
+        RateLimiter::for('payment-vnpay', function (Request $request) {
+            $identifier = $request->user()?->id ? ('user:' . $request->user()->id) : ('ip:' . $request->ip());
+            return Limit::perMinute(20)->by($identifier)->response(function (Request $request, array $headers) {
+                return response()->json([
+                    'message' => 'Bạn đã gửi quá nhiều yêu cầu thanh toán. Vui lòng thử lại sau 1 phút.',
+                ], 429, $headers);
+            });
+        });
     }
 }

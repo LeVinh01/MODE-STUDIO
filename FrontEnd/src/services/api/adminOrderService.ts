@@ -1,5 +1,5 @@
 import apiClient from './client'
-import { mapApiOrderItemToOrderItem } from './mappers'
+import { mapApiOrderItemToOrderItem, mapApiPaymentDetailsToPaymentDetails } from './mappers'
 import type {
   AdminCustomerInfo,
   AdminOrderDetail,
@@ -80,6 +80,7 @@ export const mapApiAdminOrderDetailToAdminOrderDetail = (
     cancelReason: item.cancel_reason ?? null,
     cancelledAt: item.cancelled_at ?? null,
     paidAt: item.paid_at ?? null,
+    paymentDetails: mapApiPaymentDetailsToPaymentDetails(item.payment_details),
     items: (item.items || []).map(mapApiOrderItemToOrderItem),
     statusHistories: (item.status_histories || []).map(mapStatusHistory),
   }
@@ -156,11 +157,22 @@ export const adminOrderService = {
     payload: UpdateAdminOrderStatusPayload,
     signal?: AbortSignal,
   ): Promise<{ message: string; order: AdminOrderDetail }> {
-    const body: { status: string; reason?: string } = {
+    const body: {
+      status: string
+      reason?: string
+      carrier?: string
+      tracking_code?: string
+    } = {
       status: payload.status,
     }
     if (payload.reason !== undefined && payload.reason.trim()) {
       body.reason = payload.reason.trim()
+    }
+    if (payload.carrier !== undefined && payload.carrier.trim()) {
+      body.carrier = payload.carrier.trim()
+    }
+    if (payload.tracking_code !== undefined && payload.tracking_code.trim()) {
+      body.tracking_code = payload.tracking_code.trim()
     }
 
     const response = await apiClient.patch<ApiAdminOrderUpdateStatusResponse>(

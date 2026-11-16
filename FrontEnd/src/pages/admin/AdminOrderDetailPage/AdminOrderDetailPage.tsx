@@ -47,7 +47,7 @@ export const AdminOrderDetailPage = () => {
   // 2. State Modal Đổi trạng thái
   const [activeAction, setActiveAction] = useState<AdminOrderActionItem | null>(null)
   const [cancelReason, setCancelReason] = useState('')
-  const [carrier, setCarrier] = useState<string>(SHIPPING_CARRIERS[0])
+  const [carrier, setCarrier] = useState<string>(SHIPPING_CARRIERS[0] || 'GHN')
   const [trackingCode, setTrackingCode] = useState('')
   const [reasonError, setReasonError] = useState<string | null>(null)
   const [carrierError, setCarrierError] = useState<string | null>(null)
@@ -100,7 +100,7 @@ export const AdminOrderDetailPage = () => {
   const handleOpenActionModal = (action: AdminOrderActionItem) => {
     setActiveAction(action)
     setCancelReason('')
-    setCarrier(SHIPPING_CARRIERS[0])
+    setCarrier(SHIPPING_CARRIERS[0] || 'GHN')
     setTrackingCode('')
     setReasonError(null)
     setCarrierError(null)
@@ -113,7 +113,7 @@ export const AdminOrderDetailPage = () => {
     if (isSubmitting) return
     setActiveAction(null)
     setCancelReason('')
-    setCarrier(SHIPPING_CARRIERS[0])
+    setCarrier(SHIPPING_CARRIERS[0] || 'GHN')
     setTrackingCode('')
     setReasonError(null)
     setCarrierError(null)
@@ -399,19 +399,43 @@ export const AdminOrderDetailPage = () => {
         {/* NÚT THAO TÁC THEO MÁY TRẠNG THÁI */}
         {availableActions.length > 0 && (
           <div className={styles.actionsGroup}>
-            {availableActions.map((action) => (
-              <Button
-                key={action.targetStatus}
-                variant={action.variant}
-                size="md"
-                onClick={() => handleOpenActionModal(action)}
-              >
-                {action.label}
-              </Button>
-            ))}
+            {availableActions.map((action) => {
+              const isUnpaidVnPay =
+                order.paymentMethod === 'vnpay' && order.paymentStatus !== 'paid'
+              const isCancel = Boolean(action.isCancel) || action.targetStatus === 'cancelled'
+              const isDisabled = isUnpaidVnPay && !isCancel
+
+              return (
+                <Button
+                  key={action.targetStatus}
+                  variant={action.variant}
+                  size="md"
+                  disabled={isDisabled}
+                  title={
+                    isDisabled
+                      ? 'Đơn VNPay chưa thanh toán. Không thể xử lý đơn hàng.'
+                      : undefined
+                  }
+                  onClick={() => handleOpenActionModal(action)}
+                >
+                  {action.label}
+                </Button>
+              )
+            })}
           </div>
         )}
       </div>
+
+      {order.paymentMethod === 'vnpay' &&
+        order.paymentStatus !== 'paid' &&
+        order.status !== 'cancelled' && (
+          <div className={`${styles.alertBanner} ${styles.warning}`} role="alert" style={{ marginBottom: 'var(--space-6)' }}>
+            <AlertTriangle size={18} />
+            <span className={styles.alertText}>
+              Đơn hàng này thanh toán qua VNPay nhưng chưa thanh toán. Các thao tác xác nhận và giao hàng đang bị khóa cho tới khi thanh toán hoàn tất. Quản trị viên có thể hủy đơn nếu khách yêu cầu.
+            </span>
+          </div>
+        )}
 
       {/* BỐ CỤC LƯỚI CHI TIẾT */}
       <div className={styles.detailGrid}>
@@ -602,6 +626,26 @@ export const AdminOrderDetailPage = () => {
                   <span className={styles.infoValue}>{formatDateTime(order.paidAt)}</span>
                 </div>
               )}
+              {order.paymentDetails?.providerTransactionNo && (
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>Mã GD VNPay:</span>
+                  <span className={styles.infoValue}>
+                    {order.paymentDetails.providerTransactionNo}
+                  </span>
+                </div>
+              )}
+              {order.paymentDetails?.bankCode && (
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>Ngân hàng:</span>
+                  <span className={styles.infoValue}>{order.paymentDetails.bankCode}</span>
+                </div>
+              )}
+              {order.paymentDetails?.txnRef && (
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>Mã tham chiếu:</span>
+                  <span className={styles.infoValue}>{order.paymentDetails.txnRef}</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -730,6 +774,7 @@ export const AdminOrderDetailPage = () => {
                     onChange={(e) => {
                       setCarrier(e.target.value)
                       if (carrierError) setCarrierError(null)
+                      if (modalError) setModalError(null)
                     }}
                     style={{
                       width: '100%',
@@ -769,6 +814,7 @@ export const AdminOrderDetailPage = () => {
                   onChange={(e) => {
                     setTrackingCode(e.target.value)
                     if (trackingCodeError) setTrackingCodeError(null)
+                    if (modalError) setModalError(null)
                   }}
                   errorMessage={trackingCodeError || undefined}
                   fullWidth
@@ -788,6 +834,7 @@ export const AdminOrderDetailPage = () => {
                   onChange={(e) => {
                     setCancelReason(e.target.value)
                     if (reasonError) setReasonError(null)
+                    if (modalError) setModalError(null)
                   }}
                   errorMessage={reasonError || undefined}
                   rows={4}

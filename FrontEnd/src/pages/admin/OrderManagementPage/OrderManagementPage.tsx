@@ -17,6 +17,7 @@ import {
   PAYMENT_STATUS_CONFIG,
   getOrderStatusBadge,
   getPaymentStatusBadge,
+  getPaymentMethodLabel,
 } from '@/config/orderStatus'
 import { formatCurrency, formatDateTime } from '@/utils/formatters'
 import { Button, Badge } from '@/components/common'
@@ -558,9 +559,14 @@ export const OrderManagementPage = () => {
                         </Badge>
                       </td>
                       <td>
-                        <Badge variant={paymentBadge.variant} size="sm">
-                          {paymentBadge.label}
-                        </Badge>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', fontWeight: 500 }}>
+                            {getPaymentMethodLabel(order.paymentMethod)}
+                          </span>
+                          <Badge variant={paymentBadge.variant} size="sm">
+                            {paymentBadge.label}
+                          </Badge>
+                        </div>
                       </td>
                       <td>
                         <Link
@@ -603,6 +609,9 @@ export const OrderManagementPage = () => {
                     </div>
 
                     <div className={styles.cardBadges}>
+                      <Badge variant="outline" size="sm">
+                        {getPaymentMethodLabel(order.paymentMethod)}
+                      </Badge>
                       <Badge variant={statusBadge.variant} size="sm">
                         {statusBadge.label}
                       </Badge>
