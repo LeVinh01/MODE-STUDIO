@@ -1315,7 +1315,7 @@ class BusinessRulesTest extends TestCase
     }
 
     /**
-     * SE-01 | Search behavior | documents whether search matches name, slug, description, material, brand, category.
+     * SE-01 | Search behavior | verifies search matches product name ONLY and does NOT match description or material.
      */
     public function test_SE_01_search_matches_multiple_columns_documentation(): void
     {
@@ -1350,18 +1350,18 @@ class BusinessRulesTest extends TestCase
             'published_at' => now()->subDay(),
         ]);
 
-        // 1. Search matching description
+        // 1. Search matching description must NOT return product
         $resDesc = $this->getJson("/api/products?search={$tokenDesc}");
-        $this->assertTrue(
+        $this->assertFalse(
             collect($resDesc->json('data'))->contains('slug', $prodDesc->slug),
-            'Search currently matches description column'
+            'Search must not match description column'
         );
 
-        // 2. Search matching material
+        // 2. Search matching material must NOT return product
         $resMat = $this->getJson("/api/products?search={$tokenMat}");
-        $this->assertTrue(
+        $this->assertFalse(
             collect($resMat->json('data'))->contains('slug', $prodMat->slug),
-            'Search currently matches material column'
+            'Search must not match material column'
         );
     }
 

@@ -6,7 +6,7 @@ import type {
   ApiSingleResponse,
   ProductQueryFilter,
 } from '@/types/api'
-import type { PaginatedProducts, Product } from '@/types/product'
+import type { PaginatedProducts, Product, ProductSuggestion } from '@/types/product'
 import {
   mapApiPaginationMeta,
   mapProductDetailItemToProduct,
@@ -74,5 +74,28 @@ export const productService = {
     )
 
     return mapProductDetailItemToProduct(response.data.data)
+  },
+
+  /**
+   * Gợi ý nhanh sản phẩm theo từ khóa (tối đa 6 sản phẩm, chỉ tìm theo tên)
+   */
+  async getSuggestions(
+    q: string,
+    signal?: AbortSignal,
+  ): Promise<ProductSuggestion[]> {
+    const trimmed = q.trim()
+    if (trimmed.length < 2) {
+      return []
+    }
+
+    const response = await apiClient.get<ApiSingleResponse<ProductSuggestion[]>>(
+      '/products/suggestions',
+      {
+        params: { q: trimmed },
+        signal,
+      },
+    )
+
+    return response.data.data || []
   },
 }

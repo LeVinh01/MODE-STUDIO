@@ -525,8 +525,8 @@ class ProductApiTest extends TestCase
 
     public function test_search_multiple_words_all_must_match(): void
     {
-        // "ao blazer" -> khớp các sản phẩm chứa cả 2 từ khóa trong các cột
-        $response = $this->getJson('/api/products?search=ao+blazer');
+        // "blazer cashmere" -> khớp các sản phẩm chứa cả 2 từ khóa trong tên
+        $response = $this->getJson('/api/products?search=blazer+cashmere');
         $response->assertStatus(200);
         $this->assertGreaterThanOrEqual(1, $response->json('meta.total'));
 
@@ -549,20 +549,99 @@ class ProductApiTest extends TestCase
         $this->assertNotEquals(11, $resUnderscore->json('meta.total'));
     }
 
-    public function test_search_matches_brand_category_material(): void
+    public function test_search_does_not_match_brand_category_material(): void
     {
-        // 1. Tìm theo tên thương hiệu "Heritage Craft"
+        // 1. Tìm theo tên thương hiệu "Heritage Craft" (không có chữ Heritage trong tên sản phẩm) -> Không khớp
         $resBrand = $this->getJson('/api/products?search=Heritage');
         $resBrand->assertStatus(200);
-        $this->assertGreaterThan(0, $resBrand->json('meta.total'));
-        foreach ($resBrand->json('data') as $item) {
-            $this->assertEquals('Heritage Craft', $item['brand']['name']);
-        }
+        $this->assertEquals(0, $resBrand->json('meta.total'));
 
-        // 2. Tìm theo chất liệu "Cashmere"
-        $resMaterial = $this->getJson('/api/products?search=Cashmere');
-        $resMaterial->assertStatus(200);
-        $this->assertGreaterThan(0, $resMaterial->json('meta.total'));
+        // 2. Tìm theo từ khóa chỉ có trong mô tả/chất liệu nhưng không có trong tên -> Không khớp
+        $product = Product::where('status', \App\Enums\ProductStatus::Active)
+            ->whereNotNull('description')
+            ->first();
+        if ($product) {
+            $token = 'DOCNHAT' . uniqid();
+            $product->update(['description' => "Mô tả chứa {$token}"]);
+            $resDesc = $this->getJson("/api/products?search={$token}");
+            $resDesc->assertStatus(200);
+            $this->assertEquals(0, $resDesc->json('meta.total'));
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | SUGGESTIONS API (GET /api/products/suggestions?q=...)
+    |--------------------------------------------------------------------------
+    */
+
+    public function test_suggestions_requires_q_with_min_length_2(): void
+    {
+        // Thiếu param q
+        $this->getJson('/api/products/suggestions')
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['q']);
+
+        // q rỗng
+        $this->getJson('/api/products/suggestions?q=')
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['q']);
+
+        // q chỉ có 1 ký tự
+        $this->getJson('/api/products/suggestions?q=a')
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['q']);
+    }
+
+    public function test_suggestions_returns_max_6_items_with_contract(): void
+    {
+        $response = $this->getJson('/api/products/suggestions?q=Blazer');
+        $response->assertStatus(200)
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => ['id', 'name', 'slug', 'thumbnail', 'price'],
+                ],
+            ]);
+
+        $items = $response->json('data');
+        $this->assertLessThanOrEqual(6, count($items));
+        $this->assertGreaterThan(0, count($items));
+
+        foreach ($items as $item) {
+            $this->assertIsInt($item['id']);
+            $this->assertIsString($item['name']);
+            $this->assertIsString($item['slug']);
+            $this->assertIsInt($item['price']);
+            $this->assertStringContainsStringIgnoringCase('Blazer', $item['name']);
+        }
+    }
+
+    public function test_suggestions_escapes_like_wildcards(): void
+    {
+        // Ký tự % và _ được escape an toàn
+        $resPercent = $this->getJson('/api/products/suggestions?q=%25%25');
+        $resPercent->assertStatus(200);
+        $this->assertCount(0, $resPercent->json('data'));
+
+        $resUnderscore = $this->getJson('/api/products/suggestions?q=__');
+        $resUnderscore->assertStatus(200);
+        $this->assertCount(0, $resUnderscore->json('data'));
+    }
+
+    public function test_suggestions_excludes_draft_and_archived_and_deleted_products(): void
+    {
+        // prod-012 là draft "Áo Blazer Nữ Len Mỏng Dáng Rộng"
+        $response = $this->getJson('/api/products/suggestions?q=Mỏng');
+        $response->assertStatus(200);
+        $slugs = collect($response->json('data'))->pluck('slug')->all();
+        $this->assertNotContains('ao-blazer-nu-len-mong', $slugs);
+    }
+
+    public function test_suggestions_does_not_match_description_or_brand(): void
+    {
+        $res = $this->getJson('/api/products/suggestions?q=Heritage');
+        $res->assertStatus(200);
+        $this->assertCount(0, $res->json('data'));
     }
 
     public function test_search_combined_with_category_and_price_filters(): void

@@ -123,5 +123,7 @@ Route::middleware(['auth:sanctum', 'active', 'role:admin'])->prefix('admin')->gr
 
 // Public read-only API (không có prefix /v1)
 Route::get('/categories', [CategoryController::class, 'index']);
+Route::get('/products/suggestions', [ProductController::class, 'suggestions'])
+    ->middleware('throttle:suggestions');
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{slug}', [ProductController::class, 'show'])->where('slug', '[a-z0-9\-]+');

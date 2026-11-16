@@ -6,8 +6,10 @@ use App\Enums\OrderStatus;
 use App\Enums\ProductStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ProductIndexRequest;
+use App\Http\Requests\ProductSuggestionRequest;
 use App\Http\Resources\ProductDetailResource;
 use App\Http\Resources\ProductListResource;
+use App\Http\Resources\ProductSuggestionResource;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\OrderItem;
@@ -93,7 +95,7 @@ class ProductController extends Controller
             $query->where('gender', $request->input('gender'));
         }
 
-        // 7. Tìm theo từ khóa search (hoặc q làm dự phòng)
+        // 7. Tìm theo từ khóa search (hoặc q làm dự phòng) - Chỉ tìm kiếm theo TÊN sản phẩm
         $rawSearch = $request->input('search', $request->input('q'));
         $search = is_string($rawSearch) ? trim($rawSearch) : '';
         if (mb_strlen($search) > 150) {
@@ -101,57 +103,7 @@ class ProductController extends Controller
         }
 
         if ($search !== '') {
-            // Tách từ khóa theo khoảng trắng, tối đa 5 từ
-            $words = array_values(array_filter(preg_split('/\s+/u', $search), fn($w) => $w !== ''));
-            $words = array_slice($words, 0, 5);
-
-            if (!empty($words)) {
-                $query->where(function ($q) use ($words) {
-                    foreach ($words as $word) {
-                        // Tạo các biến thể cho từ khóa:
-                        // Yêu cầu: Mở rộng d -> đ: chỉ khi từ khóa có 'd'/'D' mà KHÔNG có 'đ'/'Đ'
-                        // Giữ nguyên từ gốc (OR thêm biến thể); KHÔNG thay ngược đ -> d
-                        $variants = [$word];
-                        $hasD = (mb_stripos($word, 'd') !== false);
-                        $hasDWithStroke = (mb_stripos($word, 'đ') !== false);
-
-                        if ($hasD && !$hasDWithStroke) {
-                            $dVariant = str_ireplace('d', 'đ', $word);
-                            if ($dVariant !== $word && !in_array($dVariant, $variants, true)) {
-                                $variants[] = $dVariant;
-                            }
-                        }
-
-                        // Mỗi từ khóa (gồm các biến thể) phải khớp ít nhất 1 cột
-                        $q->where(function ($subQuery) use ($variants) {
-                            foreach ($variants as $idx => $variant) {
-                                // Escape ký tự đặc biệt của LIKE (!, %, _) bằng '!'
-                                $escaped = strtr($variant, [
-                                    '!' => '!!',
-                                    '%' => '!%',
-                                    '_' => '!_',
-                                ]);
-                                $pattern = "%{$escaped}%";
-
-                                $clause = ($idx === 0) ? 'where' : 'orWhere';
-
-                                $subQuery->$clause(function ($colQuery) use ($pattern) {
-                                    $colQuery->whereRaw("name LIKE ? ESCAPE '!'", [$pattern])
-                                        ->orWhereRaw("slug LIKE ? ESCAPE '!'", [$pattern])
-                                        ->orWhereRaw("description LIKE ? ESCAPE '!'", [$pattern])
-                                        ->orWhereRaw("material LIKE ? ESCAPE '!'", [$pattern])
-                                        ->orWhereHas('brand', function ($b) use ($pattern) {
-                                            $b->whereRaw("name LIKE ? ESCAPE '!'", [$pattern]);
-                                        })
-                                        ->orWhereHas('category', function ($c) use ($pattern) {
-                                            $c->whereRaw("name LIKE ? ESCAPE '!'", [$pattern]);
-                                        });
-                                });
-                            }
-                        });
-                    }
-                });
-            }
+            $this->applyNameSearch($query, $search);
         }
 
         // 8. Filter featured
@@ -225,5 +177,89 @@ class ProductController extends Controller
         }
 
         return new ProductDetailResource($product);
+    }
+
+    /**
+     * Gợi ý tìm kiếm sản phẩm nhanh theo tên (live suggestions)
+     * Trả về tối đa 6 sản phẩm (id, name, slug, thumbnail, price)
+     */
+    public function suggestions(ProductSuggestionRequest $request): AnonymousResourceCollection
+    {
+        $q = trim((string) $request->input('q'));
+        if (mb_strlen($q) > 150) {
+            $q = mb_substr($q, 0, 150);
+        }
+
+        $query = Product::query()
+            ->where('status', ProductStatus::Active)
+            ->where('published_at', '<=', now())
+            ->with([
+                'mainImage',
+                'images' => fn($imgQuery) => $imgQuery->orderBy('sort_order', 'asc'),
+            ]);
+
+        $this->applyNameSearch($query, $q);
+
+        // Ưu tiên sản phẩm có tên chứa toàn bộ chuỗi tìm kiếm lên trước
+        $escaped = strtr($q, [
+            '!' => '!!',
+            '%' => '!%',
+            '_' => '!_',
+        ]);
+        $searchPattern = "%{$escaped}%";
+        $query->orderByRaw("CASE WHEN name LIKE ? ESCAPE '!' THEN 0 ELSE 1 END", [$searchPattern])
+            ->orderBy('published_at', 'desc')
+            ->orderBy('id', 'desc');
+
+        $products = $query->take(6)->get();
+
+        return ProductSuggestionResource::collection($products);
+    }
+
+    /**
+     * Áp dụng tìm kiếm theo TÊN sản phẩm (name only, không phân biệt hoa thường, khớp từng phần)
+     * Có hỗ trợ tách từ (tối đa 5 từ), mở rộng d -> đ và escape các ký tự đặc biệt LIKE (!, %, _)
+     */
+    protected function applyNameSearch($query, string $search): void
+    {
+        $words = array_values(array_filter(preg_split('/\s+/u', $search), fn($w) => $w !== ''));
+        $words = array_slice($words, 0, 5);
+
+        if (empty($words)) {
+            return;
+        }
+
+        $query->where(function ($q) use ($words) {
+            foreach ($words as $word) {
+                // Tạo các biến thể cho từ khóa:
+                // Mở rộng d -> đ: chỉ khi từ khóa có 'd'/'D' mà KHÔNG có 'đ'/'Đ'
+                // Giữ nguyên từ gốc (OR thêm biến thể); KHÔNG thay ngược đ -> d
+                $variants = [$word];
+                $hasD = (mb_stripos($word, 'd') !== false);
+                $hasDWithStroke = (mb_stripos($word, 'đ') !== false);
+
+                if ($hasD && !$hasDWithStroke) {
+                    $dVariant = str_ireplace('d', 'đ', $word);
+                    if ($dVariant !== $word && !in_array($dVariant, $variants, true)) {
+                        $variants[] = $dVariant;
+                    }
+                }
+
+                // Mỗi từ khóa (gồm các biến thể) phải khớp cột name
+                $q->where(function ($subQuery) use ($variants) {
+                    foreach ($variants as $idx => $variant) {
+                        $escaped = strtr($variant, [
+                            '!' => '!!',
+                            '%' => '!%',
+                            '_' => '!_',
+                        ]);
+                        $pattern = "%{$escaped}%";
+
+                        $clause = ($idx === 0) ? 'whereRaw' : 'orWhereRaw';
+                        $subQuery->$clause("name LIKE ? ESCAPE '!'", [$pattern]);
+                    }
+                });
+            }
+        });
     }
 }
