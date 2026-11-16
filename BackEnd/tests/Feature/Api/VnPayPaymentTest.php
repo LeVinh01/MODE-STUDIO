@@ -449,8 +449,202 @@ class VnPayPaymentTest extends TestCase
         $this->assertEquals('failed', $payment->status);
 
         $order->refresh();
-        $this->assertEquals(PaymentStatus::Unpaid, $order->payment_status);
+        $this->assertEquals(PaymentStatus::Failed, $order->payment_status);
         $this->assertEquals(OrderStatus::Pending, $order->status);
+
+        $this->assertDatabaseHas('order_status_histories', [
+            'order_id' => $order->id,
+            'reason'   => 'Khách hàng hủy thanh toán qua cổng VNPay (mã: 24)',
+        ]);
+    }
+
+    public function test_vnpay_verify_failure_code_sets_payment_status_failed_and_records_history(): void
+    {
+        $user = $this->createCustomer();
+        $order = $this->createOrder($user, ['total_amount' => 500000]);
+
+        $txnRef = 'VNP' . $order->id . 'FAILED_CODE_51';
+        $payment = Payment::create([
+            'order_id' => $order->id,
+            'provider' => 'vnpay',
+            'txn_ref'  => $txnRef,
+            'amount'   => 500000,
+            'status'   => 'pending',
+        ]);
+
+        $payload = $this->buildSignedVnPayPayload([
+            'vnp_TxnRef'            => $txnRef,
+            'vnp_Amount'            => '50000000',
+            'vnp_ResponseCode'      => '51',
+            'vnp_TransactionStatus' => '02',
+        ]);
+
+        $response = $this->postJson('/api/payment/vnpay/verify', $payload);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('status', 'failed')
+            ->assertJsonPath('response_code', '51')
+            ->assertJsonPath('message', 'Tài khoản không đủ số dư để thực hiện giao dịch.');
+
+        $payment->refresh();
+        $this->assertEquals('failed', $payment->status);
+
+        $order->refresh();
+        $this->assertEquals(PaymentStatus::Failed, $order->payment_status);
+        $this->assertEquals(OrderStatus::Pending, $order->status);
+
+        $this->assertDatabaseHas('order_status_histories', [
+            'order_id' => $order->id,
+            'reason'   => 'Thanh toán VNPay không thành công (mã: 51, lý do: Tài khoản không đủ số dư để thực hiện giao dịch.)',
+        ]);
+    }
+
+    public function test_late_failure_callback_never_turns_paid_order_into_failed(): void
+    {
+        $user = $this->createCustomer();
+        $order = $this->createOrder($user, ['total_amount' => 500000]);
+
+        // Attempt 1: Txn 1
+        $txnRef1 = 'VNP' . $order->id . 'ATTEMPT_1';
+        $payment1 = Payment::create([
+            'order_id' => $order->id,
+            'provider' => 'vnpay',
+            'txn_ref'  => $txnRef1,
+            'amount'   => 500000,
+            'status'   => 'pending',
+        ]);
+
+        // Attempt 2: Txn 2 (thành công trước)
+        $txnRef2 = 'VNP' . $order->id . 'ATTEMPT_2';
+        $payment2 = Payment::create([
+            'order_id' => $order->id,
+            'provider' => 'vnpay',
+            'txn_ref'  => $txnRef2,
+            'amount'   => 500000,
+            'status'   => 'pending',
+        ]);
+
+        $successPayload = $this->buildSignedVnPayPayload([
+            'vnp_TxnRef'        => $txnRef2,
+            'vnp_Amount'        => '50000000',
+            'vnp_ResponseCode'  => '00',
+            'vnp_TransactionNo' => 'TXN_SUCCESS_2',
+        ]);
+        $this->postJson('/api/payment/vnpay/verify', $successPayload)->assertStatus(200);
+
+        $order->refresh();
+        $this->assertEquals(PaymentStatus::Paid, $order->payment_status);
+        $historiesCountAfterSuccess = OrderStatusHistory::where('order_id', $order->id)->count();
+
+        // Bây giờ, callback trễ (late callback) của Attempt 1 mới trả về kết quả FAILED (mã 24 hoặc 51)
+        $lateFailurePayload = $this->buildSignedVnPayPayload([
+            'vnp_TxnRef'            => $txnRef1,
+            'vnp_Amount'            => '50000000',
+            'vnp_ResponseCode'      => '24',
+            'vnp_TransactionStatus' => '02',
+        ]);
+        $lateRes = $this->postJson('/api/payment/vnpay/verify', $lateFailurePayload);
+        $lateRes->assertStatus(200)->assertJsonPath('status', 'failed');
+
+        // Bản ghi payment 1 được đánh dấu là failed
+        $payment1->refresh();
+        $this->assertEquals('failed', $payment1->status);
+
+        // NHƯNG ĐƠN HÀNG TUYỆT ĐỐI KHÔNG BỊ CHUYỂN THÀNH FAILED - VẪN PHẢI LÀ PAID!
+        $order->refresh();
+        $this->assertEquals(PaymentStatus::Paid, $order->payment_status);
+
+        // Số bản ghi lịch sử không bị thêm bản ghi thất bại đè lên trạng thái paid
+        $this->assertEquals($historiesCountAfterSuccess, OrderStatusHistory::where('order_id', $order->id)->count());
+    }
+
+    public function test_vnpay_verify_failure_is_idempotent_on_duplicate_callbacks(): void
+    {
+        $user = $this->createCustomer();
+        $order = $this->createOrder($user, ['total_amount' => 500000]);
+
+        $txnRef = 'VNP' . $order->id . 'IDEMPOTENT_FAIL';
+        Payment::create([
+            'order_id' => $order->id,
+            'provider' => 'vnpay',
+            'txn_ref'  => $txnRef,
+            'amount'   => 500000,
+            'status'   => 'pending',
+        ]);
+
+        $payload = $this->buildSignedVnPayPayload([
+            'vnp_TxnRef'            => $txnRef,
+            'vnp_Amount'            => '50000000',
+            'vnp_ResponseCode'      => '24',
+            'vnp_TransactionStatus' => '02',
+        ]);
+
+        // Lần gọi 1
+        $res1 = $this->postJson('/api/payment/vnpay/verify', $payload);
+        $res1->assertStatus(200)->assertJsonPath('status', 'failed');
+
+        $order->refresh();
+        $this->assertEquals(PaymentStatus::Failed, $order->payment_status);
+        $historiesCount1 = OrderStatusHistory::where('order_id', $order->id)->count();
+        $this->assertEquals(1, $historiesCount1);
+
+        // Lần gọi 2 (trùng lặp do retry mạng hoặc browser F5)
+        $res2 = $this->postJson('/api/payment/vnpay/verify', $payload);
+        $res2->assertStatus(200)->assertJsonPath('status', 'failed');
+
+        // Idempotency: Không tạo thêm bản ghi lịch sử thứ 2
+        $historiesCount2 = OrderStatusHistory::where('order_id', $order->id)->count();
+        $this->assertEquals(1, $historiesCount2);
+    }
+
+    public function test_pay_again_allowed_for_unpaid_and_failed_orders_and_never_for_paid_orders(): void
+    {
+        $user = $this->createCustomer();
+
+        // 1. Đơn unpaid -> Tạo thanh toán được
+        $unpaidOrder = $this->createOrder($user, [
+            'total_amount'   => 400000,
+            'payment_status' => PaymentStatus::Unpaid,
+        ]);
+        $resUnpaid = $this->actingAs($user, 'sanctum')->postJson("/api/orders/{$unpaidOrder->order_code}/payment/vnpay");
+        $resUnpaid->assertStatus(200)->assertJsonStructure(['payment_url', 'txn_ref']);
+
+        // 2. Đơn failed -> Thanh toán lại được
+        $failedOrder = $this->createOrder($user, [
+            'total_amount'   => 500000,
+            'payment_status' => PaymentStatus::Failed,
+        ]);
+        $resFailed = $this->actingAs($user, 'sanctum')->postJson("/api/orders/{$failedOrder->order_code}/payment/vnpay");
+        $resFailed->assertStatus(200)->assertJsonStructure(['payment_url', 'txn_ref']);
+
+        // 3. Đơn đã paid -> TUYỆT ĐỐI KHÔNG ĐƯỢC thanh toán lại (422)
+        $paidOrder = $this->createOrder($user, [
+            'total_amount'   => 600000,
+            'payment_status' => PaymentStatus::Paid,
+        ]);
+        $resPaid = $this->actingAs($user, 'sanctum')->postJson("/api/orders/{$paidOrder->order_code}/payment/vnpay");
+        $resPaid->assertStatus(422)
+            ->assertJsonPath('message', 'Đơn hàng này đã được thanh toán thành công.');
+    }
+
+    public function test_every_pay_again_attempt_gets_a_new_unique_vnp_txn_ref(): void
+    {
+        $user = $this->createCustomer();
+        $order = $this->createOrder($user, [
+            'total_amount'   => 500000,
+            'payment_status' => PaymentStatus::Unpaid,
+        ]);
+
+        $txnRefs = [];
+        for ($i = 0; $i < 3; $i++) {
+            $res = $this->actingAs($user, 'sanctum')->postJson("/api/orders/{$order->order_code}/payment/vnpay");
+            $res->assertStatus(200);
+            $txnRefs[] = $res->json('txn_ref');
+        }
+
+        // Cả 3 lần đều có mã txn_ref khác nhau hoàn toàn
+        $this->assertCount(3, array_unique($txnRefs));
+        $this->assertDatabaseCount('payments', 3);
     }
 
     public function test_customer_can_retry_payment_url_generation_after_failed_or_cancelled_payment_with_new_txn_ref(): void
@@ -472,11 +666,11 @@ class VnPayPaymentTest extends TestCase
         ]);
         $this->postJson('/api/payment/vnpay/verify', $verifyPayload)->assertStatus(200);
 
-        // Bản ghi 1 đã failed, đơn vẫn pending & unpaid
+        // Bản ghi 1 đã failed, đơn chuyển sang payment_status = failed & status = pending
         $this->assertDatabaseHas('payments', ['txn_ref' => $firstTxnRef, 'status' => 'failed']);
         $order->refresh();
         $this->assertEquals(OrderStatus::Pending, $order->status);
-        $this->assertEquals(PaymentStatus::Unpaid, $order->payment_status);
+        $this->assertEquals(PaymentStatus::Failed, $order->payment_status);
 
         // Lần 2: Khách bấm "Thanh toán lại" -> sinh URL mới với txn_ref MỚI độc nhất
         $res2 = $this->actingAs($user, 'sanctum')->postJson("/api/orders/{$order->order_code}/payment/vnpay");

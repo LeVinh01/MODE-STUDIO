@@ -14,6 +14,7 @@ use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class PaymentController extends Controller
@@ -48,6 +49,12 @@ class PaymentController extends Controller
             ], 422);
         }
 
+        if (!in_array($order->payment_status, [PaymentStatus::Unpaid, PaymentStatus::Failed], true)) {
+            return response()->json([
+                'message' => 'Trạng thái thanh toán của đơn hàng không hợp lệ để tạo thanh toán.',
+            ], 422);
+        }
+
         if ($order->payment_method !== PaymentMethod::Vnpay) {
             return response()->json([
                 'message' => 'Đơn hàng này không sử dụng phương thức thanh toán VNPay.',
@@ -55,7 +62,7 @@ class PaymentController extends Controller
         }
 
         // Sinh mã tham chiếu giao dịch độc nhất cho mỗi lần bấm thanh toán
-        $txnRef = 'VNP' . $order->id . date('ymdHis') . strtoupper(Str::random(6));
+        $txnRef = 'VNP' . $order->id . Carbon::now()->format('ymdHis') . strtoupper(Str::random(6));
 
         Payment::create([
             'order_id' => $order->id,
@@ -107,6 +114,15 @@ class PaymentController extends Controller
         $vnpTransactionNo = (string) ($params['vnp_TransactionNo'] ?? '');
         $vnpPayDate = (string) ($params['vnp_PayDate'] ?? '');
 
+        // Safe logging of callback data without secrets
+        Log::info('VNPay callback received', [
+            'TxnRef'        => $vnpTxnRef,
+            'ResponseCode'  => $vnpResponseCode,
+            'Amount'        => $vnpAmount,
+            'BankCode'      => $vnpBankCode,
+            'TransactionNo' => $vnpTransactionNo,
+        ]);
+
         if ($vnpTxnRef === '') {
             return response()->json([
                 'status'  => 'not_found',
@@ -144,8 +160,8 @@ class PaymentController extends Controller
             }
 
             // Kiểm tra số tiền khớp CẢ payments.amount LẪN orders.total_amount (nhân 100 theo quy định VNPay)
-            $expectedVnpAmount = ((int) $order->total_amount) * 100;
-            $expectedPaymentAmount = ((int) $payment->amount) * 100;
+            $expectedVnpAmount = (int) ($order->total_amount * 100);
+            $expectedPaymentAmount = (int) ($payment->amount * 100);
 
             if ($vnpAmount !== $expectedVnpAmount || $vnpAmount !== $expectedPaymentAmount) {
                 $payment->update([
@@ -269,6 +285,33 @@ class PaymentController extends Controller
                 'provider_transaction_no' => $vnpTransactionNo ?: null,
                 'raw_response'            => $params,
             ]);
+
+            // Cập nhật orders.payment_status = failed và ghi nhận lịch sử nếu đơn chưa thanh toán thành công
+            if ($order->payment_status !== PaymentStatus::Paid) {
+                $order->update([
+                    'payment_status' => PaymentStatus::Failed,
+                ]);
+
+                $reasonText = $vnpResponseCode === '24'
+                    ? "Khách hàng hủy thanh toán qua cổng VNPay (mã: 24)"
+                    : "Thanh toán VNPay không thành công (mã: {$vnpResponseCode}, lý do: " . $this->getVnPayErrorMessage($vnpResponseCode) . ")";
+
+                OrderStatusHistory::create([
+                    'order_id'    => $order->id,
+                    'from_status' => $order->status->value,
+                    'to_status'   => $order->status->value,
+                    'changed_by'  => null,
+                    'reason'      => $reasonText,
+                    'created_at'  => now(),
+                ]);
+            } else {
+                Log::warning('Late VNPay failure callback ignored for already paid order', [
+                    'order_code'    => $order->order_code,
+                    'vnp_TxnRef'    => $vnpTxnRef,
+                    'ResponseCode'  => $vnpResponseCode,
+                    'TransactionNo' => $vnpTransactionNo,
+                ]);
+            }
 
             return response()->json([
                 'status'        => 'failed',

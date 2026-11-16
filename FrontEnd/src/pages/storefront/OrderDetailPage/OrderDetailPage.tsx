@@ -315,7 +315,8 @@ export const OrderDetailPage = () => {
           <div className={styles.headerActions}>
             {order.status === 'pending' &&
               order.paymentMethod === 'vnpay' &&
-              order.paymentStatus === 'unpaid' && (
+              (order.paymentStatus === 'unpaid' ||
+                order.paymentStatus === 'failed') && (
                 <Button
                   variant="primary"
                   size="md"

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Order;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class VnPayService
 {
@@ -30,7 +31,7 @@ class VnPayService
             'vnp_Version'    => '2.1.0',
             'vnp_Command'    => 'pay',
             'vnp_TmnCode'    => $tmnCode,
-            'vnp_Amount'     => $order->total_amount * 100,
+            'vnp_Amount'     => (int) ($order->total_amount * 100),
             'vnp_CreateDate' => $nowVn->format('YmdHis'),
             'vnp_CurrCode'   => 'VND',
             'vnp_IpAddr'     => $clientIp,
@@ -95,8 +96,16 @@ class VnPayService
         }
 
         $calculatedHash = hash_hmac('sha512', $hashdata, $hashSecret);
+        $matches = hash_equals($calculatedHash, $vnp_SecureHash);
 
-        return hash_equals($calculatedHash, $vnp_SecureHash);
+        Log::info('VNPay verifySignature check', [
+            'param_count'       => count($vnp_Params),
+            'keys'              => array_keys($vnp_Params),
+            'hash_received_len' => strlen($vnp_SecureHash),
+            'hash_matches'      => $matches,
+        ]);
+
+        return $matches;
     }
 
     /**

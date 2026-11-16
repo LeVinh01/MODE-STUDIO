@@ -459,7 +459,8 @@ export const MyOrdersPage = () => {
                       <div className={styles.cardActions}>
                         {order.status === 'pending' &&
                           order.paymentMethod === 'vnpay' &&
-                          order.paymentStatus === 'unpaid' && (
+                          (order.paymentStatus === 'unpaid' ||
+                            order.paymentStatus === 'failed') && (
                             <Button
                               variant="primary"
                               size="sm"
