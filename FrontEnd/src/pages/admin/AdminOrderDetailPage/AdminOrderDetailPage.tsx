@@ -47,7 +47,7 @@ export const AdminOrderDetailPage = () => {
   // 2. State Modal Đổi trạng thái
   const [activeAction, setActiveAction] = useState<AdminOrderActionItem | null>(null)
   const [cancelReason, setCancelReason] = useState('')
-  const [carrier, setCarrier] = useState<string>(SHIPPING_CARRIERS[0])
+  const [carrier, setCarrier] = useState<string>(SHIPPING_CARRIERS[0] || 'GHN')
   const [trackingCode, setTrackingCode] = useState('')
   const [reasonError, setReasonError] = useState<string | null>(null)
   const [carrierError, setCarrierError] = useState<string | null>(null)
@@ -100,7 +100,7 @@ export const AdminOrderDetailPage = () => {
   const handleOpenActionModal = (action: AdminOrderActionItem) => {
     setActiveAction(action)
     setCancelReason('')
-    setCarrier(SHIPPING_CARRIERS[0])
+    setCarrier(SHIPPING_CARRIERS[0] || 'GHN')
     setTrackingCode('')
     setReasonError(null)
     setCarrierError(null)
@@ -113,7 +113,7 @@ export const AdminOrderDetailPage = () => {
     if (isSubmitting) return
     setActiveAction(null)
     setCancelReason('')
-    setCarrier(SHIPPING_CARRIERS[0])
+    setCarrier(SHIPPING_CARRIERS[0] || 'GHN')
     setTrackingCode('')
     setReasonError(null)
     setCarrierError(null)
@@ -774,6 +774,7 @@ export const AdminOrderDetailPage = () => {
                     onChange={(e) => {
                       setCarrier(e.target.value)
                       if (carrierError) setCarrierError(null)
+                      if (modalError) setModalError(null)
                     }}
                     style={{
                       width: '100%',
@@ -813,6 +814,7 @@ export const AdminOrderDetailPage = () => {
                   onChange={(e) => {
                     setTrackingCode(e.target.value)
                     if (trackingCodeError) setTrackingCodeError(null)
+                    if (modalError) setModalError(null)
                   }}
                   errorMessage={trackingCodeError || undefined}
                   fullWidth
@@ -832,6 +834,7 @@ export const AdminOrderDetailPage = () => {
                   onChange={(e) => {
                     setCancelReason(e.target.value)
                     if (reasonError) setReasonError(null)
+                    if (modalError) setModalError(null)
                   }}
                   errorMessage={reasonError || undefined}
                   rows={4}

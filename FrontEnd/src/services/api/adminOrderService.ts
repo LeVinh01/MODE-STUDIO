@@ -157,11 +157,22 @@ export const adminOrderService = {
     payload: UpdateAdminOrderStatusPayload,
     signal?: AbortSignal,
   ): Promise<{ message: string; order: AdminOrderDetail }> {
-    const body: { status: string; reason?: string } = {
+    const body: {
+      status: string
+      reason?: string
+      carrier?: string
+      tracking_code?: string
+    } = {
       status: payload.status,
     }
     if (payload.reason !== undefined && payload.reason.trim()) {
       body.reason = payload.reason.trim()
+    }
+    if (payload.carrier !== undefined && payload.carrier.trim()) {
+      body.carrier = payload.carrier.trim()
+    }
+    if (payload.tracking_code !== undefined && payload.tracking_code.trim()) {
+      body.tracking_code = payload.tracking_code.trim()
     }
 
     const response = await apiClient.patch<ApiAdminOrderUpdateStatusResponse>(
