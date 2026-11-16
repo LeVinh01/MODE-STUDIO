@@ -1,0 +1,163 @@
+@use '@/styles/abstracts' as *;
+
+.heroSection {
+  position: relative;
+  width: 100%;
+  height: clamp(520px, 85vh, 860px);
+  margin-top: 0;
+  overflow: hidden;
+  background-color: #121212;
+  color: #ffffff;
+}
+
+.mediaContainer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.video,
+.posterImage,
+.fallbackBlock {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.fallbackBlock {
+  background: radial-gradient(circle at center, #262626 0%, #121212 100%);
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.35) 0%,
+    rgba(0, 0, 0, 0.2) 50%,
+    rgba(0, 0, 0, 0.45) 100%
+  );
+  z-index: 2;
+  pointer-events: none;
+}
+
+.contentContainer {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: calc(4.25rem + var(--space-8)) var(--space-6) var(--space-12);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+
+  @include respond-to('md') {
+    padding: calc(4.25rem + var(--space-12)) var(--space-10) var(--space-16);
+  }
+}
+
+.textContent {
+  max-width: 720px;
+}
+
+.title {
+  font-family: $font-serif;
+  font-weight: 300;
+  font-size: clamp(2.25rem, 5vw, 3.5rem);
+  line-height: 1.15;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+  margin: 0 0 var(--space-4);
+  text-transform: uppercase;
+}
+
+.subtitle {
+  font-family: $font-sans;
+  font-size: clamp(0.9375rem, 1.5vw, 1.125rem);
+  font-weight: 300;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 var(--space-8);
+  max-width: 600px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ctaWrapper {
+  display: flex;
+  align-items: center;
+}
+
+.ctaButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 3.25rem;
+  padding: 0 var(--space-8);
+  background-color: #ffffff;
+  color: #121212;
+  font-family: $font-sans;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-radius: 0;
+  border: 1px solid #ffffff;
+  transition: all $transition-fast;
+
+  &:hover {
+    background-color: transparent;
+    color: #ffffff;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px #ffffff;
+  }
+}
+
+.playPauseButton {
+  position: absolute;
+  right: var(--space-6);
+  bottom: var(--space-12);
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background-color: rgba(0, 0, 0, 0.35);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all $transition-fast;
+  z-index: 4;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.7);
+    border-color: #ffffff;
+    transform: scale(1.05);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px #ffffff;
+  }
+
+  @include respond-to('md') {
+    right: var(--space-10);
+    bottom: var(--space-16);
+  }
+}
+
+.playIconOffset {
+  margin-left: 2px;
+}

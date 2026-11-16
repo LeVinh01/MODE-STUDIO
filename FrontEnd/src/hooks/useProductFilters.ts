@@ -11,7 +11,7 @@ export interface ParsedFilters {
   minPrice?: number
   maxPrice?: number
   search: string
-  sort: 'newest' | 'price_asc' | 'price_desc'
+  sort: 'newest' | 'best_selling' | 'price_asc' | 'price_desc'
   page: number
   perPage: number
 }
@@ -88,11 +88,11 @@ export const useProductFilters = () => {
       search = search.slice(0, 150)
     }
 
-    // G. Sắp xếp sort (chỉ nhận newest | price_asc | price_desc, mặc định newest)
+    // G. Sắp xếp sort (chỉ nhận newest | best_selling | price_asc | price_desc, mặc định newest)
     const rawSort = searchParams.get('sort')?.trim() || ''
-    const sort = (['newest', 'price_asc', 'price_desc'].includes(rawSort)
+    const sort = (['newest', 'best_selling', 'price_asc', 'price_desc'].includes(rawSort)
       ? rawSort
-      : 'newest') as 'newest' | 'price_asc' | 'price_desc'
+      : 'newest') as 'newest' | 'best_selling' | 'price_asc' | 'price_desc'
 
     // H. Page (số nguyên >= 1, mặc định 1)
     const rawPage = searchParams.get('page')

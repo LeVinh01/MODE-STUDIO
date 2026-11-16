@@ -15,6 +15,15 @@ return [
 
         // Phí vận chuyển tiêu chuẩn cho đơn dưới ngưỡng (mặc định 30.000 đ)
         'standard_fee'   => (int) env('SHIPPING_STANDARD_FEE', 30000),
+
+        // Danh sách các đơn vị vận chuyển được hỗ trợ
+        'carriers'       => [
+            'GHN',
+            'GHTK',
+            'Viettel Post',
+            'J&T Express',
+            'Khác',
+        ],
     ],
 
     'stock' => [

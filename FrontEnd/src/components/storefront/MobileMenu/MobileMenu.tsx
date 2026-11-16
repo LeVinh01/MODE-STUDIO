@@ -1,5 +1,5 @@
-import { NavLink, Link } from 'react-router-dom'
-import { ChevronRight, User, Package } from 'lucide-react'
+import { NavLink, Link, useLocation } from 'react-router-dom'
+import { ChevronRight, User, Package, Search } from 'lucide-react'
 import { Drawer } from '@/components/feedback/Drawer'
 import { MAIN_NAVIGATION } from '@/config/navigation'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
@@ -10,12 +10,18 @@ import styles from './MobileMenu.module.scss'
 
 export const MobileMenu = () => {
   const dispatch = useAppDispatch()
+  const location = useLocation()
   const user = useAppSelector(selectCurrentUser)
   const isOpen = useAppSelector((state) => state.ui.isMobileMenuOpen)
 
   const handleClose = () => {
     dispatch(setMobileMenuOpen(false))
   }
+
+  const searchLink =
+    location.pathname === '/search'
+      ? `${location.pathname}${location.search}`
+      : '/search'
 
   return (
     <Drawer
@@ -27,14 +33,24 @@ export const MobileMenu = () => {
       footer={
         <div className={styles.footerActions}>
           {user ? (
-            <Link
-              to="/orders"
-              onClick={handleClose}
-              className={styles.accountButton}
-            >
-              <Package size={18} />
-              <span>Đơn hàng của tôi</span>
-            </Link>
+            <>
+              <Link
+                to="/account"
+                onClick={handleClose}
+                className={styles.accountButton}
+              >
+                <User size={18} />
+                <span>Thông tin tài khoản</span>
+              </Link>
+              <Link
+                to="/orders"
+                onClick={handleClose}
+                className={styles.accountButton}
+              >
+                <Package size={18} />
+                <span>Đơn hàng của tôi</span>
+              </Link>
+            </>
           ) : (
             <Link
               to="/login"
@@ -46,7 +62,7 @@ export const MobileMenu = () => {
             </Link>
           )}
 
-          {import.meta.env.DEV && (
+          {import.meta.env.VITE_SHOW_DEV_SHORTCUTS === 'true' && (
             <div className={styles.devRow}>
               <Link
                 to="/admin"
@@ -68,6 +84,20 @@ export const MobileMenu = () => {
       }
     >
       <nav className={styles.nav} aria-label="Menu di động">
+        <NavLink
+          to={searchLink}
+          onClick={handleClose}
+          className={({ isActive }) =>
+            cn(styles.navLink, isActive && styles.active)
+          }
+        >
+          <span className={styles.navLabelWithIcon}>
+            <Search size={18} aria-hidden="true" />
+            Tìm kiếm
+          </span>
+          <ChevronRight size={18} aria-hidden="true" />
+        </NavLink>
+
         {MAIN_NAVIGATION.map((item) => (
           <NavLink
             key={item.to}

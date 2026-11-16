@@ -19,6 +19,15 @@ export const storefrontRoutes: RouteObject[] = [
     },
   },
   {
+    path: 'search',
+    lazy: async () => {
+      const { SearchPage } = await import(
+        '@/pages/storefront/SearchPage/SearchPage'
+      )
+      return { Component: SearchPage }
+    },
+  },
+  {
     path: 'products/:slug',
     lazy: async () => {
       const { ProductDetailPage } = await import(
@@ -74,6 +83,19 @@ export const storefrontRoutes: RouteObject[] = [
     },
   },
   {
+    path: 'account',
+    lazy: async () => {
+      const [{ AccountPage }, { ProtectedRoute }] = await Promise.all([
+        import('@/pages/storefront/AccountPage/AccountPage'),
+        import('@/components/auth/ProtectedRoute/ProtectedRoute'),
+      ])
+      return {
+        Component: () =>
+          createElement(ProtectedRoute, null, createElement(AccountPage)),
+      }
+    },
+  },
+  {
     path: 'orders',
     lazy: async () => {
       const [{ MyOrdersPage }, { ProtectedRoute }] = await Promise.all([
@@ -103,18 +125,61 @@ export const storefrontRoutes: RouteObject[] = [
       }
     },
   },
+  // Các trang thông tin tĩnh storefront
   {
-    path: 'login',
+    path: 'policy/returns',
     lazy: async () => {
-      const { LoginPage } = await import('@/pages/storefront/LoginPage')
-      return { Component: LoginPage }
+      const { InfoPage } = await import('@/pages/storefront/InfoPage')
+      return { Component: InfoPage }
     },
   },
   {
-    path: 'register',
+    path: 'size-guide',
     lazy: async () => {
-      const { RegisterPage } = await import('@/pages/storefront/RegisterPage')
-      return { Component: RegisterPage }
+      const { InfoPage } = await import('@/pages/storefront/InfoPage')
+      return { Component: InfoPage }
+    },
+  },
+  {
+    path: 'shipping',
+    lazy: async () => {
+      const { InfoPage } = await import('@/pages/storefront/InfoPage')
+      return { Component: InfoPage }
+    },
+  },
+  {
+    path: 'faq',
+    lazy: async () => {
+      const { InfoPage } = await import('@/pages/storefront/InfoPage')
+      return { Component: InfoPage }
+    },
+  },
+  {
+    path: 'about',
+    lazy: async () => {
+      const { InfoPage } = await import('@/pages/storefront/InfoPage')
+      return { Component: InfoPage }
+    },
+  },
+  {
+    path: 'editorial',
+    lazy: async () => {
+      const { InfoPage } = await import('@/pages/storefront/InfoPage')
+      return { Component: InfoPage }
+    },
+  },
+  {
+    path: 'stores',
+    lazy: async () => {
+      const { InfoPage } = await import('@/pages/storefront/InfoPage')
+      return { Component: InfoPage }
+    },
+  },
+  {
+    path: 'contact',
+    lazy: async () => {
+      const { InfoPage } = await import('@/pages/storefront/InfoPage')
+      return { Component: InfoPage }
     },
   },
 ]

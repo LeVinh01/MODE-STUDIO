@@ -66,6 +66,7 @@ export interface Product {
   mainImage?: { url: string; altText?: string } | null
   images?: ProductImage[]
   availableColors?: ProductColor[]
+  colors?: Array<{ name: string; hex?: string | null; imageUrl?: string | null }>
   material?: string | null
   gender?: 'women' | 'men' | 'unisex' | null
   isNew?: boolean

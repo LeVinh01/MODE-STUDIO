@@ -51,6 +51,8 @@ class AdminOrderListResource extends JsonResource
             'items_count'      => (int) $itemsCount,
             'created_at'       => $this->created_at?->toISOString(),
             'customer'         => $customer,
+            'carrier'          => $this->carrier,
+            'tracking_code'    => $this->tracking_code,
         ];
     }
 }

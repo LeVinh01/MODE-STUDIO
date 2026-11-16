@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\Admin\AdminDashboardController;
+use App\Http\Controllers\Api\Admin\AdminCustomerController;
 use App\Http\Controllers\Api\Admin\AdminLookupController;
 use App\Http\Controllers\Api\Admin\AdminOrderController;
 use App\Http\Controllers\Api\Admin\AdminProductController;
@@ -38,6 +39,12 @@ Route::prefix('auth')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/me', [AuthController::class, 'me']);
     });
+});
+
+// User Profile & Password API (yêu cầu đăng nhập)
+Route::middleware(['auth:sanctum', 'active'])->prefix('user')->group(function () {
+    Route::put('/profile', [AuthController::class, 'updateProfile'])->middleware('throttle:60,1');
+    Route::put('/password', [AuthController::class, 'updatePassword'])->middleware('throttle:30,1');
 });
 
 // Cart API
@@ -84,6 +91,10 @@ Route::middleware(['auth:sanctum', 'active', 'role:admin,operator'])->prefix('ad
     Route::get('/products/{id}', [AdminProductController::class, 'show']);
     Route::get('/variants/{variant_id}/stock-adjustments', [AdminStockController::class, 'history']);
     Route::get('/stock/low', [AdminStockController::class, 'lowStock']);
+
+    // Admin & Operator Customer Management (Read-Only)
+    Route::get('/customers', [AdminCustomerController::class, 'index']);
+    Route::get('/customers/{id}', [AdminCustomerController::class, 'show'])->whereNumber('id');
 
     // Admin & Operator Dashboard API
     Route::prefix('dashboard')->group(function () {

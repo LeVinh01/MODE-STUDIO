@@ -490,6 +490,39 @@ class AdminOrderManagementTest extends TestCase
         ]);
     }
 
+    public function test_admin_transition_confirmed_to_shipping_requires_carrier_and_tracking_code(): void
+    {
+        $admin = $this->createAdmin();
+        $customer = $this->createCustomer();
+        $order = $this->createOrder($customer, ['status' => OrderStatus::Confirmed]);
+
+        Sanctum::actingAs($admin);
+
+        // 1. Thiếu cả carrier và tracking_code
+        $this->patchJson("/api/admin/orders/{$order->order_code}/status", [
+            'status' => 'shipping',
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['carrier', 'tracking_code']);
+
+        // 2. Thiếu tracking_code
+        $this->patchJson("/api/admin/orders/{$order->order_code}/status", [
+            'status'  => 'shipping',
+            'carrier' => 'GHN',
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['tracking_code']);
+
+        // 3. Carrier không nằm trong danh sách được hỗ trợ
+        $this->patchJson("/api/admin/orders/{$order->order_code}/status", [
+            'status'        => 'shipping',
+            'carrier'       => 'HangKhongVietNamUnknown',
+            'tracking_code' => 'TRACK123456',
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['carrier']);
+    }
+
     public function test_admin_transition_confirmed_to_shipping_creates_history(): void
     {
         $admin = $this->createAdmin();
@@ -498,19 +531,26 @@ class AdminOrderManagementTest extends TestCase
 
         Sanctum::actingAs($admin);
 
-        $this->patchJson("/api/admin/orders/{$order->order_code}/status", [
-            'status' => 'shipping',
+        $res = $this->patchJson("/api/admin/orders/{$order->order_code}/status", [
+            'status'        => 'shipping',
+            'carrier'       => 'GHN',
+            'tracking_code' => 'GHN-VN-987654',
+            'reason'        => 'Đã giao bưu tá lấy hàng',
         ])
             ->assertStatus(200)
             ->assertJson([
                 'order' => [
-                    'status' => 'shipping',
+                    'status'        => 'shipping',
+                    'carrier'       => 'GHN',
+                    'tracking_code' => 'GHN-VN-987654',
                 ],
             ]);
 
         $this->assertDatabaseHas('orders', [
-            'id'     => $order->id,
-            'status' => OrderStatus::Shipping->value,
+            'id'            => $order->id,
+            'status'        => OrderStatus::Shipping->value,
+            'carrier'       => 'GHN',
+            'tracking_code' => 'GHN-VN-987654',
         ]);
 
         $this->assertDatabaseHas('order_status_histories', [
@@ -519,6 +559,21 @@ class AdminOrderManagementTest extends TestCase
             'to_status'   => OrderStatus::Shipping->value,
             'changed_by'  => $admin->id,
         ]);
+
+        $history = $order->fresh()->statusHistories()->latest('id')->first();
+        $this->assertStringContainsString('GHN', $history->reason);
+        $this->assertStringContainsString('GHN-VN-987654', $history->reason);
+
+        // Khách xem đơn cũng thấy carrier và tracking_code trong OrderResource
+        Sanctum::actingAs($customer);
+        $this->getJson("/api/orders/{$order->order_code}")
+            ->assertStatus(200)
+            ->assertJson([
+                'order' => [
+                    'carrier'       => 'GHN',
+                    'tracking_code' => 'GHN-VN-987654',
+                ],
+            ]);
     }
 
     public function test_admin_transition_shipping_to_delivered_updates_cod_payment_status_and_paid_at(): void

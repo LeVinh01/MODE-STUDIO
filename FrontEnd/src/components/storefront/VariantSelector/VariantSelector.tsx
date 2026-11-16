@@ -1,6 +1,8 @@
-import { useMemo } from 'react'
-import { AlertCircle } from 'lucide-react'
+import { useMemo, useState, useRef } from 'react'
+import { AlertCircle, Ruler } from 'lucide-react'
 import type { ProductVariant } from '@/types/product'
+import { Modal } from '@/components/feedback/Modal'
+import { SIZE_GUIDE_DATA, SIZE_MEASUREMENT_TIPS } from '@/config/sizeGuide'
 import { cn } from '@/utils/cn'
 import styles from './VariantSelector.module.scss'
 
@@ -21,6 +23,15 @@ export const VariantSelector = ({
   onSelectSize,
   sizeWarning,
 }: VariantSelectorProps) => {
+  const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false)
+  const sizeGuideBtnRef = useRef<HTMLButtonElement>(null)
+
+  const handleCloseSizeGuide = () => {
+    setIsSizeGuideOpen(false)
+    // Trả lại focus về nút mở modal
+    sizeGuideBtnRef.current?.focus()
+  }
+
   // 1. Trích xuất danh sách màu sắc duy nhất kèm tổng tồn kho
   const uniqueColors = useMemo(() => {
     const map = new Map<
@@ -158,6 +169,21 @@ export const VariantSelector = ({
                   : activeSize?.name || 'Chưa chọn'}
               </strong>
             </span>
+
+            {/* Nút mở Bảng hướng dẫn chọn size (ẩn khi không có size hoặc chỉ có One Size) */}
+            {!isOneSize && uniqueSizes.length > 0 && (
+              <button
+                ref={sizeGuideBtnRef}
+                type="button"
+                onClick={() => setIsSizeGuideOpen(true)}
+                className={styles.sizeGuideBtn}
+                aria-haspopup="dialog"
+                aria-label="Xem bảng hướng dẫn chọn kích cỡ"
+              >
+                <Ruler size={14} aria-hidden="true" />
+                <span>Bảng hướng dẫn chọn size</span>
+              </button>
+            )}
           </div>
 
           {isOneSize ? (
@@ -215,6 +241,56 @@ export const VariantSelector = ({
           )}
         </div>
       )}
+
+      {/* Modal Bảng hướng dẫn chọn size chuẩn */}
+      <Modal
+        isOpen={isSizeGuideOpen}
+        onClose={handleCloseSizeGuide}
+        title="Bảng Hướng Dẫn Chọn Kích Cỡ"
+        size="lg"
+      >
+        <div className={styles.sizeGuideModalContent}>
+          <p className={styles.sizeGuideNote}>
+            Bảng thông số kích cỡ may đo chuẩn của MODE STUDIO (tính bằng cm và kg). Quý khách vui lòng đối chiếu số đo cơ thể để lựa chọn kích cỡ vừa vặn nhất:
+          </p>
+
+          <div className={styles.sizeGuideTableWrapper}>
+            <table className={styles.sizeGuideTable}>
+              <thead>
+                <tr>
+                  <th scope="col">Kích cỡ</th>
+                  <th scope="col">Vòng ngực</th>
+                  <th scope="col">Vòng eo</th>
+                  <th scope="col">Vòng mông</th>
+                  <th scope="col">Chiều cao gợi ý</th>
+                  <th scope="col">Cân nặng gợi ý</th>
+                </tr>
+              </thead>
+              <tbody>
+                {SIZE_GUIDE_DATA.map((row) => (
+                  <tr key={row.size}>
+                    <td className={styles.sizeGuideCellBold}>{row.size}</td>
+                    <td>{row.bust} cm</td>
+                    <td>{row.waist} cm</td>
+                    <td>{row.hips} cm</td>
+                    <td>{row.height} cm</td>
+                    <td>{row.weight} kg</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className={styles.sizeGuideTips}>
+            <h4 className={styles.sizeGuideTipsTitle}>Lời khuyên từ thợ may đo MODE STUDIO:</h4>
+            <ul className={styles.sizeGuideTipsList}>
+              {SIZE_MEASUREMENT_TIPS.map((tip, idx) => (
+                <li key={idx}>{tip}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

@@ -1,0 +1,160 @@
+.section {
+  width: 100%;
+  padding: 4rem 0 5rem;
+  background-color: #ffffff;
+  margin: 0;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 2.5rem 0 3.5rem;
+  }
+}
+
+.wrapper {
+  width: min(1176px, calc(100% - 48px));
+  margin-inline: auto;
+  box-sizing: border-box;
+}
+
+.heading {
+  font-family: var(--font-serif, 'Playfair Display', Georgia, serif);
+  font-size: clamp(1.75rem, 2.5vw, 2.25rem);
+  font-weight: 400;
+  color: #1a1a1a;
+  margin: 0 0 2.5rem;
+  text-align: left;
+  letter-spacing: -0.01em;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 2rem 1rem;
+  align-items: start;
+  justify-items: center;
+  width: 100%;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2rem 1.5rem;
+  }
+
+  @media (max-width: 640px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem 1rem;
+  }
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  width: 100%;
+  transition: opacity 0.2s ease;
+
+  &:hover {
+    .iconImage {
+      transform: scale(1.08);
+    }
+
+    .caption {
+      color: #555555;
+    }
+  }
+}
+
+.iconBox {
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background-color: transparent;
+}
+
+.iconImage {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  transition: transform 0.25s ease;
+}
+
+.initialFallback {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background-color: #f0ede8;
+  color: #1a1a1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif, 'Playfair Display', Georgia, serif);
+  font-size: 1.75rem;
+  font-weight: 400;
+}
+
+.caption {
+  margin-top: 14px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #1a1a1a;
+  text-align: center;
+  font-weight: 400;
+  transition: color 0.2s ease;
+}
+
+.ctaWrapper {
+  margin-top: 3.5rem;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.pillButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 320px;
+  max-width: 480px;
+  width: 100%;
+  height: 56px;
+  border: 1px solid #1a1a1a;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #1a1a1a;
+  text-decoration: none;
+  background: transparent;
+  transition: all 0.25s ease;
+
+  &:hover {
+    background-color: #1a1a1a;
+    color: #ffffff;
+  }
+}
+
+.skeletonIcon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background-color: #eaeaea;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}

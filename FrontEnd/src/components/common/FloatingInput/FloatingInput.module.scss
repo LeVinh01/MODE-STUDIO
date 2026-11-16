@@ -1,0 +1,164 @@
+@use '@/styles/abstracts' as *;
+
+.floatingGroup {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  width: 100%;
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+.inputWrapper {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  height: 44px;
+  background-color: transparent;
+  border-bottom: 1px solid #e0e0e0;
+  transition: border-color 180ms ease;
+
+  &:hover:not(:has(:disabled)) {
+    border-bottom-color: #999999;
+  }
+
+  // Focus: đường gạch đậm hơn
+  &:focus-within {
+    border-bottom: 1.5px solid #111111;
+  }
+
+  &.hasError {
+    border-bottom: 1px solid #dc2626 !important;
+  }
+}
+
+.input {
+  width: 100%;
+  height: 28px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  background-color: #ffffff !important;
+  font-family: $font-sans;
+  font-size: 0.875rem; // ~14px chữ nhập liệu
+  color: #111111;
+  outline: none;
+  box-shadow: none;
+
+  // Chặn màu autofill xanh của browser
+  &:-webkit-autofill,
+  &:-webkit-autofill:hover,
+  &:-webkit-autofill:focus,
+  &:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+    -webkit-text-fill-color: #111111 !important;
+    caret-color: #111111 !important;
+    background-color: #ffffff !important;
+  }
+
+  // Placeholder ẩn (chỉ dùng khoảng trắng " " để CSS :placeholder-shown hoạt động)
+  &::placeholder {
+    color: transparent;
+    opacity: 0;
+  }
+
+  &:disabled {
+    color: #999999;
+    cursor: not-allowed;
+    background-color: transparent !important;
+  }
+}
+
+// Nhãn nổi (Floating Label)
+.label {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: $font-sans;
+  font-size: 0.875rem; // Ban đầu to bằng chữ nhập liệu (~14px)
+  font-weight: 400;
+  color: #8e8e8e; // Màu xám nhạt như placeholder
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transform-origin: left top;
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+              font-size 180ms cubic-bezier(0.16, 1, 0.3, 1),
+              color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+              top 180ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  // Khi focus, có ký tự, autofill hoặc active: thu nhỏ ~11px và trượt lên ngay trên đường gạch
+  .input:focus ~ &,
+  .input:not(:placeholder-shown) ~ &,
+  .input:-webkit-autofill ~ &,
+  .isFloating & {
+    top: 2px;
+    transform: translateY(0);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 1.2px;
+    color: #555555;
+  }
+
+  .input:focus ~ & {
+    color: #111111;
+  }
+
+  .hasError & {
+    color: #b91c1c;
+  }
+}
+
+// Trạng thái lỗi (icon + text ngay dưới đường gạch chân)
+.errorRow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 5px;
+  font-family: $font-sans;
+  font-size: 11px;
+  color: #dc2626;
+  text-align: left;
+  line-height: 1.3;
+}
+
+.errorIcon {
+  flex-shrink: 0;
+  color: #dc2626;
+}
+
+.errorText {
+  display: inline-block;
+}
+
+// Helper text nằm dưới đường gạch, không chạm ô kế tiếp
+.helperRow {
+  margin-top: 4px;
+  text-align: left;
+}
+
+.helperText {
+  font-family: $font-sans;
+  font-size: 11px;
+  color: #777777;
+  letter-spacing: 0.3px;
+  line-height: 1.3;
+  display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .label,
+  .inputWrapper {
+    transition: none !important;
+  }
+}

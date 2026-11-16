@@ -59,6 +59,8 @@ export const mapApiAdminOrderListItemToAdminOrderListItem = (
     recipientName: item.recipient_name,
     recipientPhone: item.recipient_phone,
     shippingAddress: item.shipping_address,
+    carrier: item.carrier ?? null,
+    trackingCode: item.tracking_code ?? null,
     subtotal: item.subtotal,
     shippingFee: item.shipping_fee,
     discountAmount: item.discount_amount,

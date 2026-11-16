@@ -1,15 +1,15 @@
 import type { ReactNode } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { useAppSelector } from '@/store/hooks'
 import {
   AnnouncementBar,
   Header,
   MobileMenu,
-  SearchModal,
   Footer,
   CartDrawer,
 } from '@/components/storefront'
 import { selectCartItemsCount } from '@/store/slices/cartSlice'
+import { cn } from '@/utils/cn'
 import styles from './MainLayout.module.scss'
 
 export interface MainLayoutProps {
@@ -18,6 +18,8 @@ export interface MainLayoutProps {
 
 export const MainLayout = ({ children }: MainLayoutProps = {}) => {
   const itemsCount = useAppSelector(selectCartItemsCount)
+  const location = useLocation()
+  const isHomePage = location.pathname === '/'
 
   return (
     <div className={styles.layoutStorefront}>
@@ -35,11 +37,12 @@ export const MainLayout = ({ children }: MainLayoutProps = {}) => {
       {/* 4. Mobile Drawer Navigation */}
       <MobileMenu />
 
-      {/* 5. Search Modal Dialog */}
-      <SearchModal />
-
-      {/* 6. Main Landmark Content */}
-      <main id="main-content" tabIndex={-1} className={styles.mainContent}>
+      {/* 5. Main Landmark Content */}
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className={cn(styles.mainContent, isHomePage && styles.mainContentHome)}
+      >
         {children ?? <Outlet />}
       </main>
 

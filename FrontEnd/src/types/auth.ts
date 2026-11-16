@@ -52,6 +52,17 @@ export interface LoginPayload {
   password: string
 }
 
+export interface UpdateProfilePayload {
+  fullName: string
+  phone?: string | null
+}
+
+export interface UpdatePasswordPayload {
+  currentPassword: string
+  password: string
+  passwordConfirmation: string
+}
+
 export interface ApiValidationErrorResponse {
   message: string
   errors?: Record<string, string[]>

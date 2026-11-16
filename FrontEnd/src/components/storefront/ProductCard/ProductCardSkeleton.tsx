@@ -3,15 +3,18 @@ import { Skeleton } from '@/components/feedback/Skeleton'
 import { cn } from '@/utils/cn'
 import styles from './ProductCard.module.scss'
 
-export type ProductCardSkeletonProps = HTMLAttributes<HTMLDivElement>
+export interface ProductCardSkeletonProps extends HTMLAttributes<HTMLDivElement> {
+  compact?: boolean
+}
 
 export const ProductCardSkeleton = ({
+  compact = false,
   className,
   ...props
 }: ProductCardSkeletonProps) => {
   return (
     <div
-      className={cn(styles.card, className)}
+      className={cn(styles.card, compact && styles.compact, className)}
       aria-hidden="true"
       {...props}
     >
@@ -20,14 +23,16 @@ export const ProductCardSkeleton = ({
       </div>
 
       <div className={styles.details}>
-        <Skeleton variant="text" width="35%" height="0.6875rem" />
-        <Skeleton variant="text" width="85%" height="1rem" />
-        <Skeleton variant="text" width="45%" height="1rem" />
-        <div className={styles.swatchList}>
-          <Skeleton variant="circular" width="0.75rem" height="0.75rem" />
-          <Skeleton variant="circular" width="0.75rem" height="0.75rem" />
-          <Skeleton variant="circular" width="0.75rem" height="0.75rem" />
-        </div>
+        {!compact && <Skeleton variant="text" width="35%" height="0.6875rem" />}
+        <Skeleton variant="text" width="85%" height="0.875rem" />
+        <Skeleton variant="text" width="45%" height="0.875rem" />
+        {!compact && (
+          <div className={styles.swatchList}>
+            <Skeleton variant="circular" width="0.75rem" height="0.75rem" />
+            <Skeleton variant="circular" width="0.75rem" height="0.75rem" />
+            <Skeleton variant="circular" width="0.75rem" height="0.75rem" />
+          </div>
+        )}
       </div>
     </div>
   )

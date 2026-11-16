@@ -6,6 +6,8 @@ use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
+use App\Http\Requests\UpdatePasswordRequest;
+use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Resources\UserResource;
 use App\Models\Role;
 use App\Models\User;
@@ -109,6 +111,57 @@ class AuthController extends Controller
 
         return response()->json([
             'user' => new UserResource($user),
+        ], 200);
+    }
+
+    /**
+     * Cập nhật thông tin hồ sơ tài khoản (chỉ full_name và phone)
+     */
+    public function updateProfile(UpdateProfileRequest $request): JsonResponse
+    {
+        $user = $request->user();
+        $validated = $request->validated();
+
+        $user->update([
+            'full_name' => $validated['full_name'],
+            'phone'     => $validated['phone'] ?? null,
+        ]);
+
+        return response()->json([
+            'message' => 'Cập nhật thông tin tài khoản thành công.',
+            'user'    => new UserResource($user->fresh()->loadMissing('role')),
+        ], 200);
+    }
+
+    /**
+     * Đổi mật khẩu tài khoản
+     */
+    public function updatePassword(UpdatePasswordRequest $request): JsonResponse
+    {
+        $user = $request->user();
+        $validated = $request->validated();
+
+        if (!Hash::check($validated['current_password'], $user->password)) {
+            return response()->json([
+                'message' => 'Dữ liệu không hợp lệ.',
+                'errors'  => [
+                    'current_password' => ['Mật khẩu hiện tại không chính xác.'],
+                ],
+            ], 422);
+        }
+
+        $user->update([
+            'password' => $validated['password'],
+        ]);
+
+        // Thu hồi tất cả các token khác, giữ lại token hiện tại đang thao tác
+        $currentTokenId = $user->currentAccessToken()?->id;
+        if ($currentTokenId) {
+            $user->tokens()->where('id', '!=', $currentTokenId)->delete();
+        }
+
+        return response()->json([
+            'message' => 'Đổi mật khẩu thành công.',
         ], 200);
     }
 }

@@ -1,17 +1,20 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { AlertCircle, CheckCircle2, Minus, Plus } from 'lucide-react'
+import { AlertCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import { Breadcrumbs, type BreadcrumbItem } from '@/components/navigation/Breadcrumbs'
 import { Button } from '@/components/common/Button'
+import { Toast } from '@/components/feedback'
+import { Modal } from '@/components/feedback/Modal'
 import { ProductGallery } from '@/components/storefront/ProductGallery'
-import { VariantSelector } from '@/components/storefront/VariantSelector'
-import { ProductCard } from '@/components/storefront/ProductCard'
+import { ProductCompactGrid } from '@/components/storefront'
 import { productService } from '@/services/api/productService'
 import type { Product } from '@/types/product'
 import { formatCurrency } from '@/utils/formatters'
 import { useAppDispatch } from '@/store/hooks'
 import { addToCart } from '@/store/slices/cartSlice'
 import { setCartDrawerOpen } from '@/store/slices/uiSlice'
+import { STORE_POLICIES } from '@/config/store'
+import { SIZE_GUIDE_DATA, SIZE_MEASUREMENT_TIPS } from '@/config/sizeGuide'
 import { cn } from '@/utils/cn'
 import styles from './ProductDetailPage.module.scss'
 
@@ -30,11 +33,18 @@ export const ProductDetailPage = () => {
   // 2. Selection states
   const [selectedColorId, setSelectedColorId] = useState<number | null>(null)
   const [selectedSizeId, setSelectedSizeId] = useState<number | null>(null)
-  const [quantity, setQuantity] = useState<number>(1)
   const [sizeWarning, setSizeWarning] = useState<string | null>(null)
   const [isAddingToCart, setIsAddingToCart] = useState<boolean>(false)
   const [addToCartError, setAddToCartError] = useState<string | null>(null)
-  const [cartSuccessMessage, setCartSuccessMessage] = useState<string | null>(null)
+
+  // 3. UI states (Size guide Modal & Accordion)
+  const [isSizeGuideOpen, setIsSizeGuideOpen] = useState<boolean>(false)
+  const [openAccordion, setOpenAccordion] = useState<string | null>(null)
+  const sizeGuideBtnRef = useRef<HTMLButtonElement>(null)
+
+  const toggleAccordion = (id: string) => {
+    setOpenAccordion((prev) => (prev === id ? null : id))
+  }
 
   // Reset toàn bộ state lựa chọn khi slug đổi
   const [prevSlug, setPrevSlug] = useState(slug)
@@ -42,23 +52,21 @@ export const ProductDetailPage = () => {
     setPrevSlug(slug)
     setSelectedColorId(null)
     setSelectedSizeId(null)
-    setQuantity(1)
     setSizeWarning(null)
     setIsAddingToCart(false)
     setAddToCartError(null)
-    setCartSuccessMessage(null)
     setErrorMessage(null)
     setIsNotFound(false)
     setIsLoading(true)
     setProduct(null)
     setRelatedProducts([])
+    setOpenAccordion(null)
   }
 
-  // 3. Tải dữ liệu sản phẩm khi slug thay đổi
+  // 4. Tải dữ liệu sản phẩm khi slug thay đổi
   useEffect(() => {
     if (!slug) return
 
-    // Cuộn mượt lên đầu trang khi chuyển sang xem sản phẩm khác
     window.scrollTo({ top: 0, behavior: 'smooth' })
 
     const controller = new AbortController()
@@ -68,12 +76,9 @@ export const ProductDetailPage = () => {
       try {
         const data = await productService.getProductBySlug(slug, signal)
         setProduct(data)
-
-        // Cập nhật document.title theo tên sản phẩm
         document.title = `${data.name} | MODE STUDIO`
 
         // A. Xác định màu sắc mặc định
-        // Ưu tiên: màu của ảnh chính (hoặc ảnh đầu tiên có colorId) -> fallback màu đầu tiên còn hàng
         const mainImg = data.images?.find((img) => img.isMain) || data.images?.[0]
         let initialColorId: number | null = null
 
@@ -87,7 +92,6 @@ export const ProductDetailPage = () => {
         }
 
         if (initialColorId === null && data.variants && data.variants.length > 0) {
-          // Tìm màu đầu tiên có tồn kho > 0
           const colorStockMap = new Map<number, number>()
           data.variants.forEach((v) => {
             if (v.isActive === false || v.colorId === undefined) return
@@ -103,7 +107,6 @@ export const ProductDetailPage = () => {
           if (inStockEntry) {
             initialColorId = inStockEntry[0]
           } else {
-            // Nếu tất cả đều hết hàng, lấy màu đầu tiên
             const firstActiveVariant = data.variants.find(
               (v) => v.isActive !== false && v.colorId !== undefined,
             )
@@ -112,8 +115,7 @@ export const ProductDetailPage = () => {
         }
         setSelectedColorId(initialColorId)
 
-        // B. Xác định size mặc định
-        // KHÔNG tự chọn size, TRỪ KHI sản phẩm chỉ có duy nhất One Size
+        // B. Xác định size mặc định (chỉ tự chọn nếu là One Size)
         if (data.variants && data.variants.length > 0) {
           const sizeSet = new Set<number>()
           data.variants.forEach((v) => {
@@ -126,19 +128,19 @@ export const ProductDetailPage = () => {
           }
         }
 
-        // C. Tải sản phẩm liên quan (cùng category, perPage 5 để trừ sản phẩm hiện tại ra 4)
+        // C. Tải sản phẩm liên quan (cùng category, tối đa 6 sản phẩm cho lưới compact)
         if (data.category?.slug) {
           try {
             const relatedRes = await productService.getProducts(
-              { category: data.category.slug, perPage: 5 },
+              { category: data.category.slug, perPage: 12 },
               signal,
             )
             const filtered = relatedRes.items
               .filter((item) => item.id !== data.id)
-              .slice(0, 4)
+              .slice(0, 6)
             setRelatedProducts(filtered)
           } catch {
-            // Không làm gián đoạn trang chi tiết nếu tải sản phẩm liên quan thất bại
+            // Im lặng nếu không tải được sản phẩm liên quan
           }
         }
       } catch (err: unknown) {
@@ -168,13 +170,63 @@ export const ProductDetailPage = () => {
     }
   }, [slug, retryCount])
 
-  // 4. Tính toán giá, giảm giá, tồn kho biến thể
+  // 5. Trích xuất danh sách màu sắc & kích cỡ từ variants
+  const uniqueColors = useMemo(() => {
+    if (!product?.variants) return []
+    const map = new Map<
+      number,
+      { id: number; name: string; hexCode?: string; totalStock: number }
+    >()
+
+    product.variants.forEach((v) => {
+      if (v.isActive === false || v.colorId === undefined) return
+      const existing = map.get(v.colorId)
+      if (existing) {
+        existing.totalStock += v.stock
+      } else {
+        map.set(v.colorId, {
+          id: v.colorId,
+          name: v.color,
+          hexCode: v.colorHex,
+          totalStock: v.stock,
+        })
+      }
+    })
+
+    return Array.from(map.values())
+  }, [product])
+
+  const uniqueSizes = useMemo(() => {
+    if (!product?.variants) return []
+    const map = new Map<
+      number,
+      { id: number; name: string; sortOrder: number }
+    >()
+
+    product.variants.forEach((v) => {
+      if (v.isActive === false || v.sizeId === undefined) return
+      if (!map.has(v.sizeId)) {
+        map.set(v.sizeId, {
+          id: v.sizeId,
+          name: v.size,
+          sortOrder: v.sizeSortOrder ?? 0,
+        })
+      }
+    })
+
+    return Array.from(map.values()).sort((a, b) => a.sortOrder - b.sortOrder)
+  }, [product])
+
+  const isOneSize =
+    uniqueSizes.length === 1 &&
+    (uniqueSizes[0].name.toLowerCase().includes('one size') ||
+      uniqueSizes.length === 1)
+
+  const activeColor = uniqueColors.find((c) => c.id === selectedColorId)
+
+  // 6. Tính toán giá, giảm giá, tồn kho biến thể
   const currentPrice = product?.basePrice ?? 0
   const originalPrice = product?.compareAtPrice ?? null
-  const discountPercent =
-    originalPrice && originalPrice > currentPrice
-      ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
-      : 0
 
   const activeVariant = product?.variants?.find(
     (v) =>
@@ -191,15 +243,13 @@ export const ProductDetailPage = () => {
         product.variants.every((v) => v.stock <= 0)))
 
   const isVariantOutOfStock = Boolean(activeVariant && activeVariant.stock <= 0)
-  const maxStock = activeVariant ? Math.min(activeVariant.stock, 20) : 1
 
-  // 5. Handlers lựa chọn màu & size
+  // Handlers lựa chọn màu & size
   const handleSelectColor = (colorId: number) => {
     setSelectedColorId(colorId)
     setSizeWarning(null)
     setAddToCartError(null)
 
-    // Nếu size hiện tại đã chọn không còn hàng ở màu mới, reset size về null (trừ khi là One Size)
     if (selectedSizeId !== null && product?.variants) {
       const isSizeStillInStock = product.variants.some(
         (v) =>
@@ -208,7 +258,6 @@ export const ProductDetailPage = () => {
           v.sizeId === selectedSizeId &&
           v.stock > 0,
       )
-
       const sizeCount = new Set(
         product.variants.map((v) => v.sizeId).filter(Boolean),
       ).size
@@ -224,46 +273,17 @@ export const ProductDetailPage = () => {
     setAddToCartError(null)
   }
 
-  const handleQuantityChange = (delta: number) => {
-    const stock = activeVariant?.stock ?? 0
-    const maxAllowed = Math.min(Math.max(0, stock), 20)
-
-    if (maxAllowed <= 0) {
-      setAddToCartError('Sản phẩm đã hết hàng trong kho.')
-      return
-    }
-
-    const next = quantity + delta
-    if (next > maxAllowed) {
-      setQuantity(maxAllowed)
-      setAddToCartError(`Chỉ còn ${stock} sản phẩm`)
-      return
-    }
-
-    if (next < 1) {
-      setQuantity(1)
-      setAddToCartError(null)
-      return
-    }
-
-    setQuantity(next)
-    setAddToCartError(null)
-  }
-
-  // 6. Handler Thêm vào giỏ hàng
+  // 7. Handler Thêm vào giỏ hàng (mặc định số lượng = 1)
   const handleAddToCart = async () => {
     if (!product) return
     setAddToCartError(null)
-    setCartSuccessMessage(null)
 
-    // Bắt buộc chọn màu sắc
-    if (selectedColorId === null) {
+    if (uniqueColors.length > 0 && selectedColorId === null) {
       setSizeWarning('Vui lòng chọn màu sắc')
       return
     }
 
-    // Bắt buộc chọn kích cỡ
-    if (selectedSizeId === null) {
+    if (uniqueSizes.length > 0 && selectedSizeId === null) {
       setSizeWarning('Vui lòng chọn kích cỡ')
       return
     }
@@ -278,17 +298,8 @@ export const ProductDetailPage = () => {
     }
 
     const stock = activeVariant.stock ?? 0
-    const maxAllowed = Math.min(Math.max(0, stock), 20)
-
     if (stock <= 0) {
       setAddToCartError('Sản phẩm đã hết hàng trong kho.')
-      return
-    }
-
-    // Chặn sớm ở client dựa trên tồn kho đã biết
-    if (quantity > maxAllowed) {
-      setQuantity(maxAllowed)
-      setAddToCartError(`Chỉ còn ${stock} sản phẩm`)
       return
     }
 
@@ -298,7 +309,7 @@ export const ProductDetailPage = () => {
       const result = await dispatch(
         addToCart({
           variantId: Number(activeVariant.id),
-          quantity,
+          quantity: 1, // Mặc định số lượng 1
           stockQuantity: activeVariant.stock,
         }),
       ).unwrap()
@@ -307,9 +318,7 @@ export const ProductDetailPage = () => {
         setAddToCartError(`Chỉ còn ${activeVariant.stock} sản phẩm`)
       }
 
-      setCartSuccessMessage(
-        `Đã thêm ${quantity} sản phẩm (${activeVariant.color} / Size ${activeVariant.size}) vào giỏ hàng.`,
-      )
+      // Giỏ hàng drawer sẽ tự động mở lên
       dispatch(setCartDrawerOpen(true))
     } catch (err: unknown) {
       const apiError = err as {
@@ -321,8 +330,6 @@ export const ProductDetailPage = () => {
         if (apiError.available_stock <= 0) {
           setAddToCartError('Sản phẩm đã hết hàng trong kho.')
         } else {
-          const serverMaxAllowed = Math.min(apiError.available_stock, 20)
-          setQuantity(serverMaxAllowed)
           setAddToCartError(`Chỉ còn ${apiError.available_stock} sản phẩm`)
         }
       } else if (apiError?.errors?.quantity?.[0]) {
@@ -426,191 +433,360 @@ export const ProductDetailPage = () => {
   }
 
   // =========================================================================
-  // RENDER: PRODUCT DETAIL CONTENT
+  // RENDER: PRODUCT DETAIL CONTENT (ẢNH LÀ TRỌNG TÂM, THÔNG TIN NHỎ GỌN)
   // =========================================================================
   return (
     <div className={styles.page}>
       <div className={styles.container}>
-        {/* 1. BREADCRUMBS */}
+        {/* 1. BREADCRUMBS: 11px xám, nhỏ, đặt sát trên thư viện ảnh */}
         <div className={styles.breadcrumbsWrapper}>
           <Breadcrumbs items={breadcrumbItems} />
         </div>
 
-        {/* 2. MAIN 2-COLUMN LAYOUT */}
+        {/* 2. MAIN 2-COLUMN LAYOUT: Cột trái ảnh (~67%), Cột phải bảng thông tin sticky (max-width ~380px) */}
         <div className={styles.mainLayout}>
-          {/* CỘT TRÁI: GALLERY HÌNH ẢNH */}
+          {/* CỘT TRÁI: THƯ VIỆN ẢNH (Lưới 2 cột desktop, tỉ lệ 4:5, vuốt ngang mobile) */}
           <div className={styles.galleryColumn}>
             <ProductGallery
               images={product.images || []}
               selectedColorId={selectedColorId}
               productName={product.name}
-              isOutOfStock={Boolean(isOverallOutOfStock)}
-              isNew={Boolean(product.isNew)}
             />
           </div>
 
-          {/* CỘT PHẢI: CHI TIẾT & ĐẶT HÀNG */}
-          <div className={styles.detailsColumn}>
-            {/* Header info: Brand, Name, SKU */}
-            <div className={styles.headerInfo}>
+          {/* CỘT PHẢI: BẢNG THÔNG TIN HẸP (Sticky, font sans-serif chữ nhỏ) */}
+          <aside className={styles.detailsColumn} aria-label="Thông tin sản phẩm">
+            {/* Nhãn MỚI và Thương hiệu (11px, chữ hoa, màu xám) */}
+            <div className={styles.metaRow}>
+              {product.isNew && <span className={styles.newLabel}>MỚI</span>}
               {product.brand && (
                 <span className={styles.brandName}>{product.brand.name}</span>
               )}
-              <h1 className={styles.productTitle}>{product.name}</h1>
-              {activeVariant?.sku && (
-                <span className={styles.skuText}>Mã thiết kế: {activeVariant.sku}</span>
-              )}
             </div>
 
-            {/* Price section */}
-            <div className={styles.priceSection}>
+            {/* Tên sản phẩm (14px, chữ hoa, weight 400, line-height 1.4) */}
+            <h1 className={styles.productName}>{product.name}</h1>
+
+            {/* Giá sản phẩm (14px ngay dưới tên, giá cũ gạch ngang nếu có) */}
+            <div className={styles.priceRow}>
               <span className={styles.currentPrice}>
                 {formatCurrency(currentPrice)}
               </span>
               {originalPrice && originalPrice > currentPrice && (
-                <>
-                  <span className={styles.originalPrice}>
-                    {formatCurrency(originalPrice)}
-                  </span>
-                  <span className={styles.discountBadge}>-{discountPercent}%</span>
-                </>
+                <span className={styles.originalPrice}>
+                  {formatCurrency(originalPrice)}
+                </span>
               )}
             </div>
 
-            {/* Color & Size Variant Selectors */}
-            {product.variants && product.variants.length > 0 && (
-              <VariantSelector
-                variants={product.variants}
-                selectedColorId={selectedColorId}
-                onSelectColor={handleSelectColor}
-                selectedSizeId={selectedSizeId}
-                onSelectSize={handleSelectSize}
-                sizeWarning={sizeWarning}
-              />
+            {/* Đường kẻ mỏng 1px */}
+            <hr className={styles.divider} />
+
+            {/* Bộ chọn Màu sắc (12px chữ hoa, ô vuông 22-24px, viền mỏng) */}
+            {uniqueColors.length > 0 && (
+              <div className={styles.colorSection}>
+                <span className={styles.colorLabel}>
+                  {activeColor?.name || 'MÀU SẮC'}
+                </span>
+                <div
+                  className={styles.colorList}
+                  role="radiogroup"
+                  aria-label="Chọn màu sắc"
+                >
+                  {uniqueColors.map((color) => {
+                    const isSelected = color.id === selectedColorId
+                    return (
+                      <button
+                        key={color.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={isSelected}
+                        aria-label={`Màu ${color.name}`}
+                        title={color.name}
+                        className={cn(
+                          styles.colorSwatch,
+                          isSelected && styles.colorActive,
+                        )}
+                        style={{ backgroundColor: color.hexCode || '#111111' }}
+                        onClick={() => handleSelectColor(color.id)}
+                      />
+                    )
+                  })}
+                </div>
+              </div>
             )}
 
-            {/* Quantity & Add to Cart Section */}
-            <div className={styles.purchaseSection}>
-              {/* Quantity selector */}
-              {!isOverallOutOfStock && !isVariantOutOfStock && (
-                <div className={styles.quantityRow}>
-                  <span className={styles.quantityLabel}>Số lượng:</span>
-                  <div className={styles.quantityControl}>
+            {/* Bộ chọn Kích cỡ (12px chữ hoa, ô chữ nhật cao ~36px, link bảng size) */}
+            {uniqueSizes.length > 0 && (
+              <div className={styles.sizeSection}>
+                <div className={styles.sizeHeader}>
+                  <span className={styles.sizeLabel}>KÍCH CỠ</span>
+                  {!isOneSize && (
                     <button
+                      ref={sizeGuideBtnRef}
                       type="button"
-                      className={styles.qtyBtn}
-                      onClick={() => handleQuantityChange(-1)}
-                      disabled={quantity <= 1}
-                      aria-label="Giảm số lượng"
+                      onClick={() => setIsSizeGuideOpen(true)}
+                      className={styles.sizeGuideLink}
+                      aria-haspopup="dialog"
                     >
-                      <Minus size={14} />
+                      Bảng hướng dẫn chọn size
                     </button>
-                    <span className={styles.qtyValue}>{quantity}</span>
-                    <button
-                      type="button"
-                      className={styles.qtyBtn}
-                      onClick={() => handleQuantityChange(1)}
-                      disabled={quantity >= maxStock}
-                      aria-label="Tăng số lượng"
-                    >
-                      <Plus size={14} />
-                    </button>
+                  )}
+                </div>
+
+                {isOneSize ? (
+                  <div className={styles.oneSizeBadge}>
+                    {uniqueSizes[0].name} (Freesize)
                   </div>
+                ) : (
+                  <div
+                    className={styles.sizeList}
+                    role="radiogroup"
+                    aria-label="Chọn kích cỡ"
+                  >
+                    {uniqueSizes.map((size) => {
+                      const isSelected = size.id === selectedSizeId
+                      const variantForSize = product.variants?.find(
+                        (v) =>
+                          v.isActive !== false &&
+                          v.colorId === selectedColorId &&
+                          v.sizeId === size.id,
+                      )
+                      const isAvailable = Boolean(
+                        variantForSize && variantForSize.stock > 0,
+                      )
 
-                  {activeVariant && activeVariant.stock <= 5 && (
-                    <span className={styles.stockWarning}>
-                      * Chỉ còn {activeVariant.stock} sản phẩm
-                    </span>
-                  )}
-                </div>
-              )}
+                      return (
+                        <button
+                          key={size.id}
+                          type="button"
+                          role="radio"
+                          aria-checked={isSelected}
+                          disabled={!isAvailable}
+                          aria-label={`Size ${size.name}${!isAvailable ? ' - Hết hàng' : ''}`}
+                          className={cn(
+                            styles.sizeBtn,
+                            isSelected && styles.sizeActive,
+                            !isAvailable && styles.sizeDisabled,
+                          )}
+                          onClick={() => handleSelectSize(size.id)}
+                        >
+                          {size.name}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
 
-              {/* Action Button: Thêm vào giỏ */}
-              <div className={styles.actionButtons}>
-                <Button
-                  variant="primary"
-                  size="lg"
-                  fullWidth
-                  disabled={Boolean(
-                    isOverallOutOfStock || isVariantOutOfStock || isAddingToCart,
-                  )}
-                  onClick={handleAddToCart}
-                >
-                  {isAddingToCart
-                    ? 'ĐANG THÊM...'
-                    : isOverallOutOfStock
-                      ? 'HẾT HÀNG'
-                      : isVariantOutOfStock
-                        ? 'BIẾN THỂ TẠM HẾT HÀNG'
-                        : 'THÊM VÀO GIỎ HÀNG'}
-                </Button>
+                {/* Thông báo lỗi khi chưa chọn size */}
+                {sizeWarning && (
+                  <div className={styles.sizeWarning} role="alert">
+                    {sizeWarning}
+                  </div>
+                )}
               </div>
+            )}
 
-              {/* Lỗi tồn kho hoặc lỗi 422 từ server */}
-              {addToCartError && (
-                <div className={styles.errorAlert} role="alert">
-                  <AlertCircle size={18} aria-hidden="true" />
-                  <span>{addToCartError}</span>
-                </div>
+            {/* Thông báo tồn kho thấp (12px khi còn ít <= 5) */}
+            {activeVariant && activeVariant.stock > 0 && activeVariant.stock <= 5 && (
+              <div className={styles.stockLowText}>
+                * Chỉ còn {activeVariant.stock} sản phẩm
+              </div>
+            )}
+
+            {/* Nút THÊM VÀO GIỎ HÀNG (Viền đen 1px, nền trắng, cao 46px, full-width) */}
+            <button
+              type="button"
+              className={styles.addToCartBtn}
+              disabled={Boolean(
+                isOverallOutOfStock || isVariantOutOfStock || isAddingToCart,
               )}
+              onClick={handleAddToCart}
+            >
+              {isAddingToCart
+                ? 'ĐANG THÊM...'
+                : isOverallOutOfStock
+                  ? 'HẾT HÀNG'
+                  : isVariantOutOfStock
+                    ? 'BIẾN THỂ TẠM HẾT HÀNG'
+                    : 'THÊM VÀO GIỎ HÀNG'}
+            </button>
 
-              {/* Phản hồi khi thêm vào giỏ thành công */}
-              {cartSuccessMessage && (
-                <div
-                  className={styles.successAlert}
-                  role="status"
-                  aria-live="polite"
-                >
-                  <CheckCircle2 size={18} aria-hidden="true" />
-                  <span>{cartSuccessMessage}</span>
-                </div>
-              )}
-            </div>
+            {/* Lỗi thêm giỏ hàng (nếu có từ server) */}
+            {addToCartError && (
+              <div className={styles.errorAlert} role="alert">
+                <AlertCircle size={14} aria-hidden="true" />
+                <span>{addToCartError}</span>
+              </div>
+            )}
 
-            {/* Description & Material & Policy note */}
-            <div className={styles.infoSection}>
-              {/* Mô tả sản phẩm */}
-              {product.description && (
-                <div className={styles.infoBlock}>
-                  <h2 className={styles.infoTitle}>Mô Tả Thiết Kế</h2>
-                  <p className={styles.infoContent}>{product.description}</p>
-                </div>
-              )}
+            {/* Toast thông báo lỗi thêm vào giỏ hàng */}
+            <Toast
+              isOpen={Boolean(addToCartError)}
+              message={addToCartError || ''}
+              type="error"
+              onClose={() => setAddToCartError(null)}
+            />
 
-              {/* Chất liệu sản phẩm */}
+            {/* Mô tả sản phẩm (13px, line-height 1.6, màu chữ thường) */}
+            {product.description && (
+              <div className={styles.descriptionText}>
+                {product.description}
+              </div>
+            )}
+
+            {/* Các mục thu gọn Accordion (12px chữ hoa, kẻ mỏng giữa các mục) */}
+            <div className={styles.accordionSection}>
+              {/* Mục 1: Chất liệu và bảo quản (chỉ hiện khi có material) */}
               {product.material && (
-                <div className={styles.infoBlock}>
-                  <h2 className={styles.infoTitle}>Chất Liệu & Hoàn Thiện</h2>
-                  <p className={styles.infoContent}>{product.material}</p>
+                <div className={styles.accordionItem}>
+                  <button
+                    type="button"
+                    className={styles.accordionHeader}
+                    onClick={() => toggleAccordion('material')}
+                    aria-expanded={openAccordion === 'material'}
+                  >
+                    <span>CHẤT LIỆU VÀ BẢO QUẢN</span>
+                    {openAccordion === 'material' ? (
+                      <ChevronUp size={16} />
+                    ) : (
+                      <ChevronDown size={16} />
+                    )}
+                  </button>
+                  {openAccordion === 'material' && (
+                    <div className={styles.accordionContent}>
+                      <p>
+                        <strong>Chất liệu:</strong> {product.material}
+                      </p>
+                      <p style={{ marginTop: '6px' }}>
+                        <strong>Bảo quản:</strong> Giặt tay nhẹ nhàng ở nhiệt độ
+                        thường hoặc giặt khô chuyên nghiệp. Không sử dụng thuốc tẩy.
+                        Ủi ở nhiệt độ thấp nếu cần.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* Khối chính sách (dòng chờ nội dung rõ ràng) */}
-              <div className={styles.infoBlock}>
-                <h2 className={styles.infoTitle}>Chính Sách Dịch Vụ</h2>
-                <p className={styles.policyNote}>
-                  * Nội dung chính sách vận chuyển và đổi trả đang được cập nhật.
-                </p>
+              {/* Mục 2: Giao hàng và đổi trả */}
+              <div className={styles.accordionItem}>
+                <button
+                  type="button"
+                  className={styles.accordionHeader}
+                  onClick={() => toggleAccordion('shipping')}
+                  aria-expanded={openAccordion === 'shipping'}
+                >
+                  <span>GIAO HÀNG &amp; ĐỔI TRẢ</span>
+                  {openAccordion === 'shipping' ? (
+                    <ChevronUp size={16} />
+                  ) : (
+                    <ChevronDown size={16} />
+                  )}
+                </button>
+                {openAccordion === 'shipping' && (
+                  <div className={styles.accordionContent}>
+                    <p>
+                      • Miễn phí vận chuyển tiêu chuẩn cho đơn hàng từ{' '}
+                      {(STORE_POLICIES.freeShippingThreshold / 1000000).toLocaleString(
+                        'vi-VN',
+                      )}{' '}
+                      triệu đồng toàn quốc.
+                    </p>
+                    <p style={{ marginTop: '6px' }}>
+                      • Hỗ trợ đổi kích cỡ hoặc đổi trả linh hoạt trong vòng{' '}
+                      {STORE_POLICIES.returnPeriodDays} ngày kể từ ngày nhận hàng
+                      đối với sản phẩm còn nguyên tem mác.
+                    </p>
+                    <Link to="/help" className={styles.accordionLink}>
+                      Xem chi tiết chính sách dịch vụ →
+                    </Link>
+                  </div>
+                )}
+              </div>
+
+              {/* Mục 3: Kích thước sản phẩm (Mở modal hướng dẫn chọn size) */}
+              <div className={styles.accordionItem}>
+                <button
+                  type="button"
+                  className={styles.accordionHeader}
+                  onClick={() => setIsSizeGuideOpen(true)}
+                >
+                  <span>KÍCH THƯỚC SẢN PHẨM</span>
+                  <ChevronDown size={16} />
+                </button>
               </div>
             </div>
-          </div>
+          </aside>
         </div>
 
-        {/* 3. SẢN PHẨM LIÊN QUAN (ẨN NẾU RỖNG) */}
+        {/* 3. KHỐI CÓ THỂ BẠN QUAN TÂM (Lưới compact dùng chung, tiêu đề 12px chữ hoa) */}
         {relatedProducts.length > 0 && (
-          <section
+          <ProductCompactGrid
+            title="CÓ THỂ BẠN QUAN TÂM"
+            products={relatedProducts}
             className={styles.relatedSection}
-            aria-label="Thiết kế cùng bộ sưu tập"
-          >
-            <h2 className={styles.relatedTitle}>Thiết Kế Cùng Bộ Sưu Tập</h2>
-            <div className={styles.relatedGrid}>
-              {relatedProducts.map((relProduct) => (
-                <ProductCard key={relProduct.id} product={relProduct} />
-              ))}
-            </div>
-          </section>
+            hideBadges
+            columns={6}
+          />
         )}
       </div>
+
+      {/* Modal Bảng hướng dẫn chọn size chuẩn */}
+      <Modal
+        isOpen={isSizeGuideOpen}
+        onClose={() => {
+          setIsSizeGuideOpen(false)
+          sizeGuideBtnRef.current?.focus()
+        }}
+        title="Bảng Hướng Dẫn Chọn Kích Cỡ"
+        size="lg"
+      >
+        <div className={styles.sizeGuideModalContent}>
+          <p className={styles.sizeGuideNote}>
+            Bảng thông số kích cỡ may đo chuẩn của MODE STUDIO (tính bằng cm và kg).
+            Quý khách vui lòng đối chiếu số đo cơ thể để lựa chọn kích cỡ vừa vặn
+            nhất:
+          </p>
+
+          <div className={styles.sizeGuideTableWrapper}>
+            <table className={styles.sizeGuideTable}>
+              <thead>
+                <tr>
+                  <th scope="col">Kích cỡ</th>
+                  <th scope="col">Vòng ngực</th>
+                  <th scope="col">Vòng eo</th>
+                  <th scope="col">Vòng mông</th>
+                  <th scope="col">Chiều cao gợi ý</th>
+                  <th scope="col">Cân nặng gợi ý</th>
+                </tr>
+              </thead>
+              <tbody>
+                {SIZE_GUIDE_DATA.map((row) => (
+                  <tr key={row.size}>
+                    <td className={styles.sizeGuideCellBold}>{row.size}</td>
+                    <td>{row.bust} cm</td>
+                    <td>{row.waist} cm</td>
+                    <td>{row.hips} cm</td>
+                    <td>{row.height} cm</td>
+                    <td>{row.weight} kg</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className={styles.sizeGuideTips}>
+            <h4 className={styles.sizeGuideTipsTitle}>
+              Lời khuyên từ thợ may đo MODE STUDIO:
+            </h4>
+            <ul className={styles.sizeGuideTipsList}>
+              {SIZE_MEASUREMENT_TIPS.map((tip, idx) => (
+                <li key={idx}>{tip}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

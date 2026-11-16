@@ -1,0 +1,98 @@
+@use '@/styles/abstracts' as *;
+
+.toastContainer {
+  position: fixed;
+  top: var(--space-6);
+  right: var(--space-6);
+  z-index: $z-toast;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  max-width: 420px;
+  min-width: 280px;
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-white);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--color-border);
+  animation: slideIn 250ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  @media (max-width: 640px) {
+    top: auto;
+    bottom: var(--space-4);
+    left: var(--space-4);
+    right: var(--space-4);
+    max-width: none;
+    min-width: 0;
+  }
+}
+
+.toastError {
+  border-left: 4px solid var(--color-error);
+
+  .icon {
+    color: var(--color-error);
+    flex-shrink: 0;
+  }
+}
+
+.toastSuccess {
+  border-left: 4px solid var(--color-success);
+
+  .icon {
+    color: var(--color-success);
+    flex-shrink: 0;
+  }
+}
+
+.toastInfo {
+  border-left: 4px solid var(--color-black);
+
+  .icon {
+    color: var(--color-black);
+    flex-shrink: 0;
+  }
+}
+
+.message {
+  flex: 1;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--color-text-primary);
+  word-break: break-word;
+}
+
+.closeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: var(--space-1);
+  margin-left: var(--space-1);
+  border-radius: var(--radius-sm);
+  transition: color $transition-fast, background-color $transition-fast;
+
+  &:hover {
+    color: var(--color-black);
+    background-color: var(--color-gray-100);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-black);
+    outline-offset: 2px;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

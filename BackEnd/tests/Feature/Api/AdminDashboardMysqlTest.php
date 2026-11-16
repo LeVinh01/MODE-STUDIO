@@ -270,4 +270,42 @@ class AdminDashboardMysqlTest extends TestCase
         $this->assertSame(4, $data[0]['total_quantity']);
         $this->assertSame(1400000, $data[0]['total_revenue']);
     }
+
+    public function test_mysql_summary_cancellation_rate_with_orders(): void
+    {
+        $admin = $this->createAdmin();
+        $customer = $this->createCustomer();
+        Sanctum::actingAs($admin);
+
+        $dateVn = '2026-11-10';
+        $timeUtc = Carbon::createFromFormat('Y-m-d H:i:s', '2026-11-10 12:00:00', 'Asia/Ho_Chi_Minh')->setTimezone('UTC');
+
+        // Tạo 3 đơn Delivered, 1 đơn Cancelled -> 1 / 4 * 100 = 25.0%
+        for ($i = 0; $i < 3; $i++) {
+            $o = $this->createOrder($customer, [
+                'status'       => OrderStatus::Delivered,
+                'total_amount' => 500000,
+                'paid_at'      => $timeUtc,
+            ]);
+            $o->created_at = $timeUtc;
+            $o->updated_at = $timeUtc;
+            $o->save();
+        }
+
+        $oCancelled = $this->createOrder($customer, [
+            'status'        => OrderStatus::Cancelled,
+            'total_amount'  => 300000,
+            'cancel_reason' => 'Khách đổi ý',
+        ]);
+        $oCancelled->created_at = $timeUtc;
+        $oCancelled->save();
+
+        $res = $this->getJson("/api/admin/dashboard/summary?from={$dateVn}&to={$dateVn}")
+            ->assertStatus(200);
+
+        $this->assertEquals(25.0, (float) $res->json('data.cancellation_rate'));
+        $this->assertSame(3, $res->json('data.orders_count'));
+        $this->assertSame(1, $res->json('data.orders_by_status.cancelled'));
+        $this->assertSame(3, $res->json('data.orders_by_status.delivered'));
+    }
 }

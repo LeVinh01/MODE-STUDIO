@@ -37,6 +37,53 @@ import { Spinner } from '@/components/feedback'
 import styles from './CheckoutPage.module.scss'
 
 const PHONE_REGEX = /^(0|\+84)(3|5|7|8|9)[0-9]{8}$/
+const CHECKOUT_DRAFT_KEY = 'mode_checkout_draft'
+
+interface CheckoutDraft {
+  recipientName?: string
+  recipientPhone?: string
+  shippingAddress?: string
+  note?: string
+}
+
+const loadCheckoutDraft = (): CheckoutDraft => {
+  if (typeof window === 'undefined') return {}
+  try {
+    const raw = sessionStorage.getItem(CHECKOUT_DRAFT_KEY)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw)
+    if (parsed && typeof parsed === 'object') {
+      return {
+        recipientName: typeof parsed.recipientName === 'string' ? parsed.recipientName : undefined,
+        recipientPhone: typeof parsed.recipientPhone === 'string' ? parsed.recipientPhone : undefined,
+        shippingAddress: typeof parsed.shippingAddress === 'string' ? parsed.shippingAddress : undefined,
+        note: typeof parsed.note === 'string' ? parsed.note : undefined,
+      }
+    }
+  } catch {
+    // Không làm gián đoạn trải nghiệm nếu sessionStorage bị vô hiệu hóa
+  }
+  return {}
+}
+
+const saveCheckoutDraft = (draft: CheckoutDraft) => {
+  if (typeof window === 'undefined') return
+  try {
+    // Tuyệt đối không lưu phương thức thanh toán
+    sessionStorage.setItem(CHECKOUT_DRAFT_KEY, JSON.stringify(draft))
+  } catch {
+    // Bỏ qua lỗi vượt hạn ngạch lưu trữ
+  }
+}
+
+const clearCheckoutDraft = () => {
+  if (typeof window === 'undefined') return
+  try {
+    sessionStorage.removeItem(CHECKOUT_DRAFT_KEY)
+  } catch {
+    // Bỏ qua
+  }
+}
 
 export const CheckoutPage = () => {
   const navigate = useNavigate()
@@ -56,11 +103,24 @@ export const CheckoutPage = () => {
   // Cờ ref khóa gửi: ngăn ngừa double-submit đồng thời
   const submitLockRef = useRef(false)
 
-  // Form State - khởi tạo từ user hiện tại
-  const [recipientName, setRecipientName] = useState(user?.fullName || '')
-  const [recipientPhone, setRecipientPhone] = useState(user?.phone || '')
-  const [shippingAddress, setShippingAddress] = useState('')
-  const [note, setNote] = useState('')
+  // Form State - khởi tạo từ bản nháp sessionStorage hoặc thông tin user hiện tại
+  const isVnPayEnabled = import.meta.env.VITE_ENABLE_VNPAY === 'true'
+  const [recipientName, setRecipientName] = useState(() => {
+    const draft = loadCheckoutDraft()
+    return draft.recipientName ?? user?.fullName ?? ''
+  })
+  const [recipientPhone, setRecipientPhone] = useState(() => {
+    const draft = loadCheckoutDraft()
+    return draft.recipientPhone ?? user?.phone ?? ''
+  })
+  const [shippingAddress, setShippingAddress] = useState(() => {
+    const draft = loadCheckoutDraft()
+    return draft.shippingAddress ?? ''
+  })
+  const [note, setNote] = useState(() => {
+    const draft = loadCheckoutDraft()
+    return draft.note ?? ''
+  })
   const [paymentMethod, setPaymentMethod] = useState<'cod' | 'vnpay'>('cod')
 
   // Validation & Error State
@@ -104,10 +164,42 @@ export const CheckoutPage = () => {
     })
     setSubmitError(null)
 
-    if (field === 'recipientName') setRecipientName(value)
-    if (field === 'recipientPhone') setRecipientPhone(value)
-    if (field === 'shippingAddress') setShippingAddress(value)
-    if (field === 'note') setNote(value)
+    if (field === 'recipientName') {
+      setRecipientName(value)
+      saveCheckoutDraft({
+        recipientName: value,
+        recipientPhone,
+        shippingAddress,
+        note,
+      })
+    }
+    if (field === 'recipientPhone') {
+      setRecipientPhone(value)
+      saveCheckoutDraft({
+        recipientName,
+        recipientPhone: value,
+        shippingAddress,
+        note,
+      })
+    }
+    if (field === 'shippingAddress') {
+      setShippingAddress(value)
+      saveCheckoutDraft({
+        recipientName,
+        recipientPhone,
+        shippingAddress: value,
+        note,
+      })
+    }
+    if (field === 'note') {
+      setNote(value)
+      saveCheckoutDraft({
+        recipientName,
+        recipientPhone,
+        shippingAddress,
+        note: value,
+      })
+    }
   }
 
   const validateForm = (): boolean => {
@@ -179,6 +271,9 @@ export const CheckoutPage = () => {
     try {
       const response = await orderService.createOrder(payload)
       const createdOrderCode = response.order.orderCode
+
+      // Xóa bản nháp sau khi đặt hàng thành công
+      clearCheckoutDraft()
 
       if (paymentMethod === 'vnpay') {
         setIsRedirectingToVnPay(true)
@@ -444,34 +539,36 @@ export const CheckoutPage = () => {
                     </div>
                   </label>
 
-                  {/* VNPAY */}
-                  <label
-                    className={`${styles.paymentOption} ${
-                      paymentMethod === 'vnpay' ? styles.selected : ''
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="payment_method"
-                      value="vnpay"
-                      checked={paymentMethod === 'vnpay'}
-                      onChange={() => setPaymentMethod('vnpay')}
-                      className={styles.radioInput}
-                      disabled={isSubmitting || isPossibleDuplicateOrder}
-                    />
-                    <div className={styles.paymentOptionContent}>
-                      <div className={styles.paymentOptionTitle}>
-                        <CreditCard size={18} aria-hidden="true" />
-                        <span>Cổng thanh toán VNPAY / VNPAY-QR</span>
-                        <Badge variant="success" size="sm">
-                          Trực tuyến
-                        </Badge>
+                  {/* VNPAY (chỉ hiển thị khi VITE_ENABLE_VNPAY=true) */}
+                  {isVnPayEnabled && (
+                    <label
+                      className={`${styles.paymentOption} ${
+                        paymentMethod === 'vnpay' ? styles.selected : ''
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="payment_method"
+                        value="vnpay"
+                        checked={paymentMethod === 'vnpay'}
+                        onChange={() => setPaymentMethod('vnpay')}
+                        disabled={isSubmitting || isPossibleDuplicateOrder}
+                        className={styles.radioInput}
+                      />
+                      <div className={styles.paymentOptionContent}>
+                        <div className={styles.paymentOptionTitle}>
+                          <CreditCard size={18} aria-hidden="true" />
+                          <span>Cổng thanh toán VNPAY / VNPAY-QR</span>
+                          <Badge variant="success" size="sm">
+                            Trực tuyến
+                          </Badge>
+                        </div>
+                        <p className={styles.paymentOptionDesc}>
+                          Thanh toán bảo mật qua thẻ ATM nội địa, Internet Banking hoặc mã VNPAY-QR.
+                        </p>
                       </div>
-                      <p className={styles.paymentOptionDesc}>
-                        Thanh toán bảo mật qua thẻ ATM nội địa, Internet Banking hoặc mã VNPAY-QR.
-                      </p>
-                    </div>
-                  </label>
+                    </label>
+                  )}
                 </div>
               </section>
             </div>
@@ -632,6 +729,28 @@ export const CheckoutPage = () => {
                         ? 'Đang Xử Lý Đơn Hàng...'
                         : 'Đặt Hàng Ngay'}
                   </Button>
+
+                  <p className={styles.policyConsent}>
+                    Bằng việc đặt hàng, quý khách đồng ý với{' '}
+                    <Link
+                      to="/shipping"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.policyLink}
+                    >
+                      Chính sách vận chuyển
+                    </Link>{' '}
+                    và{' '}
+                    <Link
+                      to="/policy/returns"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.policyLink}
+                    >
+                      Chính sách đổi trả
+                    </Link>{' '}
+                    của MODE STUDIO.
+                  </p>
 
                   <div className={styles.securityFooter}>
                     <ShieldCheck size={16} aria-hidden="true" />
