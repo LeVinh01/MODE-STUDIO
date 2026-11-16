@@ -32,6 +32,8 @@ class AdminDashboardMysqlTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected static bool $mysqlTestingMigrated = false;
+
     protected $connectionsToTransact = ['mysql_testing'];
 
     protected function beforeRefreshingDatabase(): void
@@ -39,12 +41,39 @@ class AdminDashboardMysqlTest extends TestCase
         config(['database.default' => 'mysql_testing']);
     }
 
+    /**
+     * Tùy biến refreshTestDatabase để đảm bảo an toàn tuyệt đối và schema sạch:
+     * 1. SAFETY GUARD: bắt buộc kiểm tra tên database là 'mode_studio_testing' trước khi can thiệp.
+     * 2. Chạy migrate:fresh đúng 1 lần cho suite MySQL độc lập với cờ tĩnh của SQLite.
+     * 3. Mở transaction cho từng test method để rollback sạch 100% dữ liệu.
+     */
+    protected function refreshTestDatabase(): void
+    {
+        config(['database.default' => 'mysql_testing']);
+
+        $conn = DB::connection('mysql_testing');
+        $dbName = $conn->getDatabaseName();
+        if ($dbName !== 'mode_studio_testing') {
+            throw new \RuntimeException("SAFETY GUARD: Expected database 'mode_studio_testing', but got '{$dbName}'! Aborting test immediately.");
+        }
+
+        if (! static::$mysqlTestingMigrated) {
+            $this->artisan('migrate:fresh', [
+                '--database' => 'mysql_testing',
+                '--drop-views' => true,
+            ]);
+            $this->app[\Illuminate\Contracts\Console\Kernel::class]->setArtisan(null);
+            static::$mysqlTestingMigrated = true;
+        }
+
+        $this->beginDatabaseTransaction();
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
 
         config(['database.default' => 'mysql_testing']);
-        DB::purge('mysql_testing');
 
         try {
             DB::connection('mysql_testing')->getPdo();

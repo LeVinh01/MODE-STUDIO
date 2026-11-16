@@ -59,6 +59,12 @@ class BusinessRulesTest extends TestCase
         ]);
     }
 
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+        parent::tearDown();
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Helper Methods
     // ─────────────────────────────────────────────────────────────────────────
@@ -776,8 +782,6 @@ class BusinessRulesTest extends TestCase
             'subtotal'         => 1000000,
             'shipping_fee'     => 0,
             'total_amount'     => 1000000,
-            'created_at'       => now(),
-            'updated_at'       => now(),
         ]);
 
         // 2. Pending order (excluded from revenue)
@@ -793,8 +797,6 @@ class BusinessRulesTest extends TestCase
             'subtotal'         => 500000,
             'shipping_fee'     => 30000,
             'total_amount'     => 530000,
-            'created_at'       => now(),
-            'updated_at'       => now(),
         ]);
 
         // 3. Cancelled order (excluded from revenue)
@@ -810,8 +812,6 @@ class BusinessRulesTest extends TestCase
             'subtotal'         => 2000000,
             'shipping_fee'     => 0,
             'total_amount'     => 2000000,
-            'created_at'       => now(),
-            'updated_at'       => now(),
         ]);
 
         $res = $this->actingAs($admin, 'sanctum')->getJson('/api/admin/dashboard/summary');
@@ -830,60 +830,80 @@ class BusinessRulesTest extends TestCase
         $admin = $this->createAdmin();
         $customer = $this->createCustomer();
 
-        $targetVnDate = '2026-11-15';
-        // 23:30 Vietnam time (UTC+7) is 16:30 UTC on the same calendar day
-        $vnLateNightUtc = Carbon::createFromFormat('Y-m-d H:i:s', "{$targetVnDate} 23:30:00", 'Asia/Ho_Chi_Minh')
-            ->setTimezone('UTC');
+        // Kiểm tra độc lập với thời gian chạy test bằng ít nhất 2 ngày đích khác nhau (boundary dates)
+        $testTargetDates = ['2026-11-15', '2027-06-20'];
 
-        $vnMorningUtc = Carbon::createFromFormat('Y-m-d H:i:s', "{$targetVnDate} 09:00:00", 'Asia/Ho_Chi_Minh')
-            ->setTimezone('UTC');
+        try {
+            foreach ($testTargetDates as $index => $targetVnDate) {
+                // Đóng băng thời gian tại ngày test (12:00 trưa giờ VN)
+                Carbon::setTestNow(Carbon::createFromFormat('Y-m-d H:i:s', "{$targetVnDate} 12:00:00", 'Asia/Ho_Chi_Minh'));
 
-        // Order 1: Pending, created in morning VN time
-        Order::create([
-            'order_code'       => 'MSTIME01',
-            'user_id'          => $customer->id,
-            'status'           => OrderStatus::Pending,
-            'payment_method'   => PaymentMethod::Cod,
-            'payment_status'   => PaymentStatus::Unpaid,
-            'recipient_name'   => 'A',
-            'recipient_phone'  => '0912345678',
-            'shipping_address' => 'HCM',
-            'subtotal'         => 500000,
-            'shipping_fee'     => 30000,
-            'total_amount'     => 530000,
-            'created_at'       => $vnMorningUtc,
-            'updated_at'       => $vnMorningUtc,
-        ]);
+                // 23:30 Vietnam time (UTC+7) is 16:30 UTC on the same calendar day
+                $vnLateNightUtc = Carbon::createFromFormat('Y-m-d H:i:s', "{$targetVnDate} 23:30:00", 'Asia/Ho_Chi_Minh')
+                    ->setTimezone('UTC');
 
-        // Order 2: Cancelled, created at 23:30 VN time
-        Order::create([
-            'order_code'       => 'MSTIME02',
-            'user_id'          => $customer->id,
-            'status'           => OrderStatus::Cancelled,
-            'payment_method'   => PaymentMethod::Cod,
-            'payment_status'   => PaymentStatus::Unpaid,
-            'recipient_name'   => 'B',
-            'recipient_phone'  => '0912345678',
-            'shipping_address' => 'HCM',
-            'subtotal'         => 500000,
-            'shipping_fee'     => 30000,
-            'total_amount'     => 530000,
-            'created_at'       => $vnLateNightUtc,
-            'updated_at'       => $vnLateNightUtc,
-        ]);
+                $vnMorningUtc = Carbon::createFromFormat('Y-m-d H:i:s', "{$targetVnDate} 09:00:00", 'Asia/Ho_Chi_Minh')
+                    ->setTimezone('UTC');
 
-        // Query dashboard summary for exactly targetVnDate
-        $res = $this->actingAs($admin, 'sanctum')->getJson("/api/admin/dashboard/summary?from={$targetVnDate}&to={$targetVnDate}");
-        $res->assertStatus(200);
+                $nextDayVnDate = Carbon::createFromFormat('Y-m-d', $targetVnDate, 'Asia/Ho_Chi_Minh')
+                    ->addDay()
+                    ->format('Y-m-d');
 
-        // Both orders must fall on this VN day (total = 2, cancelled = 1, cancellation_rate = 50.0%)
-        $this->assertEquals(2, array_sum($res->json('data.orders_by_status')));
-        $this->assertEquals(1, $res->json('data.orders_by_status.cancelled'));
-        $this->assertEquals(50.0, $res->json('data.cancellation_rate'));
+                // Order 1: Pending, created in morning VN time
+                $o1 = Order::create([
+                    'order_code'       => 'MSTIME01_' . $index,
+                    'user_id'          => $customer->id,
+                    'status'           => OrderStatus::Pending,
+                    'payment_method'   => PaymentMethod::Cod,
+                    'payment_status'   => PaymentStatus::Unpaid,
+                    'recipient_name'   => 'A',
+                    'recipient_phone'  => '0912345678',
+                    'shipping_address' => 'HCM',
+                    'subtotal'         => 500000,
+                    'shipping_fee'     => 30000,
+                    'total_amount'     => 530000,
+                ]);
+                $o1->forceFill([
+                    'created_at' => $vnMorningUtc,
+                    'updated_at' => $vnMorningUtc,
+                ])->save();
 
-        // Querying for the next day (2026-11-16) must NOT include the 23:30 order
-        $nextDayRes = $this->actingAs($admin, 'sanctum')->getJson('/api/admin/dashboard/summary?from=2026-11-16&to=2026-11-16');
-        $this->assertEquals(0, array_sum($nextDayRes->json('data.orders_by_status')));
+                // Order 2: Cancelled, created at 23:30 VN time
+                $o2 = Order::create([
+                    'order_code'       => 'MSTIME02_' . $index,
+                    'user_id'          => $customer->id,
+                    'status'           => OrderStatus::Cancelled,
+                    'payment_method'   => PaymentMethod::Cod,
+                    'payment_status'   => PaymentStatus::Unpaid,
+                    'recipient_name'   => 'B',
+                    'recipient_phone'  => '0912345678',
+                    'shipping_address' => 'HCM',
+                    'subtotal'         => 500000,
+                    'shipping_fee'     => 30000,
+                    'total_amount'     => 530000,
+                ]);
+                $o2->forceFill([
+                    'created_at' => $vnLateNightUtc,
+                    'updated_at' => $vnLateNightUtc,
+                ])->save();
+
+                // Query dashboard summary for exactly targetVnDate
+                $res = $this->actingAs($admin, 'sanctum')->getJson("/api/admin/dashboard/summary?from={$targetVnDate}&to={$targetVnDate}");
+                $res->assertStatus(200);
+
+                // Both orders must fall on this VN day (total = 2, cancelled = 1, cancellation_rate = 50.0%)
+                $this->assertEquals(2, array_sum($res->json('data.orders_by_status')));
+                $this->assertEquals(1, $res->json('data.orders_by_status.cancelled'));
+                $this->assertEquals(50.0, $res->json('data.cancellation_rate'));
+
+                // Querying for the next day must NOT include the 23:30 order
+                $nextDayRes = $this->actingAs($admin, 'sanctum')->getJson("/api/admin/dashboard/summary?from={$nextDayVnDate}&to={$nextDayVnDate}");
+                $nextDayRes->assertStatus(200);
+                $this->assertEquals(0, array_sum($nextDayRes->json('data.orders_by_status')));
+            }
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 
     /**
