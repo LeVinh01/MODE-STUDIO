@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { AlertCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { AlertCircle, ChevronDown, ChevronUp, Minus, Plus } from 'lucide-react'
 import { Breadcrumbs, type BreadcrumbItem } from '@/components/navigation/Breadcrumbs'
 import { Button } from '@/components/common/Button'
 import { Toast } from '@/components/feedback'
@@ -18,6 +18,8 @@ import { SIZE_GUIDE_DATA, SIZE_MEASUREMENT_TIPS } from '@/config/sizeGuide'
 import { cn } from '@/utils/cn'
 import styles from './ProductDetailPage.module.scss'
 
+const MAX_LINE_QUANTITY = 20
+
 export const ProductDetailPage = () => {
   const { slug } = useParams<{ slug: string }>()
   const dispatch = useAppDispatch()
@@ -33,6 +35,8 @@ export const ProductDetailPage = () => {
   // 2. Selection states
   const [selectedColorId, setSelectedColorId] = useState<number | null>(null)
   const [selectedSizeId, setSelectedSizeId] = useState<number | null>(null)
+  const [quantity, setQuantity] = useState<number>(1)
+  const [quantityInput, setQuantityInput] = useState<string>('1')
   const [sizeWarning, setSizeWarning] = useState<string | null>(null)
   const [isAddingToCart, setIsAddingToCart] = useState<boolean>(false)
   const [addToCartError, setAddToCartError] = useState<string | null>(null)
@@ -52,6 +56,8 @@ export const ProductDetailPage = () => {
     setPrevSlug(slug)
     setSelectedColorId(null)
     setSelectedSizeId(null)
+    setQuantity(1)
+    setQuantityInput('1')
     setSizeWarning(null)
     setIsAddingToCart(false)
     setAddToCartError(null)
@@ -235,6 +241,10 @@ export const ProductDetailPage = () => {
       v.sizeId === selectedSizeId,
   )
 
+  const maxAllowedStock = activeVariant
+    ? Math.min(Math.max(0, activeVariant.stock), MAX_LINE_QUANTITY)
+    : 1
+
   const isOverallOutOfStock =
     product &&
     (product.inStock === false ||
@@ -243,6 +253,25 @@ export const ProductDetailPage = () => {
         product.variants.every((v) => v.stock <= 0)))
 
   const isVariantOutOfStock = Boolean(activeVariant && activeVariant.stock <= 0)
+
+  const isSelectorDisabled = Boolean(
+    !activeVariant ||
+      isOverallOutOfStock ||
+      isVariantOutOfStock ||
+      (activeVariant?.stock ?? 0) <= 0 ||
+      isAddingToCart,
+  )
+
+  // Điều chỉnh số lượng khi activeVariant thay đổi hoặc khi tồn kho thấp hơn số lượng đang chọn
+  const [prevVariantId, setPrevVariantId] = useState<string | null>(null)
+  if ((activeVariant?.id ?? null) !== prevVariantId) {
+    setPrevVariantId(activeVariant?.id ?? null)
+    setQuantity(1)
+    setQuantityInput('1')
+  } else if (activeVariant && maxAllowedStock > 0 && quantity > maxAllowedStock) {
+    setQuantity(maxAllowedStock)
+    setQuantityInput(String(maxAllowedStock))
+  }
 
   // Handlers lựa chọn màu & size
   const handleSelectColor = (colorId: number) => {
@@ -273,7 +302,55 @@ export const ProductDetailPage = () => {
     setAddToCartError(null)
   }
 
-  // 7. Handler Thêm vào giỏ hàng (mặc định số lượng = 1)
+  // Handlers điều chỉnh số lượng
+  const handleQuantityChange = (delta: number) => {
+    if (isSelectorDisabled) return
+    const next = Math.max(1, Math.min(maxAllowedStock, quantity + delta))
+    setQuantity(next)
+    setQuantityInput(String(next))
+    setAddToCartError(null)
+  }
+
+  const handleQuantityInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isSelectorDisabled) return
+    const cleaned = e.target.value.replace(/[^0-9]/g, '')
+    setQuantityInput(cleaned)
+    const parsed = parseInt(cleaned, 10)
+    if (!isNaN(parsed) && parsed >= 1) {
+      const clamped = Math.min(parsed, maxAllowedStock)
+      setQuantity(clamped)
+    }
+  }
+
+  const handleQuantityInputBlur = () => {
+    if (isSelectorDisabled) {
+      setQuantity(1)
+      setQuantityInput('1')
+      return
+    }
+    const parsed = parseInt(quantityInput, 10)
+    if (isNaN(parsed) || parsed < 1) {
+      setQuantity(1)
+      setQuantityInput('1')
+      setAddToCartError(null)
+    } else if (parsed > maxAllowedStock) {
+      setQuantity(maxAllowedStock)
+      setQuantityInput(String(maxAllowedStock))
+      if (activeVariant && activeVariant.stock < parsed) {
+        setAddToCartError(`Chỉ còn ${activeVariant.stock} sản phẩm`)
+      } else if (parsed > MAX_LINE_QUANTITY) {
+        setAddToCartError(
+          `Số lượng tối đa cho mỗi sản phẩm trong giỏ hàng là ${MAX_LINE_QUANTITY}.`,
+        )
+      }
+    } else {
+      setQuantity(parsed)
+      setQuantityInput(String(parsed))
+      setAddToCartError(null)
+    }
+  }
+
+  // 7. Handler Thêm vào giỏ hàng
   const handleAddToCart = async () => {
     if (!product) return
     setAddToCartError(null)
@@ -303,13 +380,20 @@ export const ProductDetailPage = () => {
       return
     }
 
+    if (quantity > maxAllowedStock) {
+      setQuantity(maxAllowedStock)
+      setQuantityInput(String(maxAllowedStock))
+      setAddToCartError(`Chỉ còn ${stock} sản phẩm`)
+      return
+    }
+
     setIsAddingToCart(true)
 
     try {
       const result = await dispatch(
         addToCart({
           variantId: Number(activeVariant.id),
-          quantity: 1, // Mặc định số lượng 1
+          quantity,
           stockQuantity: activeVariant.stock,
         }),
       ).unwrap()
@@ -586,6 +670,53 @@ export const ProductDetailPage = () => {
                 )}
               </div>
             )}
+
+            {/* Bộ chọn Số lượng */}
+            <div className={styles.quantitySection}>
+              <div className={styles.quantityHeader}>
+                <span className={styles.quantityLabel}>SỐ LƯỢNG</span>
+              </div>
+              <div className={styles.quantityRow}>
+                <div
+                  className={cn(
+                    styles.quantityControl,
+                    isSelectorDisabled && styles.quantityDisabled,
+                  )}
+                  role="group"
+                  aria-label="Chọn số lượng"
+                >
+                  <button
+                    type="button"
+                    className={styles.qtyBtn}
+                    onClick={() => handleQuantityChange(-1)}
+                    disabled={isSelectorDisabled || quantity <= 1}
+                    aria-label="Giảm số lượng"
+                  >
+                    <Minus size={14} />
+                  </button>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    className={styles.qtyInput}
+                    value={quantityInput}
+                    onChange={handleQuantityInputChange}
+                    onBlur={handleQuantityInputBlur}
+                    disabled={isSelectorDisabled}
+                    aria-label="Số lượng sản phẩm"
+                  />
+                  <button
+                    type="button"
+                    className={styles.qtyBtn}
+                    onClick={() => handleQuantityChange(1)}
+                    disabled={isSelectorDisabled || quantity >= maxAllowedStock}
+                    aria-label="Tăng số lượng"
+                  >
+                    <Plus size={14} />
+                  </button>
+                </div>
+              </div>
+            </div>
 
             {/* Thông báo tồn kho thấp (12px khi còn ít <= 5) */}
             {activeVariant && activeVariant.stock > 0 && activeVariant.stock <= 5 && (
