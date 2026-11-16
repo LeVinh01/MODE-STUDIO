@@ -1,15 +1,18 @@
 import { useState, useEffect, useRef, type ChangeEvent, type KeyboardEvent } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { X, AlertCircle } from 'lucide-react'
 import { ProductCompactGrid } from '@/components/storefront/ProductCompactGrid'
 import { Button } from '@/components/common/Button'
 import { productService } from '@/services/api/productService'
-import type { Product } from '@/types/product'
+import type { Product, ProductSuggestion } from '@/types/product'
+import { formatCurrency } from '@/utils/formatters'
+import { cn } from '@/utils/cn'
 import styles from './SearchPage.module.scss'
 
 const SEARCH_PER_PAGE = 12
 
 export const SearchPage = () => {
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
 
   // 1. Đồng bộ từ khóa trên URL (?q=... hoặc ?search=...)
@@ -19,7 +22,7 @@ export const SearchPage = () => {
   const [searchTerm, setSearchTerm] = useState(urlQuery)
   const [activeQuery, setActiveQuery] = useState(urlQuery.trim())
 
-  // Trạng thái tìm kiếm
+  // Trạng thái tìm kiếm chính
   const [searchResults, setSearchResults] = useState<Product[]>([])
   const [totalCount, setTotalCount] = useState<number>(0)
   const [currentPage, setCurrentPage] = useState<number>(1)
@@ -29,12 +32,20 @@ export const SearchPage = () => {
   const [searchError, setSearchError] = useState<string | null>(null)
   const [retryTrigger, setRetryTrigger] = useState<number>(0)
 
+  // Trạng thái gợi ý trực tiếp (Live Suggestions Dropdown)
+  const [suggestions, setSuggestions] = useState<ProductSuggestion[]>([])
+  const [isSuggestionsLoading, setIsSuggestionsLoading] = useState<boolean>(false)
+  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState<boolean>(false)
+  const [highlightedIndex, setHighlightedIndex] = useState<number>(-1)
+
   // Khối "Có thể bạn quan tâm" (sản phẩm bán chạy / hàng mới)
   const [recommendations, setRecommendations] = useState<Product[]>([])
   const [isRecLoading, setIsRecLoading] = useState<boolean>(false)
 
   const inputRef = useRef<HTMLInputElement>(null)
+  const searchContainerRef = useRef<HTMLDivElement>(null)
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   // 2. Tự động focus vào ô tìm kiếm khi vào trang & đặt title
   useEffect(() => {
@@ -51,6 +62,36 @@ export const SearchPage = () => {
     setPrevUrlQuery(urlQuery)
     setSearchTerm(urlQuery)
   }
+
+  // 3.1 Xử lý đóng dropdown gợi ý khi click ngoài vùng tìm kiếm
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(e.target as Node)
+      ) {
+        setIsSuggestionsOpen(false)
+        setHighlightedIndex(-1)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('touchstart', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
+    }
+  }, [])
+
+  // 3.2 Dọn dẹp debounce timer và abort controller khi unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
+      abortControllerRef.current?.abort()
+    }
+  }, [])
 
   // 4. Tải gợi ý "CÓ THỂ BẠN QUAN TÂM" (Bán chạy nhất, tối đa 8 sản phẩm; fallback hàng mới về)
   useEffect(() => {
@@ -163,7 +204,7 @@ export const SearchPage = () => {
     }
   }, [urlQuery, retryTrigger])
 
-  // 6. Xử lý gõ chữ với debounce ~300ms
+  // 6. Xử lý gõ chữ: gợi ý sản phẩm trực tiếp (debounced ~300ms, độ dài >= 2)
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value
     setSearchTerm(val)
@@ -172,40 +213,146 @@ export const SearchPage = () => {
       clearTimeout(debounceTimerRef.current)
     }
 
-    debounceTimerRef.current = setTimeout(() => {
-      const trimmed = val.trim()
-      if (trimmed) {
-        setSearchParams({ q: trimmed }, { replace: true })
-      } else {
-        setSearchParams({}, { replace: true })
+    const trimmed = val.trim()
+    if (trimmed.length < 2) {
+      abortControllerRef.current?.abort()
+      setSuggestions([])
+      setIsSuggestionsLoading(false)
+      setIsSuggestionsOpen(false)
+      setHighlightedIndex(-1)
+      return
+    }
+
+    setIsSuggestionsOpen(true)
+    setIsSuggestionsLoading(true)
+    setHighlightedIndex(-1)
+
+    debounceTimerRef.current = setTimeout(async () => {
+      abortControllerRef.current?.abort()
+      const controller = new AbortController()
+      abortControllerRef.current = controller
+
+      try {
+        const results = await productService.getSuggestions(
+          trimmed,
+          controller.signal,
+        )
+        if (!controller.signal.aborted) {
+          setSuggestions(results)
+          setIsSuggestionsLoading(false)
+          setHighlightedIndex(-1)
+        }
+      } catch (err: unknown) {
+        if (!controller.signal.aborted) {
+          const isAbort =
+            (err as { name?: string })?.name === 'CanceledError' ||
+            (err as { name?: string })?.name === 'AbortError'
+          if (!isAbort) {
+            setSuggestions([])
+            setIsSuggestionsLoading(false)
+          }
+        }
       }
     }, 300)
   }
 
-  // Phím Enter tìm ngay, Esc không làm mất dữ liệu
+  // Chọn gợi ý -> chuyển hướng sang trang chi tiết sản phẩm /products/{slug}
+  const handleSelectSuggestion = (item: ProductSuggestion) => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
+    abortControllerRef.current?.abort()
+    setIsSuggestionsOpen(false)
+    setHighlightedIndex(-1)
+    navigate(`/products/${item.slug}`)
+  }
+
+  // Thực hiện tìm kiếm toàn diện (cập nhật URL query ?q=...)
+  const handleSubmitSearch = () => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
+    abortControllerRef.current?.abort()
+    setIsSuggestionsOpen(false)
+    setHighlightedIndex(-1)
+
+    const trimmed = searchTerm.trim()
+    if (trimmed) {
+      setSearchParams({ q: trimmed }, { replace: true })
+    } else {
+      setSearchParams({}, { replace: true })
+    }
+  }
+
+  // Điều hướng bằng bàn phím: ArrowDown / ArrowUp / Enter / Escape
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      if (!isSuggestionsOpen && suggestions.length > 0) {
+        setIsSuggestionsOpen(true)
+        setHighlightedIndex(0)
+        return
+      }
+      if (isSuggestionsOpen && suggestions.length > 0) {
+        setHighlightedIndex((prev) =>
+          prev < suggestions.length - 1 ? prev + 1 : 0,
+        )
+      }
+      return
+    }
+
+    if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      if (isSuggestionsOpen && suggestions.length > 0) {
+        setHighlightedIndex((prev) =>
+          prev > 0 ? prev - 1 : suggestions.length - 1,
+        )
+      }
+      return
+    }
+
     if (e.key === 'Enter') {
       e.preventDefault()
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current)
+      if (
+        isSuggestionsOpen &&
+        highlightedIndex >= 0 &&
+        suggestions[highlightedIndex]
+      ) {
+        handleSelectSuggestion(suggestions[highlightedIndex])
+        return
       }
-      const trimmed = searchTerm.trim()
-      if (trimmed) {
-        setSearchParams({ q: trimmed }, { replace: true })
-      } else {
-        setSearchParams({}, { replace: true })
-      }
-    } else if (e.key === 'Escape') {
-      e.stopPropagation()
+      handleSubmitSearch()
+      return
+    }
+
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      setIsSuggestionsOpen(false)
+      setHighlightedIndex(-1)
+    }
+  }
+
+  // Khi focus vào ô tìm kiếm: mở lại dropdown nếu đã có từ khóa >= 2 ký tự
+  const handleInputFocus = () => {
+    if (
+      searchTerm.trim().length >= 2 &&
+      (suggestions.length > 0 || isSuggestionsLoading)
+    ) {
+      setIsSuggestionsOpen(true)
     }
   }
 
   // Nút xóa (X) khi có chữ
   const handleClear = () => {
     setSearchTerm('')
+    setSuggestions([])
+    setIsSuggestionsOpen(false)
+    setIsSuggestionsLoading(false)
+    setHighlightedIndex(-1)
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current)
     }
+    abortControllerRef.current?.abort()
     setSearchParams({}, { replace: true })
     inputRef.current?.focus()
   }
@@ -244,7 +391,7 @@ export const SearchPage = () => {
       <div className={styles.searchContainer}>
         {/* 1. KHUNG TÌM KIẾM TRUNG TÂM (Đường gạch chân, tối đa 560-640px, cao ~40px, căn giữa, không có icon kính lúp) */}
         <section className={styles.searchHeader} aria-label="Tìm kiếm sản phẩm">
-          <div className={styles.inputWrapper}>
+          <div className={styles.inputWrapper} ref={searchContainerRef}>
             <label htmlFor="storefront-search-input" className={styles.srOnly}>
               Nhập từ khóa tìm kiếm sản phẩm
             </label>
@@ -252,13 +399,22 @@ export const SearchPage = () => {
               id="storefront-search-input"
               ref={inputRef}
               type="text"
+              role="combobox"
+              aria-autocomplete="list"
+              aria-expanded={isSuggestionsOpen}
+              aria-controls="search-suggestions-dropdown"
+              aria-activedescendant={
+                highlightedIndex >= 0 && suggestions[highlightedIndex]
+                  ? `suggestion-option-${suggestions[highlightedIndex].id}`
+                  : undefined
+              }
               value={searchTerm}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
+              onFocus={handleInputFocus}
               placeholder="BẠN ĐANG TÌM KIẾM GÌ?"
               className={styles.searchInput}
               autoComplete="off"
-              aria-autocomplete="none"
               aria-label="Tìm kiếm sản phẩm"
             />
             {searchTerm.length > 0 && (
@@ -270,6 +426,75 @@ export const SearchPage = () => {
               >
                 <X size={16} aria-hidden="true" />
               </button>
+            )}
+
+            {/* LIVE SUGGESTIONS DROPDOWN (AUTOCOMPLETE) */}
+            {isSuggestionsOpen && (
+              <div
+                id="search-suggestions-dropdown"
+                className={styles.suggestionsDropdown}
+                role="listbox"
+                aria-label="Gợi ý sản phẩm"
+              >
+                {isSuggestionsLoading ? (
+                  <div
+                    className={styles.suggestionsLoading}
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <span
+                      className={styles.suggestionsSpinner}
+                      aria-hidden="true"
+                    />
+                    <span>Đang tìm kiếm...</span>
+                  </div>
+                ) : suggestions.length > 0 ? (
+                  <ul className={styles.suggestionsList}>
+                    {suggestions.map((item, index) => (
+                      <li
+                        key={item.id}
+                        id={`suggestion-option-${item.id}`}
+                        role="option"
+                        aria-selected={index === highlightedIndex}
+                        className={cn(
+                          styles.suggestionItem,
+                          index === highlightedIndex &&
+                            styles.suggestionItemActive,
+                        )}
+                        onMouseEnter={() => setHighlightedIndex(index)}
+                        onClick={() => handleSelectSuggestion(item)}
+                      >
+                        <div className={styles.suggestionThumbWrapper}>
+                          {item.thumbnail ? (
+                            <img
+                              src={item.thumbnail}
+                              alt={item.name}
+                              className={styles.suggestionThumb}
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className={styles.suggestionThumbFallback}>
+                              <span>MODE</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className={styles.suggestionInfo}>
+                          <span className={styles.suggestionName}>
+                            {item.name}
+                          </span>
+                          <span className={styles.suggestionPrice}>
+                            {formatCurrency(item.price)}
+                          </span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className={styles.suggestionsEmpty} role="status">
+                    <span>Không tìm thấy sản phẩm</span>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </section>

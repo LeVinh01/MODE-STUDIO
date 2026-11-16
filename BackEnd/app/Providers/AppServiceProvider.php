@@ -60,5 +60,14 @@ class AppServiceProvider extends ServiceProvider
                 ], 429, $headers);
             });
         });
+
+        // Rate limiter cho gợi ý tìm kiếm sản phẩm: 60 lần/phút theo IP
+        RateLimiter::for('suggestions', function (Request $request) {
+            return Limit::perMinute(60)->by($request->ip())->response(function (Request $request, array $headers) {
+                return response()->json([
+                    'message' => 'Bạn đã gửi quá nhiều yêu cầu tìm kiếm gợi ý. Vui lòng thử lại sau 1 phút.',
+                ], 429, $headers);
+            });
+        });
     }
 }

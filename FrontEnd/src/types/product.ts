@@ -79,3 +79,12 @@ export interface PaginatedProducts {
   items: Product[]
   meta: PaginationMeta
 }
+
+export interface ProductSuggestion {
+  id: number | string
+  name: string
+  slug: string
+  thumbnail: string | null
+  price: number
+}
+

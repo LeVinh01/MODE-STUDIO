@@ -152,4 +152,42 @@ class ProductSearchMysqlTest extends TestCase
         $resPercent->assertStatus(200);
         $this->assertNotEquals(12, $resPercent->json('meta.total'));
     }
+
+    public function test_mysql_suggestions_handles_vietnamese_accents_and_name_only(): void
+    {
+        // 1. "ao so mi" (không dấu) gợi ý đúng "Áo Sơ Mi Poplin Cotton Ai Cập"
+        $resAoSoMi = $this->getJson('/api/products/suggestions?q=ao+so+mi');
+        $resAoSoMi->assertStatus(200);
+        $slugs = collect($resAoSoMi->json('data'))->pluck('slug')->all();
+        $this->assertContains('ao-so-mi-poplin-cotton-ai-cap', $slugs);
+
+        // 2. Trả về tối đa 6 sản phẩm và có cấu trúc hợp đồng
+        $resAo = $this->getJson('/api/products/suggestions?q=ao');
+        $resAo->assertStatus(200);
+        $items = $resAo->json('data');
+        $this->assertLessThanOrEqual(6, count($items));
+        $this->assertGreaterThan(0, count($items));
+        foreach ($items as $item) {
+            $this->assertArrayHasKey('id', $item);
+            $this->assertArrayHasKey('name', $item);
+            $this->assertArrayHasKey('slug', $item);
+            $this->assertArrayHasKey('thumbnail', $item);
+            $this->assertArrayHasKey('price', $item);
+        }
+
+        // 3. Không khớp theo brand ("Heritage")
+        $resBrand = $this->getJson('/api/products/suggestions?q=Heritage');
+        $resBrand->assertStatus(200);
+        $this->assertCount(0, $resBrand->json('data'));
+
+        // 4. Từ khóa < 2 ký tự trả về 422
+        $this->getJson('/api/products/suggestions?q=a')
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['q']);
+
+        // 5. Wildcards % và _ được escape
+        $resWildcard = $this->getJson('/api/products/suggestions?q=%25%25');
+        $resWildcard->assertStatus(200);
+        $this->assertCount(0, $resWildcard->json('data'));
+    }
 }
