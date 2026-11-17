@@ -1,9 +1,20 @@
 import { useEffect, useState, useCallback } from 'react'
 import { adminProductService } from '@/services/api/adminProductService'
-import type { AdminLookups } from '@/types/adminProduct'
+import type { AdminLookups, ApiAdminLookupColor } from '@/types/adminProduct'
 import axios from 'axios'
 
 let memoryLookupsCache: AdminLookups | null = null
+
+export const addColorToLookupsCache = (color: ApiAdminLookupColor) => {
+  if (memoryLookupsCache) {
+    if (!memoryLookupsCache.colors.some((c) => c.id === color.id)) {
+      memoryLookupsCache = {
+        ...memoryLookupsCache,
+        colors: [...memoryLookupsCache.colors, color],
+      }
+    }
+  }
+}
 
 const EMPTY_LOOKUPS: AdminLookups = {
   categories: [],
@@ -60,10 +71,23 @@ export const useAdminLookups = () => {
     setReloadKey((prev) => prev + 1)
   }, [])
 
+  const addColor = useCallback((newColor: ApiAdminLookupColor) => {
+    addColorToLookupsCache(newColor)
+    setLookups((prev) => {
+      if (!prev) return prev
+      if (prev.colors.some((c) => c.id === newColor.id)) return prev
+      return {
+        ...prev,
+        colors: [...prev.colors, newColor],
+      }
+    })
+  }, [])
+
   return {
     lookups: lookups || EMPTY_LOOKUPS,
     isLoading,
     error,
     retry,
+    addColor,
   }
 }

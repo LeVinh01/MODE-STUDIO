@@ -38,6 +38,15 @@ export const adminRoutes: RouteObject[] = [
     },
   },
   {
+    path: 'colors',
+    lazy: async () => {
+      const { ColorManagementPage } = await import(
+        '@/pages/admin/ColorManagementPage/ColorManagementPage'
+      )
+      return { Component: ColorManagementPage }
+    },
+  },
+  {
     path: 'orders',
     lazy: async () => {
       const { OrderManagementPage } = await import(

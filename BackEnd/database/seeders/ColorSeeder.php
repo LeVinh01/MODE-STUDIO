@@ -27,7 +27,21 @@ class ColorSeeder extends Seeder
         ];
 
         foreach ($colors as $color) {
-            Color::firstOrCreate(['name' => $color['name']], $color);
+            $hex = strtolower($color['hex_code']);
+            $name = $color['name'];
+
+            $exists = Color::where('name', $name)
+                ->orWhereRaw('LOWER(hex_code) = ?', [$hex])
+                ->exists();
+
+            if (!$exists) {
+                Color::create([
+                    'name'     => $name,
+                    'hex_code' => $hex,
+                ]);
+            }
         }
+
+        $this->call(ExtraColorSeeder::class);
     }
 }

@@ -72,3 +72,80 @@
     margin-top: 2px;
   }
 }
+
+.colorHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+}
+
+.quickAddColorLink {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-primary, #a18a70);
+  cursor: pointer;
+  font-weight: var(--font-weight-medium);
+  transition: opacity 0.15s ease;
+
+  &:hover {
+    text-decoration: underline;
+    opacity: 0.85;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.quickColorPanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  margin-bottom: var(--space-3);
+  background-color: var(--color-background-subtle, #f9f9f9);
+  border: 1px dashed var(--color-border, #d1d5db);
+  border-radius: var(--radius-md);
+}
+
+.quickColorPanelTitle {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.quickColorInputs {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.quickColorNative {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.quickColorActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.quickColorError {
+  font-size: var(--font-size-xs);
+  color: var(--color-error, #dc2626);
+}
