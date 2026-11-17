@@ -13,4 +13,5 @@ export * from './CategoryIconGrid'
 export * from './PromoBanner'
 export * from './ProductRow'
 export * from './ClosingBanner'
+export * from './ImageLightbox'
 

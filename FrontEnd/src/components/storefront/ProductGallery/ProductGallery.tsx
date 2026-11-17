@@ -1,6 +1,8 @@
 import { useState, useMemo, useRef, useEffect, type UIEvent } from 'react'
+import { ZoomIn } from 'lucide-react'
 import type { ProductImage } from '@/types/product'
 import { useMediaQuery } from '@/hooks'
+import { ImageLightbox } from '@/components/storefront/ImageLightbox'
 import { cn } from '@/utils/cn'
 import styles from './ProductGallery.module.scss'
 
@@ -8,16 +10,29 @@ export interface ProductGalleryProps {
   images: ProductImage[]
   selectedColorId?: number | null
   productName: string
+  onImageClick?: (index: number) => void
 }
 
 export const ProductGallery = ({
   images,
   selectedColorId,
   productName,
+  onImageClick,
 }: ProductGalleryProps) => {
   const isDesktop = useMediaQuery('(min-width: 900px)')
   const [activeIndex, setActiveIndex] = useState(0)
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState(0)
   const sliderRef = useRef<HTMLDivElement>(null)
+
+  const handleOpenLightbox = (index: number) => {
+    if (onImageClick) {
+      onImageClick(index)
+      return
+    }
+    setLightboxIndex(index)
+    setIsLightboxOpen(true)
+  }
 
   // 1. Lọc ảnh theo màu đang chọn hoặc toàn bộ ảnh nếu không phân màu
   const displayImages = useMemo(() => {
@@ -74,7 +89,13 @@ export const ProductGallery = ({
       {isDesktop ? (
         <div className={styles.desktopGallery}>
           {displayImages.map((img, idx) => (
-            <div key={img.id || idx} className={styles.imageItem}>
+            <button
+              key={img.id || idx}
+              type="button"
+              className={styles.imageItem}
+              onClick={() => handleOpenLightbox(idx)}
+              aria-label={`Xem ảnh lớn: ${img.altText || `${productName} – Góc nhìn ${idx + 1}`}`}
+            >
               <img
                 src={img.url}
                 alt={img.altText || `${productName} – Góc nhìn ${idx + 1}`}
@@ -82,7 +103,10 @@ export const ProductGallery = ({
                 loading={idx === 0 ? 'eager' : 'lazy'}
                 decoding="async"
               />
-            </div>
+              <div className={styles.zoomHint} aria-hidden="true">
+                <ZoomIn size={16} />
+              </div>
+            </button>
           ))}
         </div>
       ) : (
@@ -94,7 +118,13 @@ export const ProductGallery = ({
             onScroll={handleScroll}
           >
             {displayImages.map((img, idx) => (
-              <div key={img.id || idx} className={styles.mobileSlide}>
+              <button
+                key={img.id || idx}
+                type="button"
+                className={styles.mobileSlide}
+                onClick={() => handleOpenLightbox(idx)}
+                aria-label={`Xem ảnh lớn: ${img.altText || `${productName} – Góc nhìn ${idx + 1}`}`}
+              >
                 <img
                   src={img.url}
                   alt={img.altText || `${productName} – Góc nhìn ${idx + 1}`}
@@ -102,7 +132,7 @@ export const ProductGallery = ({
                   loading={idx === 0 ? 'eager' : 'lazy'}
                   decoding="async"
                 />
-              </div>
+              </button>
             ))}
           </div>
 
@@ -122,6 +152,15 @@ export const ProductGallery = ({
           )}
         </div>
       )}
+
+      {/* FULL-SCREEN IMAGE LIGHTBOX ALBUM */}
+      <ImageLightbox
+        isOpen={isLightboxOpen}
+        images={displayImages}
+        initialIndex={lightboxIndex}
+        onClose={() => setIsLightboxOpen(false)}
+        productName={productName}
+      />
     </div>
   )
 }
