@@ -32,6 +32,11 @@
   --admin-error: #{$admin-error};
   --admin-error-bg: #{$admin-error-bg};
   --admin-error-border: #{$admin-error-border};
+  --admin-sidebar-text: #{$admin-sidebar-text};
+  --admin-sidebar-text-muted: #{$admin-sidebar-text-muted};
+  --admin-sidebar-card-bg: #{$admin-sidebar-card-bg};
+  --admin-sidebar-hover-bg: #{$admin-sidebar-hover-bg};
+  --admin-sidebar-active-bg: #{$admin-sidebar-active-bg};
 
   // Map to common theme tokens within Admin shell
   --color-bg-primary: var(--admin-bg-page);
@@ -65,11 +70,11 @@
   position: relative;
 }
 
-// Ensure cards inside admin inherit token styling seamlessly
-.layoutAdmin :global(.card),
-.layoutAdmin :global([class*="Card"]),
-.layoutAdmin :global([class*="tableCard"]),
-.layoutAdmin :global([class*="filtersCard"]) {
+// Ensure cards inside admin main content inherit token styling seamlessly
+.mainBody :global(.card),
+.mainBody :global([class*="Card"]),
+.mainBody :global([class*="tableCard"]),
+.mainBody :global([class*="filtersCard"]) {
   background-color: var(--admin-bg-card);
   border-color: var(--admin-border);
   color: var(--admin-text-primary);
@@ -94,6 +99,12 @@
 // -----------------------------------------------------------------------------
 .sidebar {
   width: 260px;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  overflow-y: auto;
+  overflow-x: hidden;
   background-color: var(--admin-bg-sidebar);
   color: #F8F7F4;
   padding: var(--space-6) var(--space-4);
@@ -103,11 +114,31 @@
   flex-shrink: 0;
   border-right: 1px solid rgba(233, 227, 219, 0.08);
 
+  // Custom sleek scrollbar for sidebar
+  scrollbar-width: thin;
+  scrollbar-color: rgba(233, 227, 219, 0.2) transparent;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(233, 227, 219, 0.2);
+    border-radius: 4px;
+
+    &:hover {
+      background: rgba(233, 227, 219, 0.35);
+    }
+  }
+
   @media (max-width: 768px) {
     position: fixed;
     top: 0;
     bottom: 0;
     left: 0;
+    height: 100vh;
     z-index: $z-drawer;
     width: 270px;
     box-shadow: 6px 0 24px rgba(0, 0, 0, 0.5);
@@ -120,6 +151,7 @@
 .brand {
   padding: 0 var(--space-2) var(--space-4);
   border-bottom: 1px solid rgba(233, 227, 219, 0.08);
+  flex-shrink: 0;
 }
 
 .brandLink {
@@ -151,48 +183,72 @@
 .nav {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: 26px;
+  flex-shrink: 0;
 }
 
 .navGroup {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .groupLabel {
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   font-weight: $font-weight-semibold;
-  letter-spacing: 0.22em;
+  letter-spacing: 1.8px;
   text-transform: uppercase;
-  color: var(--admin-text-secondary);
-  padding: var(--space-2) var(--space-3) var(--space-1);
+  color: var(--admin-sidebar-text-muted);
+  padding: 0 var(--space-3) 6px;
 }
 
 .navItem {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  color: var(--admin-text-secondary);
+  color: var(--admin-sidebar-text);
+  min-height: 44px;
   padding: 0.625rem var(--space-3);
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  border-left: 2px solid transparent;
+  border-left: 3px solid transparent;
   font-size: 0.875rem;
+  font-weight: $font-weight-regular;
   letter-spacing: 0.01em;
   text-decoration: none;
   transition: all $transition-fast;
 
-  &:hover {
-    color: #F8F7F4;
-    background-color: rgba(255, 255, 255, 0.03);
+  svg {
+    color: var(--admin-sidebar-text-muted);
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    transition: color $transition-fast;
   }
 
-  // Active state: subtle left indicator & slightly lighter text, no heavy filled block
+  &:hover {
+    color: #FFFFFF;
+    background-color: var(--admin-sidebar-hover-bg, rgba(255, 255, 255, 0.04));
+
+    svg {
+      color: #FFFFFF;
+    }
+  }
+
+  // Active state: prominent left indicator & highlighted text, clearly distinguishable from inactive
   &.active {
-    color: #F8F7F4;
+    color: #FFFFFF;
     font-weight: $font-weight-medium;
     border-left-color: var(--admin-accent);
-    background-color: rgba(161, 138, 112, 0.08);
+    background-color: var(--admin-sidebar-active-bg, rgba(161, 138, 112, 0.14));
+
+    svg {
+      color: var(--admin-accent);
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--admin-accent);
+    outline-offset: -2px;
   }
 }
 
@@ -204,30 +260,33 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  flex-shrink: 0;
 }
 
 .userCard {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-2);
+  gap: 10px;
+  padding: 8px 12px;
+  min-height: 52px;
   border-radius: var(--radius-sm);
-  background-color: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(233, 227, 219, 0.06);
+  background-color: var(--admin-sidebar-card-bg, #1C1C1C);
+  border: 1px solid rgba(233, 227, 219, 0.12);
+  transition: border-color $transition-fast;
 }
 
 .userAvatar {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: var(--radius-full);
-  background-color: #1F1E1B;
+  background-color: #111111;
   border: 1px solid var(--admin-accent);
   color: var(--admin-accent);
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: $admin-font-serif;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: $font-weight-medium;
   flex-shrink: 0;
 }
@@ -236,22 +295,33 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  flex: 1;
 }
 
 .userName {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: $font-weight-medium;
-  color: #F8F7F4;
+  color: #FFFFFF;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.3;
 }
 
 .userRole {
   font-size: 0.6875rem;
-  color: var(--admin-text-secondary);
-  letter-spacing: 0.06em;
+  font-weight: $font-weight-regular;
+  color: var(--admin-sidebar-text-muted);
+  letter-spacing: 0.05em;
   text-transform: uppercase;
+  line-height: 1.3;
+}
+
+.userChevron {
+  color: var(--admin-sidebar-text-muted);
+  margin-left: auto;
+  flex-shrink: 0;
+  opacity: 0.7;
 }
 
 .footerLinks {
@@ -265,7 +335,8 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  color: var(--admin-text-secondary);
+  color: var(--admin-sidebar-text);
+  min-height: 38px;
   padding: 0.5rem var(--space-3);
   font-size: 0.8125rem;
   letter-spacing: 0.02em;
@@ -278,14 +349,33 @@
   width: 100%;
   text-align: left;
 
+  svg {
+    color: var(--admin-sidebar-text);
+    flex-shrink: 0;
+    transition: color $transition-fast;
+  }
+
   &:hover {
-    color: #F8F7F4;
-    background-color: rgba(255, 255, 255, 0.04);
+    color: #FFFFFF;
+    background-color: var(--admin-sidebar-hover-bg, rgba(255, 255, 255, 0.04));
+
+    svg {
+      color: #FFFFFF;
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--admin-accent);
+    outline-offset: -2px;
   }
 }
 
 .logoutButton:hover {
-  color: #C25E5E;
+  color: #E57373;
+
+  svg {
+    color: #E57373;
+  }
 }
 
 // -----------------------------------------------------------------------------

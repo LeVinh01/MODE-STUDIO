@@ -11,6 +11,7 @@ import {
   Menu,
   ChevronRight,
   Calendar,
+  ChevronsUpDown,
 } from 'lucide-react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { toggleAdminSidebar, setAdminSidebarOpen } from '@/store/slices/uiSlice'
@@ -289,6 +290,7 @@ export const AdminLayout: React.FC = () => {
                 </span>
                 <span className={styles.userRole}>{roleLabel}</span>
               </div>
+              <ChevronsUpDown size={14} className={styles.userChevron} aria-hidden="true" />
             </div>
 
             <div className={styles.footerLinks}>
