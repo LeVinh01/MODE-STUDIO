@@ -1,11 +1,14 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { AlertCircle, AlertTriangle } from 'lucide-react'
 import { adminProductService } from '@/services/api/adminProductService'
+import { adminColorService } from '@/services/api/adminColorService'
+import { addColorToLookupsCache } from '@/hooks/useAdminLookups'
 import type {
   AdminLookups,
   AdminVariantItem,
   AdminVariantStorePayload,
   AdminVariantUpdatePayload,
+  ApiAdminLookupColor,
 } from '@/types/adminProduct'
 import { Input, Select, Textarea, Checkbox, Button } from '@/components/common'
 import { Modal, Spinner } from '@/components/feedback'
@@ -54,8 +57,73 @@ export const VariantModal = ({
   const [generalError, setGeneralError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  const [extraColors, setExtraColors] = useState<ApiAdminLookupColor[]>([])
+  const allColors = useMemo(() => {
+    const map = new Map<number, ApiAdminLookupColor>()
+    lookups.colors.forEach((c) => map.set(c.id, c))
+    extraColors.forEach((c) => map.set(c.id, c))
+    return Array.from(map.values())
+  }, [lookups.colors, extraColors])
+
+  // Quick add color states
+  const [isQuickColorOpen, setIsQuickColorOpen] = useState(false)
+  const [quickColorName, setQuickColorName] = useState('')
+  const [quickColorHex, setQuickColorHex] = useState('#111111')
+  const [quickColorError, setQuickColorError] = useState<string | null>(null)
+  const [isCreatingColor, setIsCreatingColor] = useState(false)
+
   // Lấy màu được chọn hiện tại để xem trước swatch
-  const selectedColor = lookups.colors.find((c) => c.id === Number(colorId))
+  const selectedColor = allColors.find((c) => c.id === Number(colorId))
+
+  const handleQuickColorSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    if (!quickColorName.trim()) {
+      setQuickColorError('Vui lòng nhập tên màu sắc.')
+      return
+    }
+
+    if (!/^#([A-Fa-f0-9]{6})$/.test(quickColorHex.trim())) {
+      setQuickColorError('Mã hex phải có dạng #RRGGBB (ví dụ: #111111).')
+      return
+    }
+
+    try {
+      setIsCreatingColor(true)
+      setQuickColorError(null)
+
+      const created = await adminColorService.createColor({
+        name: quickColorName.trim(),
+        hex_code: quickColorHex.trim().toLowerCase(),
+      })
+
+      const newLookup: ApiAdminLookupColor = {
+        id: created.id,
+        name: created.name,
+        hex_code: created.hexCode,
+      }
+
+      setExtraColors((prev) => [...prev, newLookup])
+      addColorToLookupsCache(newLookup)
+      setColorId(created.id)
+      setQuickColorName('')
+      setQuickColorHex('#111111')
+      setIsQuickColorOpen(false)
+
+      if (fieldErrors.color_id) {
+        setFieldErrors((prev) => {
+          const next = { ...prev }
+          delete next.color_id
+          return next
+        })
+      }
+    } catch (err) {
+      setQuickColorError(getApiErrorMessage(err, 'Không thể tạo màu mới.'))
+    } finally {
+      setIsCreatingColor(false)
+    }
+  }
 
   // Kiểm tra cảnh báo nếu tắt biến thể đang bán duy nhất của sản phẩm active
   const activeSellingCount = existingVariants.filter(
@@ -200,16 +268,88 @@ export const VariantModal = ({
         <div className={styles.formGroup}>
           <div className={styles.twoCol}>
             <div>
-              <label className={styles.label}>
-                Màu sắc *
-                {selectedColor && (
-                  <span
-                    className={styles.swatchPreview}
-                    style={{ backgroundColor: selectedColor.hex_code }}
-                    title={selectedColor.hex_code}
-                  />
+              <div className={styles.colorHeader}>
+                <label className={styles.label}>
+                  Màu sắc *
+                  {selectedColor && (
+                    <span
+                      className={styles.swatchPreview}
+                      style={{ backgroundColor: selectedColor.hex_code }}
+                      title={selectedColor.hex_code}
+                    />
+                  )}
+                </label>
+                {!isEdit && (
+                  <button
+                    type="button"
+                    className={styles.quickAddColorLink}
+                    onClick={() => {
+                      setIsQuickColorOpen(!isQuickColorOpen)
+                      setQuickColorError(null)
+                    }}
+                  >
+                    {isQuickColorOpen ? 'Đóng' : '+ Thêm màu mới'}
+                  </button>
                 )}
-              </label>
+              </div>
+
+              {isQuickColorOpen && (
+                <div className={styles.quickColorPanel}>
+                  <span className={styles.quickColorPanelTitle}>Tạo nhanh màu mới</span>
+                  <div className={styles.quickColorInputs}>
+                    <Input
+                      placeholder="Tên màu (ví dụ: Xanh Rêu)"
+                      value={quickColorName}
+                      onChange={(e) => setQuickColorName(e.target.value)}
+                      disabled={isCreatingColor}
+                      fullWidth
+                    />
+                    <input
+                      type="color"
+                      className={styles.quickColorNative}
+                      value={/^#([A-Fa-f0-9]{6})$/.test(quickColorHex) ? quickColorHex : '#111111'}
+                      onChange={(e) => setQuickColorHex(e.target.value.toLowerCase())}
+                      disabled={isCreatingColor}
+                      title="Bảng chọn màu"
+                    />
+                    <div style={{ width: '100px', flexShrink: 0 }}>
+                      <Input
+                        placeholder="#111111"
+                        value={quickColorHex}
+                        onChange={(e) => setQuickColorHex(e.target.value)}
+                        disabled={isCreatingColor}
+                      />
+                    </div>
+                  </div>
+
+                  {quickColorError && (
+                    <span className={styles.quickColorError}>{quickColorError}</span>
+                  )}
+
+                  <div className={styles.quickColorActions}>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setIsQuickColorOpen(false)}
+                      disabled={isCreatingColor}
+                    >
+                      Hủy
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="primary"
+                      size="sm"
+                      onClick={handleQuickColorSubmit}
+                      disabled={isCreatingColor}
+                      leftIcon={isCreatingColor ? <Spinner size="sm" /> : undefined}
+                    >
+                      {isCreatingColor ? 'Đang tạo...' : 'Lưu màu'}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               <Select
                 value={colorId}
                 onChange={(e) => {
@@ -232,7 +372,7 @@ export const VariantModal = ({
                 fullWidth
               >
                 <option value="">-- Chọn màu sắc --</option>
-                {lookups.colors.map((c) => (
+                {allColors.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name} ({c.hex_code})
                   </option>
