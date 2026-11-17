@@ -56,7 +56,7 @@ export const HOME_CONFIG: HomeConfig = {
   hero: {
     type: 'hero',
     videoSrc: '/videos/hero.mp4',
-    poster: '/images/hero-poster.jpg',
+    poster: '/images/home/hero-poster.jpg',
     title: 'NGHỆ THUẬT MAY ĐO HIỆN ĐẠI',
     subtitle: 'Bộ sưu tập tối giản chế tác từ sợi len và chất liệu tự nhiên thượng hạng',
     ctaLabel: 'KHÁM PHÁ BỘ SƯU TẬP',
