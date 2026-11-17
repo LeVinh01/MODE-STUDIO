@@ -20,6 +20,13 @@ $admin-error: #a83232;
 $admin-error-bg: rgba(168, 50, 50, 0.08);
 $admin-error-border: rgba(168, 50, 50, 0.25);
 
+// Sidebar scoped color tokens (WCAG AA compliant against #111111)
+$admin-sidebar-text: #D5CDC3; // 12.00:1 contrast against #111111 (WCAG AAA)
+$admin-sidebar-text-muted: #A89F93; // 7.23:1 contrast against #111111 (WCAG AAA)
+$admin-sidebar-card-bg: #1C1C1C; // Charcoal user card background (17.04:1 with white text)
+$admin-sidebar-hover-bg: rgba(255, 255, 255, 0.04);
+$admin-sidebar-active-bg: rgba(161, 138, 112, 0.14);
+
 // Typography Stacks (Reusing existing fonts, no new font files)
 $admin-font-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
 $admin-font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
