@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { categoryService } from '@/services/api/categoryService'
 import { productService } from '@/services/api/productService'
-import { HOME_CONFIG, type CategoryGridSectionConfig } from '@/config/homeSections'
+import { HOME_CONFIG, type CategoryGridSectionConfig, type HomeGender } from '@/config/homeSections'
 import styles from './CategoryIconGrid.module.scss'
 
 export interface CategoryIconGridProps {
   config: CategoryGridSectionConfig
+  gender?: HomeGender
 }
 
 interface DisplayCategoryItem {
@@ -15,11 +16,20 @@ interface DisplayCategoryItem {
   imageUrl?: string | null
 }
 
-export const CategoryIconGrid = ({ config }: CategoryIconGridProps) => {
+export const CategoryIconGrid = ({ config, gender = 'women' }: CategoryIconGridProps) => {
   const [categories, setCategories] = useState<DisplayCategoryItem[]>([])
   const [categoryImages, setCategoryImages] = useState<Record<string, string>>({})
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({})
   const [isLoading, setIsLoading] = useState(true)
+  const [prevGender, setPrevGender] = useState(gender)
+
+  if (prevGender !== gender) {
+    setPrevGender(gender)
+    setCategories([])
+    setCategoryImages({})
+    setImageErrors({})
+    setIsLoading(true)
+  }
 
   useEffect(() => {
     const controller = new AbortController()
@@ -30,26 +40,45 @@ export const CategoryIconGrid = ({ config }: CategoryIconGridProps) => {
         const rootCategories = await categoryService.getCategories(signal)
         const hiddenSet = new Set(HOME_CONFIG.hiddenCategorySlugs || [])
 
-        // 1. Chỉ lấy danh mục lá (children của các danh mục gốc), loại trừ hiddenCategorySlugs
+        // 1. Lọc theo giới tính:
+        // - Nữ: các danh mục lá thuộc women + danh mục gốc cũ jackets-blazers, dresses
+        // - Nam: các danh mục lá thuộc men
         const leafCandidates: {
           name: string
           slug: string
           imageUrl: string | null
           productsCount?: number
         }[] = []
+        const seenSlugs = new Set<string>()
 
-        rootCategories.forEach((parent) => {
-          if (parent.children && parent.children.length > 0) {
-            parent.children.forEach((child) => {
-              if (!hiddenSet.has(child.slug)) {
-                leafCandidates.push({
-                  name: child.name,
-                  slug: child.slug,
-                  imageUrl: child.imageUrl || null,
-                  productsCount: child.productsCount,
-                })
-              }
-            })
+        const addCandidate = (item: {
+          name: string
+          slug: string
+          imageUrl?: string | null
+          productsCount?: number
+        }) => {
+          if (hiddenSet.has(item.slug) || seenSlugs.has(item.slug)) return
+          seenSlugs.add(item.slug)
+          leafCandidates.push({
+            name: item.name,
+            slug: item.slug,
+            imageUrl: item.imageUrl || null,
+            productsCount: item.productsCount,
+          })
+        }
+
+        rootCategories.forEach((cat) => {
+          if (gender === 'women') {
+            if (cat.slug === 'women') {
+              (cat.children || []).forEach(addCandidate)
+            } else if (cat.slug === 'jackets-blazers' || cat.slug === 'dresses') {
+              // Legacy root category nếu có
+              addCandidate(cat)
+            }
+          } else if (gender === 'men') {
+            if (cat.slug === 'men') {
+              (cat.children || []).forEach(addCandidate)
+            }
           }
         })
 
@@ -135,7 +164,7 @@ export const CategoryIconGrid = ({ config }: CategoryIconGridProps) => {
     return () => {
       controller.abort()
     }
-  }, [])
+  }, [gender])
 
   const handleImageError = (slug: string) => {
     setImageErrors((prev) => ({ ...prev, [slug]: true }))

@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { MapPin, Phone, Mail, Clock } from 'lucide-react'
 import { FOOTER_SECTIONS, SOCIAL_LINKS } from '@/config/navigation'
 import { STORE_INFO } from '@/config/store'
-import { BRAND_NAME } from '@/config/brand'
+import { BRAND_NAME, BRAND_LOGOS } from '@/config/brand'
 import { Input, Button } from '@/components/common'
 import { cn } from '@/utils/cn'
 import styles from './Footer.module.scss'
@@ -16,6 +16,7 @@ export const Footer = () => {
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [statusMessage, setStatusMessage] = useState('')
+  const [logoFailed, setLogoFailed] = useState(false)
 
   const activeSocialLinks = SOCIAL_LINKS.filter((social) =>
     Boolean(social.href && social.href.trim()),
@@ -95,8 +96,19 @@ export const Footer = () => {
         <div className={styles.columnsGrid}>
           {/* Brand Info Column */}
           <div className={styles.brandColumn}>
-            <Link to="/" className={styles.brandLogo}>
-              {BRAND_NAME}
+            <Link to="/" className={styles.brandLogo} aria-label={`${BRAND_NAME} - Về trang chủ`}>
+              {!logoFailed ? (
+                <img
+                  src={BRAND_LOGOS.burgundy}
+                  alt={BRAND_NAME}
+                  width={88}
+                  height={56}
+                  className={styles.footerLogoImg}
+                  onError={() => setLogoFailed(true)}
+                />
+              ) : (
+                <span>{BRAND_NAME}</span>
+              )}
             </Link>
             <p className={styles.brandSlogan}>
               Nền tảng thương mại điện tử thời trang may đo và thiết kế tối giản, tôn vinh vẻ đẹp thanh lịch vượt thời gian.

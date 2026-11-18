@@ -6,7 +6,7 @@ import { Button } from '@/components/common/Button'
 import { productService } from '@/services/api/productService'
 import type { Product, ProductSuggestion } from '@/types/product'
 import { formatCurrency } from '@/utils/formatters'
-import { formatPageTitle } from '@/config/brand'
+import { BRAND_NAME, formatPageTitle } from '@/config/brand'
 import { cn } from '@/utils/cn'
 import styles from './SearchPage.module.scss'
 
@@ -475,7 +475,7 @@ export const SearchPage = () => {
                             />
                           ) : (
                             <div className={styles.suggestionThumbFallback}>
-                              <span>MODE</span>
+                              <span>{BRAND_NAME.slice(0, 2)}</span>
                             </div>
                           )}
                         </div>

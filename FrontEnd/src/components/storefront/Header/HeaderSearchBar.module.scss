@@ -1,0 +1,261 @@
+@use '@/styles/abstracts' as *;
+
+.searchContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchForm {
+  width: 100%;
+}
+
+.pillInputWrapper {
+  display: flex;
+  align-items: center;
+  background-color: #1e1e1e;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 9999px;
+  padding: 0 12px;
+  height: 38px;
+  width: 240px;
+  transition: all 180ms ease;
+
+  @include respond-to('lg') {
+    width: 280px;
+  }
+
+  @include respond-to('xl') {
+    width: 320px;
+  }
+
+  &:focus-within {
+    border-color: #d8d1c5;
+    background-color: #242424;
+    box-shadow: 0 0 0 2px rgba(216, 209, 197, 0.2);
+  }
+}
+
+.searchSubmitButton {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a89f93;
+  cursor: pointer;
+  transition: color 150ms ease;
+
+  &:hover {
+    color: #ffffff;
+  }
+
+  &:focus-visible {
+    outline: none;
+    color: #ffffff;
+  }
+}
+
+.pillInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-family: $font-sans;
+  font-size: 0.8125rem;
+  letter-spacing: 0.01em;
+
+  &::placeholder {
+    color: #8c857b;
+  }
+
+  &::-webkit-search-cancel-button {
+    display: none;
+  }
+}
+
+.clearButton {
+  background: none;
+  border: none;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8c857b;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: all 150ms ease;
+
+  &:hover {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.closeMobileButton {
+  background: none;
+  border: none;
+  color: #d8d1c5;
+  font-family: $font-sans;
+  font-size: 0.8125rem;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  padding: 4px 8px;
+  margin-left: 4px;
+  white-space: nowrap;
+
+  &:hover {
+    color: #ffffff;
+  }
+}
+
+/* Suggestions Dropdown (Autocomplete) */
+.suggestionsDropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  min-width: 280px;
+  background-color: #1a1a1a;
+  border: 1px solid #2e2e2e;
+  border-radius: var(--radius-md, 8px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+  z-index: 1100;
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.suggestionsLoading,
+.suggestionsEmpty {
+  padding: 16px;
+  text-align: center;
+  font-size: 0.8125rem;
+  color: #a89f93;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.suggestionsSpinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spinSuggestions 600ms linear infinite;
+}
+
+@keyframes spinSuggestions {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.suggestionsList {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+}
+
+.suggestionItem {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  gap: 12px;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover,
+  &.suggestionItemActive {
+    background-color: #262626;
+  }
+}
+
+.suggestionThumbWrapper {
+  width: 36px;
+  height: 45px;
+  flex-shrink: 0;
+  background-color: #242424;
+  border-radius: 3px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.suggestionThumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.suggestionThumbFallback {
+  font-size: 0.625rem;
+  font-weight: $font-weight-semibold;
+  color: #8c857b;
+  letter-spacing: 0.05em;
+}
+
+.suggestionInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.suggestionName {
+  font-size: 0.8125rem;
+  font-weight: $font-weight-medium;
+  color: #f5f5f5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.suggestionPrice {
+  font-size: 0.75rem;
+  color: #c9b9a6;
+  font-weight: $font-weight-regular;
+}
+
+/* Mobile Search Active Overlay / Bar */
+@media (max-width: 899px) {
+  .searchContainer:not(.mobileSearchActive) {
+    display: none;
+  }
+
+  .searchContainer.mobileSearchActive {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #111111;
+    z-index: 1200;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+
+    .pillInputWrapper {
+      width: 100%;
+      height: 42px;
+      background-color: #1e1e1e;
+    }
+
+    .suggestionsDropdown {
+      top: 100%;
+      left: 12px;
+      right: 12px;
+      max-height: calc(100vh - 80px);
+    }
+  }
+}

@@ -32,10 +32,9 @@ export const ANNOUNCEMENT_CONFIG = {
 }
 
 export const MAIN_NAVIGATION: NavItem[] = [
-  { label: 'Bộ Sưu Tập', to: '/products' },
-  { label: 'Nữ', to: '/products?category=women' },
-  { label: 'Nam', to: '/products?category=men' },
-  { label: 'Phụ Kiện', to: '/products?category=accessories' },
+  { label: 'NỮ', to: '/' },
+  { label: 'NAM', to: '/nam' },
+  { label: 'PHỤ KIỆN', to: '/products?category=accessories' },
 ]
 
 export const FOOTER_SECTIONS: NavSection[] = [

@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Menu, Search, ShoppingBag, User } from 'lucide-react'
-import { BRAND_NAME } from '@/config/brand'
-import { MAIN_NAVIGATION } from '@/config/navigation'
+import { BRAND_NAME, BRAND_LOGOS } from '@/config/brand'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import {
   toggleMobileMenu,
@@ -11,6 +10,7 @@ import {
 import { selectCurrentUser, resetAuth } from '@/store/slices/authSlice'
 import { authService } from '@/services/api/authService'
 import { UserRoleBadge } from '@/components/auth/UserRoleBadge'
+import { HeaderSearchBar } from './HeaderSearchBar'
 import { cn } from '@/utils/cn'
 import styles from './Header.module.scss'
 
@@ -24,97 +24,23 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
   const location = useLocation()
   const user = useAppSelector(selectCurrentUser)
   const isMobileMenuOpen = useAppSelector((state) => state.ui.isMobileMenuOpen)
-  const isCartDrawerOpen = useAppSelector((state) => state.ui.isCartDrawerOpen)
 
-  const isHomePage = location.pathname === '/'
-  const [headerTheme, setHeaderTheme] = useState<'dark' | 'light'>('dark')
-  const [headerTop, setHeaderTop] = useState(0)
+  // Account dropdown & mobile search states
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false)
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
+  const [logoFailed, setLogoFailed] = useState(false)
 
-  const headerRef = useRef<HTMLElement>(null)
+  // Close account menu & mobile search on route change
+  const currentPath = location.pathname + location.search
+  const [prevPath, setPrevPath] = useState(currentPath)
+  if (prevPath !== currentPath) {
+    setPrevPath(currentPath)
+    setIsAccountMenuOpen(false)
+    setIsMobileSearchOpen(false)
+  }
+
   const accountMenuRef = useRef<HTMLDivElement>(null)
   const accountTriggerRef = useRef<HTMLButtonElement>(null)
-
-  const isOverlayOpen = isMobileMenuOpen || isCartDrawerOpen || isAccountMenuOpen
-
-  // Section theme & announcement bar detection (HOME PAGE ONLY)
-  useEffect(() => {
-    if (!isHomePage) return
-
-    let rafId: number | null = null
-
-    const detectThemeAndPosition = () => {
-      // 1. Calculate top offset based on normal-flow announcement bar
-      const announcementBar = document.querySelector(
-        'aside[aria-label="Thông báo ưu đãi"]'
-      )
-      let topOffset = 0
-      if (announcementBar) {
-        const barRect = announcementBar.getBoundingClientRect()
-        topOffset = Math.max(0, barRect.bottom)
-      }
-      setHeaderTop(topOffset)
-
-      // 2. Detect section under header vertical center
-      const headerEl = headerRef.current
-      const headerHeight = headerEl ? headerEl.offsetHeight : 68
-      const headerCenterY = topOffset + headerHeight / 2
-
-      const sections = document.querySelectorAll<HTMLElement>('[data-header-theme]')
-      let detectedTheme: 'dark' | 'light' = 'dark'
-      let closestSection: HTMLElement | null = null
-      let closestDist = -Infinity
-
-      for (let i = 0; i < sections.length; i++) {
-        const sec = sections[i]
-        const rect = sec.getBoundingClientRect()
-        if (rect.top <= headerCenterY && rect.bottom > headerCenterY) {
-          closestSection = sec
-          break
-        }
-        if (rect.top <= headerCenterY && rect.top > closestDist) {
-          closestDist = rect.top
-          closestSection = sec
-        }
-      }
-
-      if (closestSection) {
-        const theme = closestSection.getAttribute('data-header-theme')
-        if (theme === 'dark' || theme === 'light') {
-          detectedTheme = theme
-        }
-      }
-
-      setHeaderTheme(detectedTheme)
-    }
-
-    const scheduleUpdate = () => {
-      if (rafId !== null) return
-      rafId = requestAnimationFrame(() => {
-        detectThemeAndPosition()
-        rafId = null
-      })
-    }
-
-    window.addEventListener('scroll', scheduleUpdate, { passive: true })
-    window.addEventListener('resize', scheduleUpdate, { passive: true })
-
-    // MutationObserver to immediately detect when AnnouncementBar is dismissed
-    const observer = new MutationObserver(() => {
-      scheduleUpdate()
-    })
-    observer.observe(document.body, { childList: true, subtree: true })
-
-    // Initial check
-    detectThemeAndPosition()
-
-    return () => {
-      window.removeEventListener('scroll', scheduleUpdate)
-      window.removeEventListener('resize', scheduleUpdate)
-      observer.disconnect()
-      if (rafId !== null) cancelAnimationFrame(rafId)
-    }
-  }, [isHomePage])
 
   // Click outside & Escape for account dropdown
   useEffect(() => {
@@ -158,34 +84,19 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
     }
   }
 
-  const searchLink =
-    location.pathname === '/search'
-      ? `${location.pathname}${location.search}`
-      : '/search'
+  // Active navigation states derived from URL
+  const pathname = location.pathname
+  const search = location.search
 
-  // Header class configuration
-  const headerClassNames = cn(
-    styles.header,
-    isHomePage ? styles.homeHeader : styles.solidSticky,
-    isHomePage &&
-      !isOverlayOpen &&
-      (headerTheme === 'dark' ? styles.themeDark : styles.themeLight),
-    isOverlayOpen && styles.overlayOpen
-  )
-
-  const headerInlineStyle: React.CSSProperties = isHomePage
-    ? { top: `${headerTop}px` }
-    : {}
+  const isWomenActive = pathname === '/' || pathname === '/nu'
+  const isMenActive = pathname === '/nam'
+  const isAccessoriesActive =
+    pathname === '/products' && search.includes('category=accessories')
 
   return (
-    <header
-      ref={headerRef}
-      className={headerClassNames}
-      style={headerInlineStyle}
-      role="banner"
-    >
-      <div className={styles.inner}>
-        {/* Left Section: Mobile Hamburger & Desktop Nav */}
+    <header className={styles.header} role="banner">
+      <div className={styles.container}>
+        {/* Left Section: Mobile Hamburger Toggle + Brand Logo + Nav Items */}
         <div className={styles.leftSection}>
           <button
             type="button"
@@ -197,38 +108,71 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
             <Menu size={22} />
           </button>
 
-          <nav className={styles.desktopNav} aria-label="Điều hướng chính">
-            {MAIN_NAVIGATION.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={({ isActive }) =>
-                  cn(styles.navLink, isActive && styles.active)
-                }
-              >
-                {item.label}
-              </NavLink>
-            ))}
+          {/* OMBRE Logo */}
+          <Link
+            to="/"
+            className={styles.logoLink}
+            aria-label={`${BRAND_NAME} Trang Chủ`}
+          >
+            {!logoFailed ? (
+              <img
+                src={BRAND_LOGOS.cream}
+                alt={BRAND_NAME}
+                width={88}
+                height={56}
+                className={styles.logoImg}
+                onError={() => setLogoFailed(true)}
+              />
+            ) : (
+              <span className={styles.logoText}>{BRAND_NAME}</span>
+            )}
+          </Link>
+
+          {/* Desktop Nav: NỮ, NAM, PHỤ KIỆN (Uniqlo style underline) */}
+          <nav className={styles.desktopNav} aria-label="Điều hướng danh mục">
+            <Link
+              to="/"
+              className={cn(styles.navLink, isWomenActive && styles.active)}
+              aria-current={isWomenActive ? 'page' : undefined}
+            >
+              NỮ
+            </Link>
+            <Link
+              to="/nam"
+              className={cn(styles.navLink, isMenActive && styles.active)}
+              aria-current={isMenActive ? 'page' : undefined}
+            >
+              NAM
+            </Link>
+            <Link
+              to="/products?category=accessories"
+              className={cn(styles.navLink, isAccessoriesActive && styles.active)}
+              aria-current={isAccessoriesActive ? 'page' : undefined}
+            >
+              PHỤ KIỆN
+            </Link>
           </nav>
         </div>
 
-        {/* Center Section: Editorial Logo */}
-        <div className={styles.centerSection}>
-          <Link to="/" className={styles.logo} aria-label={`${BRAND_NAME} Trang Chủ`}>
-            {BRAND_NAME}
-          </Link>
-        </div>
-
-        {/* Right Section: Quick Action Icons */}
+        {/* Right Section: Pill Search + Account Menu + Cart Icon */}
         <div className={styles.rightSection}>
-          <Link
-            to={searchLink}
-            aria-label="Tìm kiếm sản phẩm"
-            className={styles.actionButton}
+          {/* Desktop Search Bar & Mobile Search Overlay */}
+          <HeaderSearchBar
+            isMobileSearchOpen={isMobileSearchOpen}
+            onCloseMobileSearch={() => setIsMobileSearchOpen(false)}
+          />
+
+          {/* Mobile Search Toggle Button */}
+          <button
+            type="button"
+            onClick={() => setIsMobileSearchOpen(true)}
+            aria-label="Mở thanh tìm kiếm"
+            className={cn(styles.actionButton, styles.mobileSearchButton)}
           >
             <Search size={20} />
-          </Link>
+          </button>
 
+          {/* Account Icon / Dropdown */}
           {user ? (
             <div className={styles.accountWrapper} ref={accountMenuRef}>
               <button
@@ -314,6 +258,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
             </Link>
           )}
 
+          {/* Cart Icon with Item Count Badge */}
           <button
             type="button"
             onClick={() => dispatch(toggleCartDrawer())}

@@ -47,6 +47,76 @@ export interface HomeProductRowConfig {
   viewAllHref: string
 }
 
+export type HomeGender = 'women' | 'men'
+
+export interface HomeGenderConfig {
+  categoryGrid: CategoryGridSectionConfig
+  productRows: HomeProductRowConfig[]
+}
+
+export const GENDER_HOME_CONFIG: Record<HomeGender, HomeGenderConfig> = {
+  women: {
+    categoryGrid: {
+      type: 'category_grid',
+      title: 'Tìm theo danh mục',
+      ctaLabel: 'XEM TẤT CẢ DANH MỤC NỮ',
+      ctaHref: '/products?category=women',
+    },
+    productRows: [
+      {
+        title: 'Áo khoác & áo ấm',
+        categorySlugs: ['jackets-blazers', 'women-coats', 'women-sweaters'],
+        viewAllHref: '/products?category=jackets-blazers,women-coats,women-sweaters',
+      },
+      {
+        title: 'Cardigan & Blouse',
+        categorySlugs: ['women-cardigans', 'women-blouses'],
+        viewAllHref: '/products?category=women-cardigans,women-blouses',
+      },
+      {
+        title: 'Jeans',
+        categorySlugs: ['women-jeans'],
+        viewAllHref: '/products?category=women-jeans',
+      },
+      {
+        title: 'Quần',
+        categorySlugs: ['women-pants'],
+        viewAllHref: '/products?category=women-pants',
+      },
+    ],
+  },
+  men: {
+    categoryGrid: {
+      type: 'category_grid',
+      title: 'Tìm theo danh mục',
+      ctaLabel: 'XEM TẤT CẢ DANH MỤC NAM',
+      ctaHref: '/products?category=men',
+    },
+    productRows: [
+      {
+        title: 'Áo khoác & áo ấm',
+        categorySlugs: ['men-jackets', 'men-coats', 'men-sweaters'],
+        viewAllHref: '/products?category=men-jackets,men-coats,men-sweaters',
+      },
+      {
+        title: 'Cardigan & Sơ mi',
+        categorySlugs: ['men-cardigans', 'men-shirts'],
+        viewAllHref: '/products?category=men-cardigans,men-shirts',
+      },
+      {
+        title: 'Jeans',
+        categorySlugs: ['men-jeans'],
+        viewAllHref: '/products?category=men-jeans',
+      },
+      {
+        title: 'Quần',
+        categorySlugs: ['men-pants'],
+        viewAllHref: '/products?category=men-pants',
+      },
+    ],
+  },
+}
+
 export interface HomeConfig {
   hero: HeroSectionConfig
   categoryGrid: CategoryGridSectionConfig
@@ -67,45 +137,11 @@ export const HOME_CONFIG: HomeConfig = {
   },
 
   // S2: Category Icon Grid
-  categoryGrid: {
-    type: 'category_grid',
-    title: 'Tìm theo danh mục',
-    ctaLabel: 'XEM TẤT CẢ DANH MỤC',
-    ctaHref: '/products',
-  },
+  categoryGrid: GENDER_HOME_CONFIG.women.categoryGrid,
 
   // Danh mục loại trừ khỏi tiles và rows (chưa có phụ kiện)
   hiddenCategorySlugs: ['accessories', 'bags', 'belts'],
 
-  // 4 Hàng sản phẩm theo quyết định đã duyệt (hàng không có sản phẩm sẽ tự động ẩn)
-  productRows: [
-    {
-      title: 'Áo khoác & áo ấm',
-      categorySlugs: [
-        'jackets-blazers',
-        'women-coats',
-        'women-sweaters',
-        'men-jackets',
-        'men-coats',
-        'men-sweaters',
-      ],
-      viewAllHref:
-        '/products?category=jackets-blazers,women-coats,women-sweaters,men-jackets,men-coats,men-sweaters',
-    },
-    {
-      title: 'Cardigan & Blouse',
-      categorySlugs: ['women-cardigans', 'women-blouses', 'men-cardigans'],
-      viewAllHref: '/products?category=women-cardigans,women-blouses,men-cardigans',
-    },
-    {
-      title: 'Jeans',
-      categorySlugs: ['women-jeans', 'men-jeans'],
-      viewAllHref: '/products?category=women-jeans,men-jeans',
-    },
-    {
-      title: 'Quần',
-      categorySlugs: ['women-pants', 'men-pants'],
-      viewAllHref: '/products?category=women-pants,men-pants',
-    },
-  ],
+  // 4 Hàng sản phẩm mặc định (nữ)
+  productRows: GENDER_HOME_CONFIG.women.productRows,
 }

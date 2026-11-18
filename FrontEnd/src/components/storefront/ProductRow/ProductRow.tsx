@@ -180,6 +180,8 @@ export const ProductRow: React.FC<ProductRowProps> = ({
 
     const fetchProducts = async () => {
       setLoading(true)
+      setProducts([])
+      setPageIndex(0)
       try {
         const response = await productService.getProducts({
           category: activeSlugs,

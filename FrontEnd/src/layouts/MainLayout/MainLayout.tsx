@@ -2,7 +2,6 @@ import type { ReactNode } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { useAppSelector } from '@/store/hooks'
 import {
-  AnnouncementBar,
   Header,
   MobileMenu,
   Footer,
@@ -19,7 +18,10 @@ export interface MainLayoutProps {
 export const MainLayout = ({ children }: MainLayoutProps = {}) => {
   const itemsCount = useAppSelector(selectCartItemsCount)
   const location = useLocation()
-  const isHomePage = location.pathname === '/'
+  const isHomePage =
+    location.pathname === '/' ||
+    location.pathname === '/nu' ||
+    location.pathname === '/nam'
 
   return (
     <div className={styles.layoutStorefront}>
@@ -28,10 +30,7 @@ export const MainLayout = ({ children }: MainLayoutProps = {}) => {
         Chuyển đến nội dung chính
       </a>
 
-      {/* 2. Dismissible Announcement Bar */}
-      <AnnouncementBar />
-
-      {/* 3. Sticky Editorial Header */}
+      {/* 2. Sticky Editorial Header */}
       <Header cartCount={itemsCount} />
 
       {/* 4. Mobile Drawer Navigation */}

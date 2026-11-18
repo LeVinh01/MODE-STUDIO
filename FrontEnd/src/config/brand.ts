@@ -5,6 +5,13 @@
 export const BRAND_NAME = 'OMBRE'
 export const BRAND_TAGLINE = 'Modern Luxury & Editorial Fashion'
 
+export const BRAND_LOGOS = {
+  cream: '/images/brand/ombre-logo-cream.png',
+  burgundy: '/images/brand/ombre-logo-burgundy.png',
+  width: 791,
+  height: 501,
+} as const
+
 /**
  * Helper to format document title consistently:
  * e.g. "Tìm kiếm | OMBRE" or "OMBRE | Modern Luxury & Editorial Fashion"
