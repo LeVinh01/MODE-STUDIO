@@ -840,7 +840,7 @@ class AdminOrderManagementTest extends TestCase
         $this->postJson("/api/orders/{$order->order_code}/cancel")
             ->assertStatus(422)
             ->assertJson([
-                'message' => 'Chỉ có thể hủy đơn hàng khi đơn đang ở trạng thái chờ xử lý (pending).',
+                'message' => 'Chỉ có thể hủy đơn hàng khi đơn đang ở trạng thái chờ xử lý (pending). Vui lòng liên hệ cửa hàng để được hỗ trợ.',
             ]);
 
         // Tồn kho không bị hoàn tăng: vẫn giữ nguyên 5
@@ -880,5 +880,109 @@ class AdminOrderManagementTest extends TestCase
             ->assertStatus(422);
 
         $this->assertSame(13, $v1->fresh()->stock_quantity);
+    }
+
+    public function test_admin_cancelling_paid_order_sets_payment_status_to_refund_pending(): void
+    {
+        $admin = $this->createAdmin();
+        $customer = $this->createCustomer();
+        $order = $this->createOrder($customer, [
+            'status'         => OrderStatus::Pending,
+            'payment_method' => PaymentMethod::Vnpay,
+            'payment_status' => PaymentStatus::Paid,
+            'paid_at'        => now()->subHour(),
+        ]);
+
+        Sanctum::actingAs($admin);
+
+        $response = $this->patchJson("/api/admin/orders/{$order->order_code}/status", [
+            'status' => 'cancelled',
+            'reason' => 'Khách gọi yêu cầu hủy và hoàn tiền',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('order.status', 'cancelled')
+            ->assertJsonPath('order.payment_status', 'refund_pending');
+
+        $order->refresh();
+        $this->assertSame(OrderStatus::Cancelled, $order->status);
+        $this->assertSame(PaymentStatus::RefundPending, $order->payment_status);
+        $this->assertNotNull($order->refund_requested_at);
+        $this->assertNotNull($order->paid_at);
+    }
+
+    public function test_admin_can_confirm_refund_for_refund_pending_order(): void
+    {
+        $admin = $this->createAdmin();
+        $customer = $this->createCustomer();
+        $order = $this->createOrder($customer, [
+            'status'              => OrderStatus::Cancelled,
+            'payment_method'      => PaymentMethod::Vnpay,
+            'payment_status'      => PaymentStatus::RefundPending,
+            'paid_at'             => now()->subHours(2),
+            'refund_requested_at' => now()->subHour(),
+        ]);
+
+        Sanctum::actingAs($admin);
+
+        $response = $this->postJson("/api/admin/orders/{$order->order_code}/refund", [
+            'refund_note' => 'Đã chuyển khoản hoàn 530k qua VCB',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('order.payment_status', 'refunded')
+            ->assertJsonPath('order.refund_note', 'Đã chuyển khoản hoàn 530k qua VCB');
+
+        $order->refresh();
+        $this->assertSame(PaymentStatus::Refunded, $order->payment_status);
+        $this->assertNotNull($order->refunded_at);
+        $this->assertSame('Đã chuyển khoản hoàn 530k qua VCB', $order->refund_note);
+
+        $this->assertDatabaseHas('order_status_histories', [
+            'order_id'   => $order->id,
+            'changed_by' => $admin->id,
+            'reason'     => 'Đã hoàn tiền thủ công cho khách hàng: Đã chuyển khoản hoàn 530k qua VCB',
+        ]);
+    }
+
+    public function test_operator_cannot_confirm_refund_returns_403(): void
+    {
+        $operator = $this->createOperator();
+        $customer = $this->createCustomer();
+        $order = $this->createOrder($customer, [
+            'status'              => OrderStatus::Cancelled,
+            'payment_method'      => PaymentMethod::Vnpay,
+            'payment_status'      => PaymentStatus::RefundPending,
+            'refund_requested_at' => now()->subHour(),
+        ]);
+
+        Sanctum::actingAs($operator);
+
+        $response = $this->postJson("/api/admin/orders/{$order->order_code}/refund", [
+            'refund_note' => 'Operator thu hoan tien',
+        ]);
+
+        $response->assertStatus(403)
+            ->assertJsonPath('message', 'Bạn không có quyền thực hiện thao tác này.');
+
+        $order->refresh();
+        $this->assertSame(PaymentStatus::RefundPending, $order->payment_status);
+    }
+
+    public function test_confirm_refund_rejects_non_refund_pending_orders_with_422(): void
+    {
+        $admin = $this->createAdmin();
+        $customer = $this->createCustomer();
+        $order = $this->createOrder($customer, [
+            'status'         => OrderStatus::Pending,
+            'payment_status' => PaymentStatus::Unpaid,
+        ]);
+
+        Sanctum::actingAs($admin);
+
+        $response = $this->postJson("/api/admin/orders/{$order->order_code}/refund", []);
+
+        $response->assertStatus(422)
+            ->assertJsonPath('message', 'Chỉ có thể xác nhận hoàn tiền cho đơn hàng đang ở trạng thái chờ hoàn tiền (refund_pending).');
     }
 }

@@ -27,7 +27,7 @@ import { EmptyState, Skeleton } from '@/components/feedback'
 import styles from './OrderManagementPage.module.scss'
 
 const VALID_STATUSES = ['all', 'pending', 'confirmed', 'shipping', 'delivered', 'cancelled']
-const VALID_PAYMENT_STATUSES = ['all', 'unpaid', 'paid', 'failed', 'refunded']
+const VALID_PAYMENT_STATUSES = ['all', 'unpaid', 'paid', 'failed', 'refund_pending', 'refunded']
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/
 
 export const OrderManagementPage = () => {

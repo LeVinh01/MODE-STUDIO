@@ -472,7 +472,7 @@ export const MyOrdersPage = () => {
                             </Button>
                           )}
 
-                        {order.status === 'pending' && order.paymentStatus !== 'paid' && (
+                        {order.status === 'pending' && (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -551,7 +551,14 @@ export const MyOrdersPage = () => {
           <p className={styles.cancelPrompt}>
             Quý khách có chắc chắn muốn hủy đơn hàng{' '}
             <strong>{cancellingOrder?.orderCode}</strong> không?
-            Số lượng các sản phẩm trong đơn sẽ được tự động hoàn lại kho hàng.
+            {cancellingOrder?.paymentStatus === 'paid' ? (
+              <>
+                <br />
+                Đơn hàng đã được thanh toán trực tuyến. Sau khi hủy đơn, {BRAND_NAME} sẽ tiến hành đối soát và hoàn tiền thủ công cho quý khách. Trạng thái thanh toán của đơn sẽ chuyển sang <strong>Chờ hoàn tiền</strong>.
+              </>
+            ) : (
+              ' Số lượng các sản phẩm trong đơn sẽ được tự động hoàn lại kho hàng.'
+            )}
           </p>
 
           <Textarea

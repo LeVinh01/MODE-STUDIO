@@ -84,6 +84,7 @@ Route::middleware(['auth:sanctum', 'active', 'role:admin,operator'])->prefix('ad
     Route::get('/', [AdminOrderController::class, 'index']);
     Route::get('/{order_code}', [AdminOrderController::class, 'show']);
     Route::patch('/{order_code}/status', [AdminOrderController::class, 'updateStatus']);
+    Route::post('/{order_code}/refund', [AdminOrderController::class, 'confirmRefund'])->middleware('role:admin');
 });
 
 // Admin & Operator Read-only Catalog & Stock API

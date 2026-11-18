@@ -290,14 +290,7 @@ class OrderController extends Controller
             // 2. Kiểm tra trạng thái đơn sau khi khóa: chỉ cho phép hủy khi đang pending
             if ($order->status !== OrderStatus::Pending) {
                 throw new HttpResponseException(response()->json([
-                    'message' => 'Chỉ có thể hủy đơn hàng khi đơn đang ở trạng thái chờ xử lý (pending).',
-                ], 422));
-            }
-
-            // Đơn hàng thanh toán trực tuyến đã hoàn tất thanh toán thì khách không được tự hủy
-            if ($order->payment_status === PaymentStatus::Paid) {
-                throw new HttpResponseException(response()->json([
-                    'message' => 'Không thể hủy đơn hàng đã thanh toán trực tuyến. Vui lòng liên hệ bộ phận hỗ trợ.',
+                    'message' => 'Chỉ có thể hủy đơn hàng khi đơn đang ở trạng thái chờ xử lý (pending). Vui lòng liên hệ cửa hàng để được hỗ trợ.',
                 ], 422));
             }
 
@@ -328,11 +321,19 @@ class OrderController extends Controller
             }
 
             // 6. Cập nhật trạng thái và thời gian hủy
-            $order->update([
+            $updateData = [
                 'status'        => OrderStatus::Cancelled,
                 'cancelled_at'  => now(),
                 'cancel_reason' => $reason,
-            ]);
+            ];
+
+            // Nếu đơn hàng đã thanh toán, chuyển sang chờ hoàn tiền thủ công và ghi nhận thời điểm yêu cầu hoàn tiền
+            if ($order->payment_status === PaymentStatus::Paid) {
+                $updateData['payment_status']       = PaymentStatus::RefundPending;
+                $updateData['refund_requested_at']  = now();
+            }
+
+            $order->update($updateData);
 
             // 7. Ghi lịch sử trạng thái trong cùng transaction
             OrderStatusHistory::create([

@@ -264,6 +264,9 @@ export interface ApiOrder {
   cancel_reason?: string | null
   cancelled_at?: string | null
   paid_at?: string | null
+  refund_requested_at?: string | null
+  refunded_at?: string | null
+  refund_note?: string | null
   created_at: string
   payment_details?: ApiPaymentDetails | null
   items?: ApiOrderItem[]

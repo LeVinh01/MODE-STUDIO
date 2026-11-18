@@ -23,6 +23,7 @@ import { getApiErrorMessage } from '@/utils/apiError'
 import { Button, Badge, Textarea } from '@/components/common'
 import { Breadcrumbs } from '@/components/navigation'
 import { EmptyState, Modal, Spinner } from '@/components/feedback'
+import { BRAND_NAME } from '@/config/brand'
 import styles from './OrderDetailPage.module.scss'
 
 export const OrderDetailPage = () => {
@@ -134,7 +135,11 @@ export const OrderDetailPage = () => {
 
       // Cập nhật đơn theo response
       setOrder(response.order)
-      setSuccessMessage('Đã hủy đơn hàng, số lượng hàng đã được hoàn lại kho.')
+      setSuccessMessage(
+        response.order.paymentStatus === 'refund_pending'
+          ? 'Đã hủy đơn hàng thành công. Trạng thái thanh toán chuyển sang "Chờ hoàn tiền". Cửa hàng sẽ xử lý hoàn tiền cho quý khách.'
+          : 'Đã hủy đơn hàng, số lượng hàng đã được hoàn lại kho.',
+      )
     } catch (err: unknown) {
       cancelLockRef.current = false
       setIsCancelling(false)
@@ -337,7 +342,7 @@ export const OrderDetailPage = () => {
                 </Button>
               )}
 
-            {order.status === 'pending' && order.paymentStatus !== 'paid' && (
+            {order.status === 'pending' && (
               <Button
                 variant="secondary"
                 size="md"
@@ -347,9 +352,9 @@ export const OrderDetailPage = () => {
               </Button>
             )}
 
-            {order.status === 'pending' && order.paymentStatus === 'paid' && (
+            {(order.status === 'confirmed' || order.status === 'shipping') && (
               <span className={styles.paidNotice}>
-                Đơn đã thanh toán, vui lòng liên hệ cửa hàng để hủy/hoàn tiền.
+                Đơn hàng đã được xác nhận/đang vận chuyển. Quý khách vui lòng liên hệ cửa hàng để được hỗ trợ nếu cần hủy hoặc hoàn trả.
               </span>
             )}
           </div>
@@ -610,7 +615,14 @@ export const OrderDetailPage = () => {
         <div className={styles.cancelForm}>
           <p className={styles.cancelPrompt}>
             Quý khách có chắc chắn muốn hủy đơn hàng <strong>{order.orderCode}</strong> không?
-            Số lượng các sản phẩm trong đơn sẽ được tự động hoàn lại kho hàng.
+            {order.paymentStatus === 'paid' ? (
+              <>
+                <br />
+                Đơn hàng đã được thanh toán trực tuyến. Sau khi hủy đơn, {BRAND_NAME} sẽ tiến hành đối soát và hoàn tiền thủ công cho quý khách qua tài khoản ngân hàng hoặc cổng thanh toán. Trạng thái thanh toán của đơn sẽ chuyển sang <strong>Chờ hoàn tiền</strong>.
+              </>
+            ) : (
+              ' Số lượng các sản phẩm trong đơn sẽ được tự động hoàn lại kho hàng.'
+            )}
           </p>
 
           <Textarea

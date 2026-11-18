@@ -12,6 +12,7 @@ import type {
   ApiAdminOrderStatusHistory,
   ApiAdminOrderShowResponse,
   ApiAdminOrderUpdateStatusResponse,
+  ConfirmRefundPayload,
   UpdateAdminOrderStatusPayload,
 } from '@/types/adminOrder'
 import type { ApiPaginatedResponse, ApiPaginationMeta } from '@/types/api'
@@ -80,6 +81,9 @@ export const mapApiAdminOrderDetailToAdminOrderDetail = (
     cancelReason: item.cancel_reason ?? null,
     cancelledAt: item.cancelled_at ?? null,
     paidAt: item.paid_at ?? null,
+    refundRequestedAt: item.refund_requested_at ?? null,
+    refundedAt: item.refunded_at ?? null,
+    refundNote: item.refund_note ?? null,
     paymentDetails: mapApiPaymentDetailsToPaymentDetails(item.payment_details),
     items: (item.items || []).map(mapApiOrderItemToOrderItem),
     statusHistories: (item.status_histories || []).map(mapStatusHistory),
@@ -178,6 +182,27 @@ export const adminOrderService = {
     const response = await apiClient.patch<ApiAdminOrderUpdateStatusResponse>(
       `/admin/orders/${encodeURIComponent(orderCode)}/status`,
       body,
+      { signal },
+    )
+
+    return {
+      message: response.data.message,
+      order: mapApiAdminOrderDetailToAdminOrderDetail(response.data.order),
+    }
+  },
+
+  /**
+   * Xác nhận hoàn tiền thủ công cho đơn hàng (chỉ dành cho role Admin)
+   * POST /api/admin/orders/{order_code}/refund
+   */
+  async confirmRefund(
+    orderCode: string,
+    payload?: ConfirmRefundPayload,
+    signal?: AbortSignal,
+  ): Promise<{ message: string; order: AdminOrderDetail }> {
+    const response = await apiClient.post<{ message: string; order: ApiAdminOrderDetail }>(
+      `/admin/orders/${encodeURIComponent(orderCode)}/refund`,
+      payload ?? {},
       { signal },
     )
 

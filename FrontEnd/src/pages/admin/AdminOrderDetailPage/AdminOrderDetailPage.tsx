@@ -28,6 +28,8 @@ import { Button, Badge, Textarea, Input } from '@/components/common'
 import { Breadcrumbs } from '@/components/navigation'
 import { EmptyState, Modal, Skeleton } from '@/components/feedback'
 import { SHIPPING_CARRIERS } from '@/config/shipping'
+import { useAppSelector } from '@/store/hooks'
+import { selectUserRole } from '@/store/slices/authSlice'
 import styles from './AdminOrderDetailPage.module.scss'
 
 export const AdminOrderDetailPage = () => {
@@ -56,6 +58,14 @@ export const AdminOrderDetailPage = () => {
   const [modalError, setModalError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const actionLockRef = useRef(false)
+
+  // 2b. State Modal Xác nhận Hoàn tiền
+  const currentUserRole = useAppSelector(selectUserRole)
+  const isAdmin = currentUserRole === 'admin'
+  const [refundModalOpen, setRefundModalOpen] = useState(false)
+  const [refundNote, setRefundNote] = useState('')
+  const [refundError, setRefundError] = useState<string | null>(null)
+  const [isSubmittingRefund, setIsSubmittingRefund] = useState(false)
 
   // 3. Tải chi tiết đơn hàng
   const reloadOrder = useCallback(() => {
@@ -238,6 +248,45 @@ export const AdminOrderDetailPage = () => {
     }
   }
 
+  // Thao tác hoàn tiền thủ công (chỉ dành cho Admin)
+  const handleOpenRefundModal = () => {
+    setRefundNote('')
+    setRefundError(null)
+    setRefundModalOpen(true)
+  }
+
+  const handleCloseRefundModal = () => {
+    if (isSubmittingRefund) return
+    setRefundModalOpen(false)
+    setRefundNote('')
+    setRefundError(null)
+  }
+
+  const handleConfirmRefund = async () => {
+    if (!orderCode || isSubmittingRefund) return
+
+    if (refundNote.trim().length > 255) {
+      setRefundError('Ghi chú hoàn tiền không được vượt quá 255 ký tự.')
+      return
+    }
+
+    setIsSubmittingRefund(true)
+    setRefundError(null)
+
+    try {
+      const payload = refundNote.trim() ? { refund_note: refundNote.trim() } : {}
+      const res = await adminOrderService.confirmRefund(orderCode, payload)
+      setIsSubmittingRefund(false)
+      setRefundModalOpen(false)
+      setOrder(res.order)
+      setSuccessMessage('Xác nhận hoàn tiền thành công cho đơn hàng.')
+    } catch (err: unknown) {
+      setIsSubmittingRefund(false)
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+      setRefundError(msg || 'Không thể xác nhận hoàn tiền. Vui lòng thử lại.')
+    }
+  }
+
   // BREADCRUMBS
   const breadcrumbItems = [
     { label: 'Admin', to: '/admin' },
@@ -408,7 +457,7 @@ export const AdminOrderDetailPage = () => {
             <span>Xem / In hóa đơn</span>
           </Link>
 
-          {availableActions.length > 0 && (
+          {(availableActions.length > 0 || (order.paymentStatus === 'refund_pending' && isAdmin)) && (
             <div className={styles.actionsGroup}>
               {availableActions.map((action) => {
                 const isUnpaidVnPay =
@@ -433,10 +482,29 @@ export const AdminOrderDetailPage = () => {
                   </Button>
                 )
               })}
+
+              {order.paymentStatus === 'refund_pending' && isAdmin && (
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={handleOpenRefundModal}
+                >
+                  Xác nhận đã hoàn tiền
+                </Button>
+              )}
             </div>
           )}
         </div>
       </div>
+
+      {order.paymentStatus === 'refund_pending' && (
+        <div className={`${styles.alertBanner} ${styles.warning}`} role="alert" style={{ marginBottom: 'var(--space-6)' }}>
+          <AlertTriangle size={18} />
+          <span className={styles.alertText}>
+            Đơn hàng này đang ở trạng thái <strong>Chờ hoàn tiền</strong>. Quản trị viên cần thực hiện hoàn tiền thủ công cho khách hàng qua tài khoản ngân hàng hoặc cổng VNPay merchant, sau đó bấm &ldquo;Xác nhận đã hoàn tiền&rdquo;.
+          </span>
+        </div>
+      )}
 
       {order.paymentMethod === 'vnpay' &&
         order.paymentStatus !== 'paid' &&
@@ -656,6 +724,24 @@ export const AdminOrderDetailPage = () => {
                 <div className={styles.infoRow}>
                   <span className={styles.infoLabel}>Mã tham chiếu:</span>
                   <span className={styles.infoValue}>{order.paymentDetails.txnRef}</span>
+                </div>
+              )}
+              {order.refundRequestedAt && (
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>Yêu cầu hoàn tiền:</span>
+                  <span className={styles.infoValue}>{formatDateTime(order.refundRequestedAt)}</span>
+                </div>
+              )}
+              {order.refundedAt && (
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>Thời gian hoàn tiền:</span>
+                  <span className={styles.infoValue}>{formatDateTime(order.refundedAt)}</span>
+                </div>
+              )}
+              {order.refundNote && (
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>Ghi chú hoàn tiền:</span>
+                  <div className={styles.orderNoteBox}>&ldquo;{order.refundNote}&rdquo;</div>
                 </div>
               )}
             </div>
@@ -891,6 +977,81 @@ export const AdminOrderDetailPage = () => {
           </div>
         </Modal>
       )}
+
+      {/* MODAL XÁC NHẬN ĐÃ HOÀN TIỀN THỦ CÔNG */}
+      <Modal
+        isOpen={refundModalOpen}
+        onClose={handleCloseRefundModal}
+        title="Xác Nhận Đã Hoàn Tiền"
+        size="md"
+        footer={
+          <div className={styles.modalFooter}>
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={handleCloseRefundModal}
+              disabled={isSubmittingRefund}
+            >
+              Hủy bỏ
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={handleConfirmRefund}
+              isLoading={isSubmittingRefund}
+              disabled={isSubmittingRefund}
+            >
+              Xác Nhận Đã Hoàn Tiền
+            </Button>
+          </div>
+        }
+      >
+        <div className={styles.modalBody}>
+          <p className={styles.modalPrompt}>
+            Xác nhận quý khách đã hoàn tiền thành công cho đơn hàng{' '}
+            <strong>{order.orderCode}</strong>? Sau khi xác nhận, trạng thái thanh toán sẽ đổi sang{' '}
+            <strong>Đã hoàn tiền</strong>.
+          </p>
+          <p
+            style={{
+              fontSize: '0.875rem',
+              color: 'var(--color-text-secondary)',
+              marginBottom: 'var(--space-4)',
+              lineHeight: 1.5,
+            }}
+          >
+            Lưu ý: Hệ thống không tự động gọi API hoàn tiền. Quản trị viên cần thực hiện chuyển khoản
+            hoặc hoàn tiền thủ công trên cổng thanh toán trước khi xác nhận.
+          </p>
+
+          {refundError && (
+            <div
+              className={`${styles.alertBanner} ${styles.error}`}
+              role="alert"
+              style={{ marginBottom: 'var(--space-4)' }}
+            >
+              <AlertCircle size={16} />
+              <span className={styles.alertText}>{refundError}</span>
+            </div>
+          )}
+
+          <Textarea
+            id="admin-refund-note-input"
+            label="Ghi chú hoàn tiền (tùy chọn)"
+            placeholder="Nhập thông tin giao dịch hoàn tiền (ví dụ: Đã CK qua VCB lúc 14:00, mã GD...)..."
+            value={refundNote}
+            onChange={(e) => {
+              setRefundNote(e.target.value)
+              if (refundError) setRefundError(null)
+            }}
+            helperText="Tối đa 255 ký tự"
+            disabled={isSubmittingRefund}
+            maxLength={255}
+            rows={3}
+            fullWidth
+          />
+        </div>
+      </Modal>
     </section>
   )
 }

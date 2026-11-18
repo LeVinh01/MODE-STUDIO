@@ -79,6 +79,10 @@ export const PAYMENT_STATUS_CONFIG: Record<PaymentStatus, PaymentStatusConfigIte
     label: 'Thanh toán thất bại',
     variant: 'error',
   },
+  refund_pending: {
+    label: 'Chờ hoàn tiền',
+    variant: 'warning',
+  },
   refunded: {
     label: 'Đã hoàn tiền',
     variant: 'info',

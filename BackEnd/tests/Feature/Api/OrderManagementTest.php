@@ -420,7 +420,7 @@ class OrderManagementTest extends TestCase
         $this->postJson("/api/orders/{$order->order_code}/cancel")
             ->assertStatus(422)
             ->assertJson([
-                'message' => 'Chỉ có thể hủy đơn hàng khi đơn đang ở trạng thái chờ xử lý (pending).',
+                'message' => 'Chỉ có thể hủy đơn hàng khi đơn đang ở trạng thái chờ xử lý (pending). Vui lòng liên hệ cửa hàng để được hỗ trợ.',
             ]);
 
         $this->assertSame(12, $v1->fresh()->stock_quantity);
@@ -442,7 +442,7 @@ class OrderManagementTest extends TestCase
         $this->postJson("/api/orders/{$order->order_code}/cancel")
             ->assertStatus(422)
             ->assertJson([
-                'message' => 'Chỉ có thể hủy đơn hàng khi đơn đang ở trạng thái chờ xử lý (pending).',
+                'message' => 'Chỉ có thể hủy đơn hàng khi đơn đang ở trạng thái chờ xử lý (pending). Vui lòng liên hệ cửa hàng để được hỗ trợ.',
             ]);
 
         $this->assertSame(10, $v1->fresh()->stock_quantity);

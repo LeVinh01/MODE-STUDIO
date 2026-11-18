@@ -199,11 +199,18 @@ class AdminOrderController extends Controller
                     }
                 }
 
-                $order->update([
+                $cancelData = [
                     'status'        => OrderStatus::Cancelled,
                     'cancelled_at'  => now(),
                     'cancel_reason' => $reason,
-                ]);
+                ];
+
+                if ($order->payment_status === PaymentStatus::Paid) {
+                    $cancelData['payment_status']      = PaymentStatus::RefundPending;
+                    $cancelData['refund_requested_at'] = now();
+                }
+
+                $order->update($cancelData);
             } elseif ($targetStatus === OrderStatus::Shipping) {
                 $allowedCarriers = config('shop.shipping.carriers', ['GHN', 'GHTK', 'Viettel Post', 'J&T Express', 'Khác']);
                 $carrier = trim((string) $request->input('carrier'));
@@ -272,6 +279,83 @@ class AdminOrderController extends Controller
         return response()->json([
             'message' => 'Cập nhật trạng thái đơn hàng thành công.',
             'order'   => new AdminOrderDetailResource($order->fresh(['user.role', 'items', 'statusHistories.changedBy.role', 'latestPayment'])),
+        ], 200);
+    }
+
+    /**
+     * Xác nhận đã hoàn tiền thủ công cho đơn hàng (Chỉ dành cho Admin).
+     * POST /api/admin/orders/{order_code}/refund
+     */
+    public function confirmRefund(Request $request, string $order_code): JsonResponse
+    {
+        $user = $request->user();
+        if ($user?->role?->name !== 'admin') {
+            return response()->json([
+                'message' => 'Bạn không có quyền thực hiện thao tác này.',
+            ], 403);
+        }
+
+        $request->validate([
+            'refund_note' => ['nullable', 'string', 'max:255'],
+        ], [
+            'refund_note.string' => 'Ghi chú hoàn tiền không hợp lệ.',
+            'refund_note.max'    => 'Ghi chú hoàn tiền không được vượt quá 255 ký tự.',
+        ]);
+
+        $refundNote = $request->filled('refund_note') ? trim((string) $request->input('refund_note')) : null;
+
+        $order = DB::transaction(function () use ($order_code, $refundNote, $user) {
+            $order = Order::where('order_code', $order_code)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$order) {
+                throw new HttpResponseException(response()->json([
+                    'message' => 'Đơn hàng không tồn tại.',
+                ], 404));
+            }
+
+            if ($order->payment_status !== PaymentStatus::RefundPending) {
+                throw new HttpResponseException(response()->json([
+                    'message' => 'Chỉ có thể xác nhận hoàn tiền cho đơn hàng đang ở trạng thái chờ hoàn tiền (refund_pending).',
+                ], 422));
+            }
+
+            // LƯU Ý: Không gọi API hoàn tiền của VNPay.
+            // Việc hoàn tiền cho khách được thực hiện thủ công qua chuyển khoản ngân hàng hoặc cổng quản trị VNPay merchant portal.
+            $order->update([
+                'payment_status' => PaymentStatus::Refunded,
+                'refunded_at'    => now(),
+                'refund_note'    => $refundNote,
+            ]);
+
+            $historyReason = 'Đã hoàn tiền thủ công cho khách hàng';
+            if ($refundNote !== null && $refundNote !== '') {
+                $historyReason .= ": {$refundNote}";
+            }
+
+            OrderStatusHistory::create([
+                'order_id'    => $order->id,
+                'from_status' => $order->status->value,
+                'to_status'   => $order->status->value,
+                'changed_by'  => $user->id,
+                'reason'      => $historyReason,
+                'created_at'  => now(),
+            ]);
+
+            return $order;
+        }, attempts: 3);
+
+        $order->load([
+            'user.role',
+            'items',
+            'statusHistories.changedBy.role',
+            'latestPayment',
+        ]);
+
+        return response()->json([
+            'message' => 'Xác nhận hoàn tiền thành công.',
+            'order'   => new AdminOrderDetailResource($order),
         ], 200);
     }
 }
