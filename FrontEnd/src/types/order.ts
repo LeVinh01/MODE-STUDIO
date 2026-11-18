@@ -5,7 +5,7 @@ export type OrderStatus =
   | 'delivered'
   | 'cancelled'
 
-export type PaymentStatus = 'unpaid' | 'paid' | 'failed' | 'refunded'
+export type PaymentStatus = 'unpaid' | 'paid' | 'failed' | 'refund_pending' | 'refunded'
 export type PaymentMethod = 'cod' | 'vnpay'
 
 export interface PaymentDetails {
@@ -49,6 +49,9 @@ export interface Order {
   cancelReason?: string | null
   cancelledAt?: string | null
   paidAt?: string | null
+  refundRequestedAt?: string | null
+  refundedAt?: string | null
+  refundNote?: string | null
   createdAt: string
   paymentDetails?: PaymentDetails | null
   items: OrderItem[]

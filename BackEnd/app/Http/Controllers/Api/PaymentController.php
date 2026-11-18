@@ -218,6 +218,12 @@ class PaymentController extends Controller
 
                 // Xử lý giao dịch bất thường (đơn đã cancelled hoặc đã paid trước đó)
                 if ($order->status === OrderStatus::Cancelled) {
+                    $order->update([
+                        'payment_status'      => PaymentStatus::RefundPending,
+                        'refund_requested_at' => now(),
+                        'paid_at'             => $paidAt,
+                    ]);
+
                     OrderStatusHistory::create([
                         'order_id'    => $order->id,
                         'from_status' => OrderStatus::Cancelled->value,

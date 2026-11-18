@@ -169,7 +169,11 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
                       className={
                         order.paymentStatus === 'paid'
                           ? styles.paymentPaid
-                          : styles.paymentUnpaid
+                          : order.paymentStatus === 'refund_pending'
+                            ? styles.paymentRefundPending
+                            : order.paymentStatus === 'refunded'
+                              ? styles.paymentRefunded
+                              : styles.paymentUnpaid
                       }
                     >
                       {paymentStatusBadge.label}

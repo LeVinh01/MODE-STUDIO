@@ -31,18 +31,23 @@ class Order extends Model
         'cancel_reason',
         'cancelled_at',
         'paid_at',
+        'refund_requested_at',
+        'refunded_at',
+        'refund_note',
     ];
 
     protected $casts = [
-        'status'          => OrderStatus::class,
-        'payment_method'  => PaymentMethod::class,
-        'payment_status'  => PaymentStatus::class,
-        'subtotal'        => 'integer',
-        'shipping_fee'    => 'integer',
-        'discount_amount' => 'integer',
-        'total_amount'    => 'integer',
-        'cancelled_at'    => 'datetime',
-        'paid_at'         => 'datetime',
+        'status'              => OrderStatus::class,
+        'payment_method'      => PaymentMethod::class,
+        'payment_status'      => PaymentStatus::class,
+        'subtotal'            => 'integer',
+        'shipping_fee'        => 'integer',
+        'discount_amount'     => 'integer',
+        'total_amount'        => 'integer',
+        'cancelled_at'        => 'datetime',
+        'paid_at'             => 'datetime',
+        'refund_requested_at' => 'datetime',
+        'refunded_at'         => 'datetime',
     ];
 
     public function user(): BelongsTo

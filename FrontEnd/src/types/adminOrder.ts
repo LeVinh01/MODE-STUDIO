@@ -58,6 +58,9 @@ export interface AdminOrderDetail extends AdminOrderListItem {
   cancelReason?: string | null
   cancelledAt?: string | null
   paidAt?: string | null
+  refundRequestedAt?: string | null
+  refundedAt?: string | null
+  refundNote?: string | null
   paymentDetails?: PaymentDetails | null
   items: OrderItem[]
   statusHistories: AdminOrderStatusHistory[]
@@ -135,9 +138,16 @@ export interface ApiAdminOrderDetail extends ApiAdminOrderListItem {
   cancel_reason: string | null
   cancelled_at: string | null
   paid_at: string | null
+  refund_requested_at?: string | null
+  refunded_at?: string | null
+  refund_note?: string | null
   payment_details?: ApiPaymentDetails | null
   items?: ApiOrderItem[]
   status_histories?: ApiAdminOrderStatusHistory[]
+}
+
+export interface ConfirmRefundPayload {
+  refund_note?: string
 }
 
 export interface ApiAdminOrderShowResponse {

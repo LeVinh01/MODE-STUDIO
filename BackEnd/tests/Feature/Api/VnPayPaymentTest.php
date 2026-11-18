@@ -719,6 +719,9 @@ class VnPayPaymentTest extends TestCase
         $order->refresh();
         // Đơn hàng vẫn giữ nguyên trạng thái Cancelled
         $this->assertEquals(OrderStatus::Cancelled, $order->status);
+        $this->assertEquals(PaymentStatus::RefundPending, $order->payment_status);
+        $this->assertNotNull($order->refund_requested_at);
+        $this->assertNotNull($order->paid_at);
 
         $this->assertDatabaseHas('order_status_histories', [
             'order_id' => $order->id,
@@ -771,11 +774,14 @@ class VnPayPaymentTest extends TestCase
     // 4. HỦY ĐƠN VÀ PHÂN QUYỀN CHUYỂN TRẠNG THÁI
     // =========================================================================
 
-    public function test_customer_cannot_cancel_paid_vnpay_order(): void
+    public function test_customer_can_cancel_paid_pending_vnpay_order_setting_refund_pending(): void
     {
         $user = $this->createCustomer();
+        $paidAt = now()->subHours(2);
         $order = $this->createOrder($user, [
+            'payment_method' => PaymentMethod::Vnpay,
             'payment_status' => PaymentStatus::Paid,
+            'paid_at'        => $paidAt,
             'status'         => OrderStatus::Pending,
         ]);
 
@@ -784,8 +790,33 @@ class VnPayPaymentTest extends TestCase
                 'reason' => 'Doi y khong mua',
             ]);
 
+        $response->assertStatus(200)
+            ->assertJsonPath('order.status', 'cancelled')
+            ->assertJsonPath('order.payment_status', 'refund_pending');
+
+        $order->refresh();
+        $this->assertEquals(OrderStatus::Cancelled, $order->status);
+        $this->assertEquals(PaymentStatus::RefundPending, $order->payment_status);
+        $this->assertNotNull($order->refund_requested_at);
+        $this->assertNotNull($order->paid_at);
+    }
+
+    public function test_customer_cannot_cancel_confirmed_paid_vnpay_order(): void
+    {
+        $user = $this->createCustomer();
+        $order = $this->createOrder($user, [
+            'payment_method' => PaymentMethod::Vnpay,
+            'payment_status' => PaymentStatus::Paid,
+            'status'         => OrderStatus::Confirmed,
+        ]);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->postJson("/api/orders/{$order->order_code}/cancel", [
+                'reason' => 'Doi y khong mua',
+            ]);
+
         $response->assertStatus(422)
-            ->assertJsonPath('message', 'Không thể hủy đơn hàng đã thanh toán trực tuyến. Vui lòng liên hệ bộ phận hỗ trợ.');
+            ->assertJsonPath('message', 'Chỉ có thể hủy đơn hàng khi đơn đang ở trạng thái chờ xử lý (pending). Vui lòng liên hệ cửa hàng để được hỗ trợ.');
     }
 
     public function test_customer_can_cancel_unpaid_vnpay_order(): void
