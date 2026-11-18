@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\AdminCategoryController;
 use App\Http\Controllers\Api\Admin\AdminColorController;
 use App\Http\Controllers\Api\Admin\AdminCustomerController;
 use App\Http\Controllers\Api\Admin\AdminDashboardController;
@@ -94,6 +95,8 @@ Route::middleware(['auth:sanctum', 'active', 'role:admin,operator'])->prefix('ad
     Route::get('/stock/low', [AdminStockController::class, 'lowStock']);
     Route::get('/colors', [AdminColorController::class, 'index']);
     Route::get('/colors/{id}', [AdminColorController::class, 'show'])->whereNumber('id');
+    Route::get('/categories', [AdminCategoryController::class, 'index']);
+    Route::get('/categories/{id}', [AdminCategoryController::class, 'show'])->whereNumber('id');
 
     // Admin & Operator Customer Management (Read-Only)
     Route::get('/customers', [AdminCustomerController::class, 'index']);
@@ -126,6 +129,11 @@ Route::middleware(['auth:sanctum', 'active', 'role:admin'])->prefix('admin')->gr
     Route::post('/colors', [AdminColorController::class, 'store']);
     Route::match(['put', 'patch'], '/colors/{id}', [AdminColorController::class, 'update'])->whereNumber('id');
     Route::delete('/colors/{id}', [AdminColorController::class, 'destroy'])->whereNumber('id');
+
+    Route::post('/categories', [AdminCategoryController::class, 'store']);
+    Route::match(['put', 'patch'], '/categories/{id}', [AdminCategoryController::class, 'update'])->whereNumber('id');
+    Route::post('/categories/{id}/image', [AdminCategoryController::class, 'uploadImage'])->whereNumber('id');
+    Route::delete('/categories/{id}/image', [AdminCategoryController::class, 'removeImage'])->whereNumber('id');
 });
 
 // Public read-only API (không có prefix /v1)

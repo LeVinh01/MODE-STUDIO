@@ -2,9 +2,7 @@ import React from 'react'
 import {
   HeroVideoBanner,
   CategoryIconGrid,
-  PromoBanner,
   ProductRow,
-  ClosingBanner,
 } from '@/components/storefront'
 import { HOME_CONFIG } from '@/config/homeSections'
 import styles from './HomePage.module.scss'
@@ -15,19 +13,18 @@ export const HomePage: React.FC = () => {
       {/* S1: Hero Video Banner */}
       <HeroVideoBanner config={HOME_CONFIG.hero} />
 
-      {/* S2: Category Icon Grid */}
+      {/* S2: Category Icon Grid (Leaf-only, Uniqlo style) */}
       <CategoryIconGrid config={HOME_CONFIG.categoryGrid} />
 
-      {/* S3 & S4: 4 Featured Categories (PromoBanner + ProductRow pairs) */}
-      {HOME_CONFIG.featuredCategories.map((section) => (
-        <React.Fragment key={section.categorySlug}>
-          <PromoBanner config={section} />
-          <ProductRow categorySlug={section.categorySlug} title={section.title} />
-        </React.Fragment>
+      {/* S3: 4 Category Product Rows (Empty rows are automatically hidden) */}
+      {HOME_CONFIG.productRows.map((row) => (
+        <ProductRow
+          key={row.title}
+          categorySlugs={row.categorySlugs}
+          title={row.title}
+          viewAllHref={row.viewAllHref}
+        />
       ))}
-
-      {/* S5: Closing Editorial Banner */}
-      <ClosingBanner config={HOME_CONFIG.closingBanner} />
     </div>
   )
 }

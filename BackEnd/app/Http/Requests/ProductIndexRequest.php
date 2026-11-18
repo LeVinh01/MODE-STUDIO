@@ -30,7 +30,7 @@ class ProductIndexRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'category'   => ['sometimes', 'string', 'max:150'],
+            'category'   => ['sometimes', 'string', 'max:500'],
             'brand'      => ['sometimes', 'string', 'max:150'],
             'color'      => ['sometimes', 'string'],
             'color_ids'  => ['sometimes', 'array'],

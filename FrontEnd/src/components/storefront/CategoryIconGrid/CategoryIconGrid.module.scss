@@ -65,28 +65,35 @@
 }
 
 .iconBox {
-  width: 72px;
-  height: 72px;
+  width: 110px;
+  height: 110px;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background-color: transparent;
+  background-color: #f7f7f7;
+  border-radius: 8px;
+  padding: 8px;
+  box-sizing: border-box;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+
+  @media (max-width: 640px) {
+    width: 96px;
+    height: 96px;
+  }
 }
 
 .iconImage {
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   transition: transform 0.25s ease;
 }
 
 .initialFallback {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
   background-color: #f0ede8;
   color: #1a1a1a;
   display: flex;
@@ -94,16 +101,16 @@
   justify-content: center;
   font-family: var(--font-serif, 'Playfair Display', Georgia, serif);
   font-size: 1.75rem;
-  font-weight: 400;
+  font-weight: 500;
 }
 
 .caption {
-  margin-top: 14px;
-  font-size: 14px;
-  line-height: 1.4;
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.35;
   color: #1a1a1a;
   text-align: center;
-  font-weight: 400;
+  font-weight: 500;
   transition: color 0.2s ease;
 }
 
@@ -140,11 +147,16 @@
 }
 
 .skeletonIcon {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
+  width: 110px;
+  height: 110px;
+  border-radius: 8px;
   background-color: #eaeaea;
   animation: pulse 1.5s infinite;
+
+  @media (max-width: 640px) {
+    width: 96px;
+    height: 96px;
+  }
 }
 
 @keyframes pulse {

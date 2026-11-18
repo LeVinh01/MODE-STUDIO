@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import {
   LayoutDashboard,
   Package,
+  FolderTree,
   Palette,
   ShoppingCart,
   Store,
@@ -49,6 +50,16 @@ const getPageMeta = (pathname: string): PageMeta => {
       breadcrumbs: [
         { label: 'Quản trị', to: '/admin' },
         { label: 'Sản phẩm' },
+      ],
+    }
+  }
+
+  if (cleanPath === '/admin/categories') {
+    return {
+      title: 'Quản lý danh mục',
+      breadcrumbs: [
+        { label: 'Quản trị', to: '/admin' },
+        { label: 'Danh mục' },
       ],
     }
   }
@@ -188,6 +199,11 @@ const NAV_GROUPS: NavGroup[] = [
         to: '/admin/products',
         label: 'Sản phẩm',
         icon: Package,
+      },
+      {
+        to: '/admin/categories',
+        label: 'Danh mục',
+        icon: FolderTree,
       },
       {
         to: '/admin/colors',

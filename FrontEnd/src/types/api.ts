@@ -37,6 +37,7 @@ export interface ApiCategoryItem {
   description: string | null
   image_url: string | null
   sort_order: number
+  products_count?: number
   children?: ApiCategoryItem[]
 }
 

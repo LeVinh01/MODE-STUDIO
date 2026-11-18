@@ -50,17 +50,17 @@ class CategoryApiTest extends TestCase
                      ],
                  ]);
 
-        // Cả DB có 7 categories (3 root: women, men, accessories)
+        // 3 root categories: women, men, accessories
         $data = $response->json('data');
         $this->assertCount(3, $data);
 
         $women = collect($data)->firstWhere('slug', 'women');
         $this->assertNotNull($women);
-        $this->assertCount(2, $women['children']); // jackets-blazers, dresses
+        $this->assertCount(9, $women['children']); // 2 gốc + 7 loại trang phục mới
 
         $men = collect($data)->firstWhere('slug', 'men');
         $this->assertNotNull($men);
-        $this->assertCount(0, $men['children']);
+        $this->assertCount(8, $men['children']); // 8 loại trang phục nam
 
         $accessories = collect($data)->firstWhere('slug', 'accessories');
         $this->assertNotNull($accessories);
@@ -76,8 +76,8 @@ class CategoryApiTest extends TestCase
         $response->assertStatus(200);
 
         $women = collect($response->json('data'))->firstWhere('slug', 'women');
-        $this->assertCount(1, $women['children']);
-        $this->assertEquals('jackets-blazers', $women['children'][0]['slug']);
+        $this->assertCount(8, $women['children']);
+        $this->assertFalse(collect($women['children'])->pluck('slug')->contains('dresses'));
 
         // Ẩn 1 danh mục gốc
         Category::where('slug', 'men')->update(['is_active' => false]);
