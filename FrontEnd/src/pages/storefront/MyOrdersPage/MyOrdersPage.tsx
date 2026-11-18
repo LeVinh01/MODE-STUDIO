@@ -14,6 +14,7 @@ import {
 } from '@/config/orderStatus'
 import { formatCurrency, formatDateTime } from '@/utils/formatters'
 import { getApiErrorMessage } from '@/utils/apiError'
+import { BRAND_NAME } from '@/config/brand'
 import { Button, Badge, Textarea } from '@/components/common'
 import { Breadcrumbs } from '@/components/navigation'
 import { Pagination } from '@/components/navigation/Pagination'
@@ -238,7 +239,7 @@ export const MyOrdersPage = () => {
         <header className={styles.pageHeader}>
           <h1 className={styles.pageTitle}>Đơn Hàng Của Tôi</h1>
           <p className={styles.pageSubtitle}>
-            Theo dõi chi tiết tiến trình vận chuyển và lịch sử đơn hàng của quý khách tại MODE STUDIO.
+            {`Theo dõi chi tiết tiến trình vận chuyển và lịch sử đơn hàng của quý khách tại ${BRAND_NAME}.`}
           </p>
         </header>
 
@@ -348,7 +349,7 @@ export const MyOrdersPage = () => {
               }
               description={
                 currentStatus === 'all'
-                  ? 'Quý khách chưa thực hiện đặt đơn hàng nào. Hãy khám phá các thiết kế thời trang tinh tế mới nhất từ MODE STUDIO.'
+                  ? `Quý khách chưa thực hiện đặt đơn hàng nào. Hãy khám phá các thiết kế thời trang tinh tế mới nhất từ ${BRAND_NAME}.`
                   : 'Không tìm thấy đơn hàng phù hợp với trạng thái đang chọn. Quý khách có thể xem lại toàn bộ đơn hàng.'
               }
               action={

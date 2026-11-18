@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { useMediaQuery } from '@/hooks'
 import { AUTH_IMAGES } from '@/config/authImages'
+import { BRAND_NAME } from '@/config/brand'
 import styles from './AuthSplitLayout.module.scss'
 
 export interface AuthSplitLayoutProps {
@@ -87,7 +88,7 @@ export const AuthSplitLayout = ({
             ) : (
               <div className={styles.brandFallback}>
                 <div className={styles.brandFallbackFrame}>
-                  <span className={styles.brandMonogram}>MODE STUDIO</span>
+                  <span className={styles.brandMonogram}>{BRAND_NAME}</span>
                   <span className={styles.brandTagline}>
                     MAY ĐO &amp; THIẾT KẾ CAO CẤP
                   </span>

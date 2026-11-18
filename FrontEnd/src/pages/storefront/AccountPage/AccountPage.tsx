@@ -8,6 +8,7 @@ import { authService } from '@/services/api/authService'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { selectCurrentUser, setUser } from '@/store/slices/authSlice'
 import { getApiErrorMessage, getApiFieldErrors } from '@/utils/apiError'
+import { BRAND_NAME } from '@/config/brand'
 import styles from './AccountPage.module.scss'
 
 const PHONE_REGEX = /^(0|\+84)(3|5|7|8|9)[0-9]{8}$/
@@ -228,7 +229,7 @@ export const AccountPage = () => {
           <Breadcrumbs items={breadcrumbsItems} />
           <h1 className={styles.title}>Thông Tin Tài Khoản</h1>
           <p className={styles.subtitle}>
-            Quản lý hồ sơ cá nhân và cập nhật mật khẩu bảo mật tài khoản MODE STUDIO
+            {`Quản lý hồ sơ cá nhân và cập nhật mật khẩu bảo mật tài khoản ${BRAND_NAME}`}
           </p>
         </div>
 

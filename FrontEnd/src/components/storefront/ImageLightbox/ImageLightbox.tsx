@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useDialogA11y } from '@/hooks/useDialogA11y'
+import { BRAND_NAME } from '@/config/brand'
 import type { ProductImage } from '@/types/product'
 import { cn } from '@/utils/cn'
 import styles from './ImageLightbox.module.scss'
@@ -268,7 +269,7 @@ export const ImageLightbox = ({
               />
             ) : (
               <div className={styles.fallbackBox} role="alert">
-                <span className={styles.fallbackBrand}>MODE STUDIO</span>
+                <span className={styles.fallbackBrand}>{BRAND_NAME}</span>
                 <span>Không thể tải hình ảnh</span>
               </div>
             )}

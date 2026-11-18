@@ -4,6 +4,7 @@ import axios from 'axios'
 import { Button, PasswordInput, FloatingInput } from '@/components/common'
 import { AuthLoadingScreen } from '@/components/auth/AuthLoadingScreen'
 import { authService } from '@/services/api/authService'
+import { BRAND_NAME } from '@/config/brand'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import {
   setUser,
@@ -195,8 +196,8 @@ export const RegisterPage = () => {
     <div className={styles.formWrapper}>
       {/* 1. Logo thương hiệu quay về trang chủ */}
       <div className={styles.logoWrapper}>
-        <Link to="/" className={styles.brandLogo} aria-label="MODE STUDIO - Về trang chủ">
-          MODE STUDIO
+        <Link to="/" className={styles.brandLogo} aria-label={`${BRAND_NAME} - Về trang chủ`}>
+          {BRAND_NAME}
         </Link>
       </div>
 

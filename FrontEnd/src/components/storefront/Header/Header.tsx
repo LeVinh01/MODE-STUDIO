@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { Menu, Search, ShoppingBag, User } from 'lucide-react'
+import { BRAND_NAME } from '@/config/brand'
 import { MAIN_NAVIGATION } from '@/config/navigation'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import {
@@ -213,8 +214,8 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0 }) => {
 
         {/* Center Section: Editorial Logo */}
         <div className={styles.centerSection}>
-          <Link to="/" className={styles.logo} aria-label="MODE STUDIO Trang Chủ">
-            MODE STUDIO
+          <Link to="/" className={styles.logo} aria-label={`${BRAND_NAME} Trang Chủ`}>
+            {BRAND_NAME}
           </Link>
         </div>
 

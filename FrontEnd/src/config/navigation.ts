@@ -1,4 +1,5 @@
 import { STORE_POLICIES } from './store'
+import { BRAND_NAME } from './brand'
 
 export interface NavItem {
   label: string
@@ -57,7 +58,7 @@ export const FOOTER_SECTIONS: NavSection[] = [
     ],
   },
   {
-    title: 'Về MODE STUDIO',
+    title: `Về ${BRAND_NAME}`,
     items: [
       { label: 'Câu Chuyện Thương Hiệu', to: '/about' },
       { label: 'Triết Lý Thiết Kế', to: '/editorial' },

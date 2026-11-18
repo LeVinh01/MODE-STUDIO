@@ -1,4 +1,4 @@
-# Hướng Dẫn Quản Lý Tài Nguyên Ảnh Nguồn Sản Phẩm - MODE STUDIO
+# Hướng Dẫn Quản Lý Tài Nguyên Ảnh Nguồn Sản Phẩm - OMBRE
 
 Tài liệu này hướng dẫn quy trình tổ chức thư mục làm việc nguồn (Working Directory) bên ngoài kho lưu trữ Git và các bước tải ảnh sản phẩm lên hệ thống thông qua giao diện Quản trị viên (Admin Panel).
 

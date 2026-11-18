@@ -9,7 +9,7 @@ export interface ProductStatusConfigItem {
 }
 
 /**
- * Nguồn chân lý duy nhất (Single Source of Truth) cho trạng thái sản phẩm tại MODE STUDIO
+ * Nguồn chân lý duy nhất (Single Source of Truth) cho trạng thái sản phẩm tại OMBRE
  */
 export const PRODUCT_STATUS_CONFIG: Record<ProductStatus, ProductStatusConfigItem> = {
   draft: {

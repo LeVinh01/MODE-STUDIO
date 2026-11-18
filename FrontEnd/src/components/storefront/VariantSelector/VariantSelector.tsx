@@ -2,6 +2,7 @@ import { useMemo, useState, useRef } from 'react'
 import { AlertCircle, Ruler } from 'lucide-react'
 import type { ProductVariant } from '@/types/product'
 import { Modal } from '@/components/feedback/Modal'
+import { BRAND_NAME } from '@/config/brand'
 import { SIZE_GUIDE_DATA, SIZE_MEASUREMENT_TIPS } from '@/config/sizeGuide'
 import { cn } from '@/utils/cn'
 import styles from './VariantSelector.module.scss'
@@ -251,7 +252,7 @@ export const VariantSelector = ({
       >
         <div className={styles.sizeGuideModalContent}>
           <p className={styles.sizeGuideNote}>
-            Bảng thông số kích cỡ may đo chuẩn của MODE STUDIO (tính bằng cm và kg). Quý khách vui lòng đối chiếu số đo cơ thể để lựa chọn kích cỡ vừa vặn nhất:
+            {`Bảng thông số kích cỡ may đo chuẩn của ${BRAND_NAME} (tính bằng cm và kg). Quý khách vui lòng đối chiếu số đo cơ thể để lựa chọn kích cỡ vừa vặn nhất:`}
           </p>
 
           <div className={styles.sizeGuideTableWrapper}>
@@ -282,7 +283,7 @@ export const VariantSelector = ({
           </div>
 
           <div className={styles.sizeGuideTips}>
-            <h4 className={styles.sizeGuideTipsTitle}>Lời khuyên từ thợ may đo MODE STUDIO:</h4>
+            <h4 className={styles.sizeGuideTipsTitle}>{`Lời khuyên từ thợ may đo ${BRAND_NAME}:`}</h4>
             <ul className={styles.sizeGuideTipsList}>
               {SIZE_MEASUREMENT_TIPS.map((tip, idx) => (
                 <li key={idx}>{tip}</li>

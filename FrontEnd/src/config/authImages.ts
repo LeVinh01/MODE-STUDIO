@@ -3,7 +3,7 @@
  *
  * Hình ảnh chính thức được đặt trong thư mục public/images/auth/.
  * Khi chưa có hình ảnh hoặc hình ảnh lỗi tải, AuthLayout tự động
- * hiển thị khung màu kem thương hiệu + chữ MODE STUDIO chuẩn tối giản.
+ * hiển thị khung màu kem thương hiệu + chữ OMBRE chuẩn tối giản.
  */
 export const AUTH_IMAGES = {
   login: '/images/auth/login.jpg',

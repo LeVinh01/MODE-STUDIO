@@ -20,6 +20,7 @@ import {
   getPaymentMethodLabel,
 } from '@/config/orderStatus'
 import { formatCurrency, formatDateTime } from '@/utils/formatters'
+import { BRAND_NAME } from '@/config/brand'
 import { Button, Badge } from '@/components/common'
 import { Pagination } from '@/components/navigation/Pagination'
 import { EmptyState, Skeleton } from '@/components/feedback'
@@ -319,7 +320,7 @@ export const OrderManagementPage = () => {
             Quản Lý Đơn Hàng
           </h1>
           <p className={styles.pageSubtitle}>
-            Theo dõi, xử lý và cập nhật tiến độ giao nhận cho các đơn hàng tại MODE STUDIO.
+            {`Theo dõi, xử lý và cập nhật tiến độ giao nhận cho các đơn hàng tại ${BRAND_NAME}.`}
           </p>
         </div>
 

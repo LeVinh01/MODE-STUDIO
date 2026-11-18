@@ -1,6 +1,6 @@
-# MODE STUDIO - Backend API
+# OMBRE - Backend API
 
-Hệ thống Backend API cho dự án thương mại điện tử thời trang **MODE STUDIO**.  
+Hệ thống Backend API cho dự án thương mại điện tử thời trang **OMBRE**.  
 Xây dựng trên nền tảng **Laravel 13**, **PHP 8.4+**, **MySQL 8.0** và triển khai qua **Docker Compose**.
 
 ---

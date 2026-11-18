@@ -1,5 +1,6 @@
 import type { OrderStatus, PaymentStatus } from '@/types/order'
 import type { BadgeVariant } from '@/components/common/Badge/Badge'
+import { BRAND_NAME } from './brand'
 
 export interface OrderStatusConfigItem {
   label: string
@@ -9,14 +10,14 @@ export interface OrderStatusConfigItem {
 }
 
 /**
- * Nguồn chân lý duy nhất (Single Source of Truth) cho trạng thái đơn hàng tại MODE STUDIO
+ * Nguồn chân lý duy nhất (Single Source of Truth) cho trạng thái đơn hàng tại OMBRE
  */
 export const ORDER_STATUS_CONFIG: Record<OrderStatus, OrderStatusConfigItem> = {
   pending: {
     label: 'Chờ xác nhận',
     variant: 'warning',
     step: 1,
-    description: 'Đơn hàng đang chờ bộ phận chăm sóc khách hàng của MODE STUDIO tiếp nhận và xác nhận.',
+    description: `Đơn hàng đang chờ bộ phận chăm sóc khách hàng của ${BRAND_NAME} tiếp nhận và xác nhận.`,
   },
   confirmed: {
     label: 'Đã xác nhận',

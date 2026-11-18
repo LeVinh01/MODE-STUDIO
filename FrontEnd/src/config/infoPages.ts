@@ -1,4 +1,5 @@
 import { STORE_INFO, STORE_POLICIES } from './store'
+import { BRAND_NAME } from './brand'
 import { SIZE_MEASUREMENT_TIPS } from './sizeGuide'
 
 export interface InfoPageSection {
@@ -32,7 +33,7 @@ export const INFO_PAGES_CONFIG: Record<string, InfoPageConfig> = {
         title: '1. Thời Hạn Đổi Trả',
         paragraphs: [
           // Nội dung mẫu: Thời hạn đổi trả mẫu 7 ngày theo tiêu chuẩn mua sắm thời trang
-          `MODE STUDIO hỗ trợ đổi size hoặc đổi mẫu trong vòng 7 ngày kể từ ngày quý khách nhận được kiện hàng thành công từ đối tác vận chuyển.`,
+          `${BRAND_NAME} hỗ trợ đổi size hoặc đổi mẫu trong vòng 7 ngày kể từ ngày quý khách nhận được kiện hàng thành công từ đối tác vận chuyển.`,
         ],
       },
       {
@@ -41,7 +42,7 @@ export const INFO_PAGES_CONFIG: Record<string, InfoPageConfig> = {
           'Để được hỗ trợ đổi trả thuận tiện và nhanh chóng nhất, sản phẩm cần đáp ứng các điều kiện tiêu chuẩn sau:',
         ],
         bulletPoints: [
-          'Sản phẩm còn nguyên tem mác, nhãn bảo hành và bao bì nguyên vẹn của MODE STUDIO.',
+          `Sản phẩm còn nguyên tem mác, nhãn bảo hành và bao bì nguyên vẹn của ${BRAND_NAME}.`,
           'Sản phẩm chưa qua giặt tẩy, chưa qua sử dụng, không dính mùi nước hoa hoặc các hóa mỹ phẩm lạ.',
           'Sản phẩm không bị rách, sờn chỉ, đứt cúc hoặc biến dạng do tác động bên ngoài.',
           'Có thông tin mã đơn hàng hoặc số điện thoại đặt hàng hợp lệ trên hệ thống.',
@@ -51,7 +52,7 @@ export const INFO_PAGES_CONFIG: Record<string, InfoPageConfig> = {
         title: '3. Quy Trình Thực Hiện Đổi Trả',
         paragraphs: [
           `Quý khách vui lòng liên hệ hotline hỗ trợ ${STORE_INFO.hotline} hoặc gửi email tới ${STORE_INFO.email} kèm mã đơn hàng và hình ảnh sản phẩm cần hỗ trợ.`,
-          'Chuyên viên chăm sóc khách hàng của MODE STUDIO sẽ hướng dẫn nhân viên giao nhận đến tận nơi tiếp nhận kiện hàng đổi trả chu đáo và giao lại trang phục vừa vặn cho quý khách.',
+          `Chuyên viên chăm sóc khách hàng của ${BRAND_NAME} sẽ hướng dẫn nhân viên giao nhận đến tận nơi tiếp nhận kiện hàng đổi trả chu đáo và giao lại trang phục vừa vặn cho quý khách.`,
         ],
       },
     ],
@@ -67,7 +68,7 @@ export const INFO_PAGES_CONFIG: Record<string, InfoPageConfig> = {
       {
         title: 'Bảng Thông Số Kích Cỡ Chuẩn',
         paragraphs: [
-          'Dưới đây là bảng quy đổi số đo kích cỡ tiêu chuẩn (cm) áp dụng cho các dòng sản phẩm may đo sẵn của MODE STUDIO:',
+          `Dưới đây là bảng quy đổi số đo kích cỡ tiêu chuẩn (cm) áp dụng cho các dòng sản phẩm may đo sẵn của ${BRAND_NAME}:`,
         ],
         isSizeTable: true,
       },
@@ -92,7 +93,7 @@ export const INFO_PAGES_CONFIG: Record<string, InfoPageConfig> = {
           `Phí vận chuyển tiêu chuẩn cho mọi đơn hàng toàn quốc là ${(
             STORE_POLICIES.standardShippingFee
           ).toLocaleString('vi-VN')} đ.`,
-          `MODE STUDIO MIỄN PHÍ VẬN CHUYỂN cho mọi đơn hàng có tổng giá trị từ ${(
+          `${BRAND_NAME} MIỄN PHÍ VẬN CHUYỂN cho mọi đơn hàng có tổng giá trị từ ${(
             STORE_POLICIES.freeShippingThreshold
           ).toLocaleString('vi-VN')} đ trở lên.`,
         ],
@@ -100,7 +101,7 @@ export const INFO_PAGES_CONFIG: Record<string, InfoPageConfig> = {
       {
         title: '2. Thời Gian Giao Hàng Dự Kiến',
         paragraphs: [
-          'Kiện hàng thời trang được đội ngũ kho MODE STUDIO kiểm tra chất lượng và đóng gói cẩn trọng trước khi bàn giao đơn vị vận chuyển:',
+          `Kiện hàng thời trang được đội ngũ kho ${BRAND_NAME} kiểm tra chất lượng và đóng gói cẩn trọng trước khi bàn giao đơn vị vận chuyển:`,
         ],
         bulletPoints: [
           'Khu vực nội thành Hà Nội & TP. Hồ Chí Minh: Dự kiến giao nhận từ 1 - 2 ngày làm việc.',
@@ -122,11 +123,11 @@ export const INFO_PAGES_CONFIG: Record<string, InfoPageConfig> = {
   faq: {
     id: 'faq',
     title: 'Câu Hỏi Thường Gặp (FAQ)',
-    subtitle: 'Giải đáp những thắc mắc phổ biến về mua sắm và sản phẩm tại MODE STUDIO',
+    subtitle: `Giải đáp những thắc mắc phổ biến về mua sắm và sản phẩm tại ${BRAND_NAME}`,
     breadcrumbLabel: 'Câu hỏi thường gặp',
     sections: [
       {
-        title: '1. Làm thế nào để đặt hàng tại website MODE STUDIO?',
+        title: `1. Làm thế nào để đặt hàng tại website ${BRAND_NAME}?`,
         paragraphs: [
           'Quý khách chỉ cần chọn sản phẩm ưng ý, chọn màu sắc và kích cỡ phù hợp, sau đó bấm "Thêm vào giỏ hàng" hoặc chuyển thẳng tới trang "Thanh toán". Điền địa chỉ nhận hàng và xác nhận đặt đơn.',
         ],
@@ -150,7 +151,7 @@ export const INFO_PAGES_CONFIG: Record<string, InfoPageConfig> = {
       {
         title: '4. Tôi cần làm gì nếu trang phục mặc không vừa vặn?',
         paragraphs: [
-          `MODE STUDIO hỗ trợ đổi kích cỡ hoặc đổi mẫu trong vòng 7 ngày kể từ khi quý khách nhận hàng. Vui lòng liên hệ hotline ${STORE_INFO.hotline} để nhân viên tiếp nhận và hỗ trợ đổi tận nơi chu đáo.`,
+          `${BRAND_NAME} hỗ trợ đổi kích cỡ hoặc đổi mẫu trong vòng 7 ngày kể từ khi quý khách nhận hàng. Vui lòng liên hệ hotline ${STORE_INFO.hotline} để nhân viên tiếp nhận và hỗ trợ đổi tận nơi chu đáo.`,
         ],
       },
     ],
@@ -161,19 +162,19 @@ export const INFO_PAGES_CONFIG: Record<string, InfoPageConfig> = {
     id: 'about',
     title: 'Câu Chuyện Thương Hiệu',
     subtitle: 'Hành trình kiến tạo chuẩn mực thời trang may đo thanh lịch và trường tồn',
-    breadcrumbLabel: 'Về MODE STUDIO',
+    breadcrumbLabel: `Về ${BRAND_NAME}`,
     sections: [
       {
         title: 'Khởi Nguồn Cảm Hứng',
         paragraphs: [
-          'Được thành lập với khát vọng tôn vinh vẻ đẹp tinh tế của trang phục may đo hiện đại, MODE STUDIO hướng tới việc kiến tạo tủ đồ vượt thời gian cho những cá nhân yêu chuộng sự chỉn chu và tối giản.',
+          `Được thành lập với khát vọng tôn vinh vẻ đẹp tinh tế của trang phục may đo hiện đại, ${BRAND_NAME} hướng tới việc kiến tạo tủ đồ vượt thời gian cho những cá nhân yêu chuộng sự chỉn chu và tối giản.`,
           'Mỗi thiết kế của chúng tôi là sự giao thoa hài hòa giữa kỹ thuật cắt may truyền thống chuẩn mực và hơi thở thẩm mỹ đương đại. Chúng tôi tin rằng trang phục không chỉ để mặc, mà là một ngôn ngữ biểu đạt sự tự tin và phong thái của người sở hữu.',
         ],
       },
       {
         title: 'Chất Liệu Thượng Hạng',
         paragraphs: [
-          'Chúng tôi ưu tiên tuyển chọn các dòng sợi tự nhiên thượng hạng như lụa tơ tằm, len lông cừu nguyên chất (Wool 130s), đũi dệt thoi và cotton hữu cơ. Sự êm ái trên làn da cùng độ rũ tự nhiên là cam kết chất lượng hàng đầu của MODE STUDIO.',
+          `Chúng tôi ưu tiên tuyển chọn các dòng sợi tự nhiên thượng hạng như lụa tơ tằm, len lông cừu nguyên chất (Wool 130s), đũi dệt thoi và cotton hữu cơ. Sự êm ái trên làn da cùng độ rũ tự nhiên là cam kết chất lượng hàng đầu của ${BRAND_NAME}.`,
         ],
       },
     ],
@@ -189,14 +190,14 @@ export const INFO_PAGES_CONFIG: Record<string, InfoPageConfig> = {
       {
         title: 'Tối Giản Nhưng Không Đơn Điệu',
         paragraphs: [
-          'Phong cách thiết kế của MODE STUDIO bám sát triết lý "Less is More" - loại bỏ các chi tiết rườm rà không cần thiết để tập trung vào phom dáng kiến trúc và đường may chuẩn xác đến từng milimet.',
+          `Phong cách thiết kế của ${BRAND_NAME} bám sát triết lý "Less is More" - loại bỏ các chi tiết rườm rà không cần thiết để tập trung vào phom dáng kiến trúc và đường may chuẩn xác đến từng milimet.`,
           'Từng chiếc ve áo, đường xẻ lưng hay nếp ly quần đều được tính toán tỉ mỉ nhằm tôn vinh vóc dáng người mặc một cách tự nhiên và thoải mái nhất.',
         ],
       },
       {
         title: 'Bền Vững Trong Từng Đường Kim',
         paragraphs: [
-          'Thời trang nhanh dần qua đi, nhưng giá trị của một trang phục may đo tinh tế sẽ luôn ở lại. Bằng cách sử dụng chất liệu tự nhiên bền bỉ và gam màu trung tính nhã nhặn, các thiết kế của MODE STUDIO đồng hành cùng bạn qua nhiều mùa thời trang mà không bao giờ lỗi mốt.',
+          `Thời trang nhanh dần qua đi, nhưng giá trị của một trang phục may đo tinh tế sẽ luôn ở lại. Bằng cách sử dụng chất liệu tự nhiên bền bỉ và gam màu trung tính nhã nhặn, các thiết kế của ${BRAND_NAME} đồng hành cùng bạn qua nhiều mùa thời trang mà không bao giờ lỗi mốt.`,
         ],
       },
     ],
@@ -212,7 +213,7 @@ export const INFO_PAGES_CONFIG: Record<string, InfoPageConfig> = {
       {
         title: 'Showroom Chính Thức Tại Hà Nội',
         paragraphs: [
-          'Không gian showroom MODE STUDIO được bài trí theo phong cách tối giản thanh lịch, nơi quý khách có thể trực tiếp chạm vào các chất liệu vải cao cấp và nhận tư vấn fitting phom dáng từ các chuyên gia thời trang:',
+          `Không gian showroom ${BRAND_NAME} được bài trí theo phong cách tối giản thanh lịch, nơi quý khách có thể trực tiếp chạm vào các chất liệu vải cao cấp và nhận tư vấn fitting phom dáng từ các chuyên gia thời trang:`,
         ],
         isStoreCard: true,
       },
@@ -231,7 +232,7 @@ export const INFO_PAGES_CONFIG: Record<string, InfoPageConfig> = {
   contact: {
     id: 'contact',
     title: 'Liên Hệ & Hợp Tác',
-    subtitle: 'Kết nối cùng bộ phận chăm sóc khách hàng và đối tác của MODE STUDIO',
+    subtitle: `Kết nối cùng bộ phận chăm sóc khách hàng và đối tác của ${BRAND_NAME}`,
     breadcrumbLabel: 'Liên hệ',
     sections: [
       {

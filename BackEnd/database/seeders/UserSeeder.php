@@ -32,7 +32,7 @@ class UserSeeder extends Seeder
 
         $users = [
             [
-                'full_name'         => 'Admin MODE Studio',
+                'full_name'         => 'Admin OMBRE',
                 'email'             => 'admin@mode-studio.test',
                 'password'          => Hash::make($adminPass),
                 'role_id'           => $adminRole->id,
@@ -41,7 +41,7 @@ class UserSeeder extends Seeder
                 'last_login_at'     => null,
             ],
             [
-                'full_name'         => 'Operator MODE Studio',
+                'full_name'         => 'Operator OMBRE',
                 'email'             => 'operator@mode-studio.test',
                 'password'          => Hash::make($operatorPass),
                 'role_id'           => $operatorRole->id,

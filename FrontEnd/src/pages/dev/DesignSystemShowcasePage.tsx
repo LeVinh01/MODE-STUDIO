@@ -18,6 +18,7 @@ import { Spinner, Skeleton, Modal, EmptyState, Drawer } from '@/components/feedb
 import { Pagination, Breadcrumbs } from '@/components/navigation'
 import { ProductCard, ProductCardSkeleton } from '@/components/storefront'
 import { MOCK_PRODUCTS } from '@/mocks/products'
+import { BRAND_NAME } from '@/config/brand'
 import styles from './DesignSystemShowcasePage.module.scss'
 
 export const DesignSystemShowcasePage = () => {
@@ -63,9 +64,9 @@ export const DesignSystemShowcasePage = () => {
   return (
     <div className={styles.showcaseContainer}>
       <header className={styles.header}>
-        <h1 className={styles.title}>MODE STUDIO Design System</h1>
+        <h1 className={styles.title}>{`${BRAND_NAME} Design System`}</h1>
         <p className={styles.subtitle}>
-          Thư viện thành phần giao diện chuẩn hóa (Design System) cho nền tảng thương mại điện tử MODE STUDIO. Phong cách Minimalist / Modern Luxury / Editorial.
+          {`Thư viện thành phần giao diện chuẩn hóa (Design System) cho nền tảng thương mại điện tử ${BRAND_NAME}. Phong cách Minimalist / Modern Luxury / Editorial.`}
         </p>
         <div className={styles.devBadge}>
           <Badge variant="luxury" dot>
@@ -423,7 +424,7 @@ export const DesignSystemShowcasePage = () => {
             <EmptyState
               icon={<ShoppingBag />}
               title="Giỏ Hàng Đang Trống"
-              description="Bạn chưa chọn sản phẩm nào. Hãy khám phá các thiết kế thời trang may đo tinh xảo mới nhất từ MODE STUDIO."
+              description={`Bạn chưa chọn sản phẩm nào. Hãy khám phá các thiết kế thời trang may đo tinh xảo mới nhất từ ${BRAND_NAME}.`}
               action={
                 <Button to="/products" variant="primary" size="md">
                   Khám Phá Bộ Sưu Tập

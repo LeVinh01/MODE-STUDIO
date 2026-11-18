@@ -7,7 +7,7 @@ return [
     | Cross-Origin Resource Sharing (CORS) Configuration
     |--------------------------------------------------------------------------
     |
-    | Cấu hình CORS cho ứng dụng MODE STUDIO API.
+    | Cấu hình CORS cho ứng dụng OMBRE API.
     | Cho phép truy cập từ Vite Dev Server của FrontEnd (mặc định: http://localhost:5173).
     |
     */
