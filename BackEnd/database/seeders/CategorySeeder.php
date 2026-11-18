@@ -73,5 +73,7 @@ class CategorySeeder extends Seeder
             'sort_order' => 2,
             'is_active'  => true,
         ]);
+
+        $this->call(ClothingTypeCategorySeeder::class);
     }
 }

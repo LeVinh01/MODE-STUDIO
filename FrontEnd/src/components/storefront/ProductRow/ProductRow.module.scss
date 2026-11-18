@@ -20,6 +20,39 @@
   }
 }
 
+.rowHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-border, #eaeaea);
+}
+
+.rowTitle {
+  font-family: var(--font-serif, 'Playfair Display', Georgia, serif);
+  font-size: clamp(1.35rem, 2vw, 1.65rem);
+  font-weight: 500;
+  color: #1a1a1a;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.viewAllLink {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-primary, #a18a70);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: opacity 0.2s ease;
+
+  &:hover {
+    text-decoration: underline;
+    opacity: 0.8;
+  }
+}
+
 .slider {
   width: 100%;
   overflow: hidden;

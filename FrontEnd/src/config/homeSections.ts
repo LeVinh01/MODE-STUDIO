@@ -1,6 +1,6 @@
 /**
  * Configuration for HomePage Section-based Layout
- * Single source of truth for home sections, banners, copy, and category mapping.
+ * Single source of truth for home sections, category mapping, and hidden categories.
  */
 
 export interface HeroSectionConfig {
@@ -13,25 +13,22 @@ export interface HeroSectionConfig {
   ctaHref: string
 }
 
-export interface CategoryGridItemConfig {
-  name: string
-  slug: string
-}
-
 export interface CategoryGridSectionConfig {
   type: 'category_grid'
   title: string
   ctaLabel: string
   ctaHref: string
-  categories: CategoryGridItemConfig[]
 }
 
 export interface PromoCategorySectionConfig {
   type: 'promo_category'
-  categorySlug: 'jackets-blazers' | 'dresses' | 'men' | 'accessories' | string
   title: string
-  description: string
-  bannerImage: string
+  subtitle?: string
+  description?: string
+  categorySlug: string
+  bannerImage?: string
+  image?: string
+  ctaLabel?: string
   ctaHref: string
 }
 
@@ -44,11 +41,17 @@ export interface ClosingBannerSectionConfig {
   ctaHref: string
 }
 
+export interface HomeProductRowConfig {
+  title: string
+  categorySlugs: string[]
+  viewAllHref: string
+}
+
 export interface HomeConfig {
   hero: HeroSectionConfig
   categoryGrid: CategoryGridSectionConfig
-  featuredCategories: PromoCategorySectionConfig[]
-  closingBanner: ClosingBannerSectionConfig
+  hiddenCategorySlugs: string[]
+  productRows: HomeProductRowConfig[]
 }
 
 export const HOME_CONFIG: HomeConfig = {
@@ -69,63 +72,40 @@ export const HOME_CONFIG: HomeConfig = {
     title: 'Tìm theo danh mục',
     ctaLabel: 'XEM TẤT CẢ DANH MỤC',
     ctaHref: '/products',
-    categories: [
-      { name: 'Thời Trang Nữ', slug: 'women' },
-      { name: 'Thời Trang Nam', slug: 'men' },
-      { name: 'Phụ Kiện', slug: 'accessories' },
-      { name: 'Áo Khoác & Blazer', slug: 'jackets-blazers' },
-      { name: 'Đầm & Váy', slug: 'dresses' },
-      { name: 'Túi Xách', slug: 'bags' },
-    ],
   },
 
-  // S3 & S4: 4 Featured Categories in explicit order
-  featuredCategories: [
+  // Danh mục loại trừ khỏi tiles và rows (chưa có phụ kiện)
+  hiddenCategorySlugs: ['accessories', 'bags', 'belts'],
+
+  // 4 Hàng sản phẩm theo quyết định đã duyệt (hàng không có sản phẩm sẽ tự động ẩn)
+  productRows: [
     {
-      type: 'promo_category',
-      categorySlug: 'jackets-blazers',
-      title: 'Áo Khoác & Blazer May Đo',
-      description:
-        'Phom dáng sắc sảo, cấu trúc vai chuẩn mực cùng chất liệu len cao cấp cho trang phục thường nhật và công sở.',
-      bannerImage: '/images/banners/jackets-blazers-banner.jpg',
-      ctaHref: '/products?category=jackets-blazers',
+      title: 'Áo khoác & áo ấm',
+      categorySlugs: [
+        'jackets-blazers',
+        'women-coats',
+        'women-sweaters',
+        'men-jackets',
+        'men-coats',
+        'men-sweaters',
+      ],
+      viewAllHref:
+        '/products?category=jackets-blazers,women-coats,women-sweaters,men-jackets,men-coats,men-sweaters',
     },
     {
-      type: 'promo_category',
-      categorySlug: 'dresses',
-      title: 'Đầm & Váy Thanh Lịch',
-      description:
-        'Đường cắt tối giản, chất liệu lụa và sợi dệt tự nhiên tôn vinh nét đẹp thanh tao vượt thời gian.',
-      bannerImage: '/images/banners/dresses-banner.jpg',
-      ctaHref: '/products?category=dresses',
+      title: 'Cardigan & Blouse',
+      categorySlugs: ['women-cardigans', 'women-blouses', 'men-cardigans'],
+      viewAllHref: '/products?category=women-cardigans,women-blouses,men-cardigans',
     },
     {
-      type: 'promo_category',
-      categorySlug: 'men',
-      title: 'Thời Trang Nam Chuẩn Mực',
-      description:
-        'Trang phục may đo quý ông hiện đại với các thiết kế tối giản, sắc sảo từ chất liệu chọn lọc.',
-      bannerImage: '/images/banners/men-banner.jpg',
-      ctaHref: '/products?category=men',
+      title: 'Jeans',
+      categorySlugs: ['women-jeans', 'men-jeans'],
+      viewAllHref: '/products?category=women-jeans,men-jeans',
     },
     {
-      type: 'promo_category',
-      categorySlug: 'accessories',
-      title: 'Phụ Kiện Da & Thủ Công',
-      description:
-        'Túi xách và thắt lưng da chế tác tỉ mỉ, điểm nhấn hoàn thiện bộ trang phục tinh tế.',
-      bannerImage: '/images/banners/accessories-banner.jpg',
-      ctaHref: '/products?category=accessories',
+      title: 'Quần',
+      categorySlugs: ['women-pants', 'men-pants'],
+      viewAllHref: '/products?category=women-pants,men-pants',
     },
   ],
-
-  // S5: Closing Banner
-  closingBanner: {
-    type: 'closing_banner',
-    title: 'HÀNH TRÌNH TÌM KIẾM PHONG CÁCH BỀN VỮNG',
-    subtitle: 'Khám phá toàn bộ các thiết kế may đo cao cấp của MODE STUDIO',
-    image: '/images/banners/closing-banner.jpg',
-    ctaLabel: 'Khám phá thêm',
-    ctaHref: '/products',
-  },
 }

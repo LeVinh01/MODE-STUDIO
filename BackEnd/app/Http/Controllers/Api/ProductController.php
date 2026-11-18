@@ -33,18 +33,23 @@ class ProductController extends Controller
                 'variants' => fn($q) => $q->where('is_active', true)->with('color'),
             ]);
 
-        // 1. Filter theo category slug (gồm cả sub-categories)
+        // 1. Filter theo category slug (hỗ trợ 1 slug hoặc nhiều slug phân tách bằng dấu phẩy, gồm cả sub-categories)
         if ($request->filled('category')) {
-            $catSlug = $request->input('category');
-            $category = Category::where('slug', $catSlug)->first();
+            $catParam = (string) $request->input('category');
+            $slugs = array_filter(array_map('trim', explode(',', $catParam)));
 
-            if ($category) {
-                $childIds = $category->children()->pluck('id')->all();
-                $allCategoryIds = array_merge([$category->id], $childIds);
-                $query->whereIn('category_id', $allCategoryIds);
-            } else {
-                // Nếu slug không tồn tại, trả về rỗng
-                $query->whereRaw('1 = 0');
+            if (!empty($slugs)) {
+                $categories = Category::whereIn('slug', $slugs)->get();
+
+                if ($categories->isNotEmpty()) {
+                    $catIds = $categories->pluck('id')->all();
+                    $childIds = Category::whereIn('parent_id', $catIds)->pluck('id')->all();
+                    $allCategoryIds = array_unique(array_merge($catIds, $childIds));
+                    $query->whereIn('category_id', $allCategoryIds);
+                } else {
+                    // Nếu không có slug nào tồn tại, trả về rỗng
+                    $query->whereRaw('1 = 0');
+                }
             }
         }
 

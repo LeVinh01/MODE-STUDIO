@@ -6,9 +6,11 @@ import type { Product } from '@/types/product'
 import { formatCurrency } from '@/utils/formatters'
 import styles from './ProductRow.module.scss'
 
-interface ProductRowProps {
-  categorySlug: string
+export interface ProductRowProps {
+  categorySlug?: string
+  categorySlugs?: string[]
   title?: string
+  viewAllHref?: string
 }
 
 interface ProductTileProps {
@@ -152,21 +154,35 @@ const ProductTile: React.FC<ProductTileProps> = ({ product }) => {
 
 export const ProductRow: React.FC<ProductRowProps> = ({
   categorySlug,
+  categorySlugs,
   title,
+  viewAllHref,
 }) => {
+  const activeSlugs = React.useMemo(() => {
+    if (categorySlugs && categorySlugs.length > 0) {
+      return categorySlugs.join(',')
+    }
+    return categorySlug || ''
+  }, [categorySlug, categorySlugs])
+
   const [products, setProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(() => Boolean(activeSlugs))
   const [pageIndex, setPageIndex] = useState(0)
   const [imageCenterY, setImageCenterY] = useState<number>(245)
   const wrapperRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    if (!activeSlugs) {
+      return
+    }
+
     let isMounted = true
+
     const fetchProducts = async () => {
       setLoading(true)
       try {
         const response = await productService.getProducts({
-          category: categorySlug,
+          category: activeSlugs,
           sort: 'best_selling',
           perPage: 8,
         })
@@ -188,7 +204,7 @@ export const ProductRow: React.FC<ProductRowProps> = ({
     return () => {
       isMounted = false
     }
-  }, [categorySlug])
+  }, [activeSlugs])
 
   // Measure first image height to center navigation buttons vertically on image
   useEffect(() => {
@@ -239,6 +255,18 @@ export const ProductRow: React.FC<ProductRowProps> = ({
       data-header-theme="light"
     >
       <div className={styles.wrapper} ref={wrapperRef}>
+        {/* Row Header with Title & View All Link */}
+        {title && (
+          <div className={styles.rowHeader}>
+            <h2 className={styles.rowTitle}>{title}</h2>
+            {viewAllHref && (
+              <Link to={viewAllHref} className={styles.viewAllLink}>
+                Xem tất cả
+              </Link>
+            )}
+          </div>
+        )}
+
         {/* Navigation Arrow Left */}
         {showNavButtons && (
           <button

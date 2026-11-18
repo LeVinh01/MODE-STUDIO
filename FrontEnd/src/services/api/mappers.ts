@@ -195,6 +195,7 @@ export const mapCategoryItemToCategory = (item: ApiCategoryItem): ProductCategor
     description: item.description ?? undefined,
     imageUrl: item.image_url,
     sortOrder: item.sort_order,
+    productsCount: item.products_count,
     children: item.children?.map(mapCategoryItemToCategory),
   }
 }

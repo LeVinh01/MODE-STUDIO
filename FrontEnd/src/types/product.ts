@@ -7,6 +7,7 @@ export interface ProductCategory {
   description?: string
   imageUrl?: string | null
   sortOrder?: number
+  productsCount?: number
   children?: ProductCategory[]
 }
 
