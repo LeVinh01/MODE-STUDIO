@@ -74,6 +74,15 @@ export const adminRoutes: RouteObject[] = [
     },
   },
   {
+    path: 'orders/:orderCode/invoice',
+    lazy: async () => {
+      const { AdminOrderInvoicePage } = await import(
+        '@/pages/admin/AdminOrderInvoicePage/AdminOrderInvoicePage'
+      )
+      return { Component: AdminOrderInvoicePage }
+    },
+  },
+  {
     path: 'inventory',
     lazy: async () => {
       const { InventoryManagementPage } = await import(

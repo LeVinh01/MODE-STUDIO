@@ -1,0 +1,732 @@
+@use '@/styles/abstracts' as *;
+
+/* ==========================================================================
+   1. SCREEN VIEW WRAPPER
+   ========================================================================== */
+.invoiceScreenWrapper {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #f7f6f4;
+  padding: var(--space-6) var(--space-4) var(--space-12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: var(--space-4) var(--space-2) var(--space-8);
+  }
+}
+
+/* ==========================================================================
+   2. SCREEN ACTIONS BAR (Ẩn khi in)
+   ========================================================================== */
+.screenActions {
+  width: 100%;
+  max-width: 210mm;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-4);
+  gap: var(--space-3);
+  flex-wrap: wrap;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.actionsLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.actionsRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 8px 16px;
+  background-color: #ffffff;
+  color: var(--color-black, #111111);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+  font-family: $font-sans;
+  font-size: 0.875rem;
+  font-weight: $font-weight-medium;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 180ms ease;
+
+  &:hover {
+    background-color: #f0ede8;
+    border-color: rgba(0, 0, 0, 0.24);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #111111;
+    outline-offset: 2px;
+  }
+}
+
+.printButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 8px 20px;
+  background-color: var(--color-black, #111111);
+  color: #ffffff;
+  border: 1px solid var(--color-black, #111111);
+  border-radius: 4px;
+  font-family: $font-sans;
+  font-size: 0.875rem;
+  font-weight: $font-weight-semibold;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  transition: all 180ms ease;
+
+  &:hover {
+    background-color: #2b2b2b;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #111111;
+    outline-offset: 2px;
+  }
+}
+
+/* ==========================================================================
+   3. A4 INVOICE SHEET
+   ========================================================================== */
+.invoiceSheet {
+  width: 100%;
+  max-width: 210mm;
+  min-height: 297mm;
+  background-color: #ffffff;
+  color: #111111;
+  padding: 16mm 14mm 14mm;
+  box-sizing: border-box;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  font-family: $font-sans;
+  font-size: 0.875rem;
+  line-height: 1.5;
+
+  @media (max-width: 800px) {
+    min-height: auto;
+    padding: var(--space-6) var(--space-4);
+    box-shadow: none;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  @media (max-width: 480px) {
+    padding: var(--space-4) var(--space-3);
+  }
+}
+
+/* Dấu chìm ĐÃ HỦY */
+.cancelledStamp {
+  position: absolute;
+  top: 18mm;
+  right: 14mm;
+  z-index: 10;
+  pointer-events: none;
+  transform: rotate(-8deg);
+
+  @media (max-width: 768px) {
+    position: static;
+    transform: none;
+    margin-bottom: var(--space-4);
+  }
+}
+
+.stampBorder {
+  border: 3px solid #dc2626;
+  padding: 6px 14px;
+  border-radius: 4px;
+  background-color: rgba(254, 242, 242, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.stampTitle {
+  font-family: $font-sans;
+  font-size: 1.375rem;
+  font-weight: 800;
+  color: #dc2626;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.stampReason {
+  font-size: 0.75rem;
+  color: #991b1b;
+  margin-top: 2px;
+  max-width: 220px;
+}
+
+.stampDate {
+  font-size: 0.6875rem;
+  color: #b91c1c;
+  margin-top: 2px;
+}
+
+.cancelledAlertNotice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background-color: #fef2f2;
+  border-left: 3px solid #dc2626;
+  color: #991b1b;
+  padding: 8px 12px;
+  font-size: 0.8125rem;
+  margin-bottom: var(--space-4);
+}
+
+/* HEADER CỬA HÀNG & TIÊU ĐỀ */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #111111;
+  margin-bottom: 16px;
+  gap: var(--space-4);
+
+  @media (max-width: 680px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.shopBlock {
+  flex: 1;
+  max-width: 60%;
+
+  @media (max-width: 680px) {
+    max-width: 100%;
+  }
+}
+
+.brandTitle {
+  font-family: $font-serif;
+  font-size: 1.875rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #111111;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.shopSlogan {
+  font-size: 0.8125rem;
+  font-weight: $font-weight-medium;
+  color: #666666;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+
+.shopContact {
+  font-size: 0.75rem;
+  color: #444444;
+  line-height: 1.45;
+
+  p {
+    margin: 2px 0;
+  }
+}
+
+.invoiceMetaBlock {
+  text-align: right;
+
+  @media (max-width: 680px) {
+    text-align: left;
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px dashed rgba(0, 0, 0, 0.15);
+  }
+}
+
+.invoiceTitle {
+  font-family: $font-serif;
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #111111;
+  margin: 0 0 4px 0;
+}
+
+.orderCodeBadge {
+  font-family: $font-mono;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #111111;
+  margin-bottom: 8px;
+}
+
+.metaTable {
+  margin-left: auto;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+
+  @media (max-width: 680px) {
+    margin-left: 0;
+  }
+
+  td {
+    padding: 2px 6px;
+    vertical-align: top;
+
+    &:first-child {
+      text-align: right;
+      color: #666666;
+
+      @media (max-width: 680px) {
+        text-align: left;
+        padding-left: 0;
+      }
+    }
+
+    &:last-child {
+      text-align: left;
+      font-weight: $font-weight-medium;
+    }
+  }
+}
+
+.statusText {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 2px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.statusActive {
+  background-color: #f0fdf4;
+  color: #15803d;
+}
+
+.statusCancelled {
+  background-color: #fef2f2;
+  color: #b91c1c;
+}
+
+.paymentPaid {
+  color: #15803d;
+  font-weight: 600;
+}
+
+.paymentUnpaid {
+  color: #b45309;
+  font-weight: 600;
+}
+
+/* KHỐI THÔNG TIN KHÁCH HÀNG & GIAO HÀNG */
+.customerGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 12px;
+  background-color: #faf9f7;
+  border: 1px solid #ebe8e2;
+  border-radius: 4px;
+  margin-bottom: 16px;
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+.infoCol {
+  display: flex;
+  flex-direction: column;
+}
+
+.colHeading {
+  font-family: $font-sans;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #111111;
+  padding-bottom: 4px;
+  margin: 0 0 8px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.colContent {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+
+  p {
+    margin: 3px 0;
+  }
+}
+
+.label {
+  color: #666666;
+  font-weight: $font-weight-regular;
+}
+
+.value {
+  color: #111111;
+  font-weight: $font-weight-medium;
+  word-break: break-word;
+}
+
+.valueHighlight {
+  color: #111111;
+  font-weight: 700;
+}
+
+/* BẢNG CHI TIẾT SẢN PHẨM */
+.tableSection {
+  margin-bottom: 16px;
+}
+
+.tableResponsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.itemsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+
+  @media (max-width: 600px) {
+    min-width: 520px;
+  }
+
+  thead {
+    background-color: #111111;
+    color: #ffffff;
+
+    th {
+      padding: 8px 10px;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      border: 1px solid #111111;
+      white-space: nowrap;
+    }
+  }
+
+  tbody {
+    tr {
+      border-bottom: 1px solid #e5e5e5;
+
+      &:nth-child(even) {
+        background-color: #faf9f8;
+      }
+    }
+
+    td {
+      padding: 8px 10px;
+      vertical-align: middle;
+      border-left: 1px solid #f0f0f0;
+      border-right: 1px solid #f0f0f0;
+    }
+  }
+}
+
+.productName {
+  font-weight: 600;
+  color: #111111;
+  line-height: 1.35;
+}
+
+.skuText {
+  font-family: $font-mono;
+  font-size: 0.6875rem;
+  color: #777777;
+  margin-top: 2px;
+}
+
+/* TỔNG KẾT THANH TOÁN */
+.summarySection {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 24px;
+}
+
+.summarySpacer {
+  flex: 1;
+
+  @media (max-width: 600px) {
+    display: none;
+  }
+}
+
+.summaryCard {
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background-color: #faf9f7;
+  border: 1px solid #ebe8e2;
+  padding: 12px 16px;
+  border-radius: 4px;
+
+  @media (max-width: 600px) {
+    width: 100%;
+  }
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8125rem;
+  color: #444444;
+
+  span:last-child {
+    font-weight: 500;
+    color: #111111;
+  }
+}
+
+.discountRow {
+  color: #dc2626;
+
+  span:last-child {
+    color: #dc2626;
+    font-weight: 600;
+  }
+}
+
+.totalRow {
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 2px solid #111111;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #111111;
+
+  span:first-child {
+    letter-spacing: 0.04em;
+  }
+
+  .totalAmount {
+    font-size: 1.125rem;
+    color: #111111;
+  }
+}
+
+/* CHỮ KÝ XÁC NHẬN */
+.signaturesSection {
+  display: flex;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 20px;
+  margin-bottom: 20px;
+  page-break-inside: avoid;
+  break-inside: avoid;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    gap: 16px;
+  }
+}
+
+.signatureBox {
+  width: 45%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  @media (max-width: 480px) {
+    width: 100%;
+  }
+}
+
+.signTitle {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #111111;
+}
+
+.signNote {
+  font-size: 0.6875rem;
+  font-style: italic;
+  color: #777777;
+  margin-top: 2px;
+}
+
+.signSpace {
+  height: 50px;
+}
+
+.signName {
+  font-weight: 600;
+  font-size: 0.8125rem;
+  color: #111111;
+  border-top: 1px dotted rgba(0, 0, 0, 0.2);
+  padding-top: 4px;
+  min-width: 150px;
+}
+
+/* FOOTER CHÍNH SÁCH VÀ CẢM ƠN */
+.footerNote {
+  padding-top: 12px;
+  border-top: 1px solid #e5e5e5;
+  text-align: center;
+  font-size: 0.6875rem;
+  color: #666666;
+  line-height: 1.5;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.thankYouText {
+  font-weight: 600;
+  color: #111111;
+  margin: 0 0 4px 0;
+}
+
+.policyText {
+  margin: 0;
+  color: #777777;
+}
+
+/* ==========================================================================
+   4. CHẾ ĐỘ IN ẤN CHUẨN A4 (@media print & @page)
+   ========================================================================== */
+@page {
+  size: A4 portrait;
+  margin: 12mm;
+}
+
+@media print {
+  // 1. Ẩn toàn bộ chrome layout bên ngoài: header, footer, navigation, sidebar, v.v.
+  :global {
+    header,
+    footer,
+    nav,
+    aside:not(.cancelledStamp),
+    [role="contentinfo"],
+    [data-header-theme],
+    .skipToContent,
+    .cartDrawer {
+      display: none !important;
+    }
+
+    body,
+    html {
+      background: #ffffff !important;
+      color: #000000 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      font-size: 10pt !important;
+    }
+
+    main,
+    [class*="mainContent"],
+    [class*="mainBody"],
+    [class*="contentWrapper"],
+    [class*="adminContainer"],
+    [class*="pageContainer"],
+    [class*="layoutStorefront"] {
+      padding: 0 !important;
+      margin: 0 !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      background: transparent !important;
+    }
+  }
+
+  // 2. Ẩn thanh thao tác trên màn hình
+  .screenActions {
+    display: none !important;
+  }
+
+  // 3. Tối ưu khung hóa đơn tràn theo lề in chuẩn @page
+  .invoiceScreenWrapper {
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    min-height: auto !important;
+    width: 100% !important;
+  }
+
+  .invoiceSheet {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  // 4. Bảng sản phẩm và các dòng không bị cắt ngang trang
+  .tableResponsive {
+    overflow: visible !important;
+    display: block !important;
+  }
+
+  .itemsTable {
+    width: 100% !important;
+    min-width: 100% !important;
+
+    thead th {
+      background-color: #222222 !important;
+      color: #ffffff !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    tr {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+  }
+
+  .signaturesSection,
+  .footerNote,
+  .summarySection,
+  .cancelledStamp {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  // 5. Đảm bảo màu nền và viền in sắc nét
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

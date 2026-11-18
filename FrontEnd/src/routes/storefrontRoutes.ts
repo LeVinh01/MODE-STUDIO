@@ -139,6 +139,23 @@ export const storefrontRoutes: RouteObject[] = [
       }
     },
   },
+  {
+    path: 'orders/:orderCode/invoice',
+    lazy: async () => {
+      const [{ OrderInvoicePage }, { ProtectedRoute }] = await Promise.all([
+        import('@/pages/storefront/OrderInvoicePage/OrderInvoicePage'),
+        import('@/components/auth/ProtectedRoute/ProtectedRoute'),
+      ])
+      return {
+        Component: () =>
+          createElement(
+            ProtectedRoute,
+            null,
+            createElement(OrderInvoicePage),
+          ),
+      }
+    },
+  },
   // Các trang thông tin tĩnh storefront
   {
     path: 'policy/returns',
