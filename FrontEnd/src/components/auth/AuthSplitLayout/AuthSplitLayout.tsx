@@ -2,12 +2,14 @@ import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { useMediaQuery } from '@/hooks'
-import { AUTH_IMAGES } from '@/config/authImages'
+import { AUTH_IMAGES, type AuthImageData } from '@/config/authImages'
 import { BRAND_NAME } from '@/config/brand'
+import { cn } from '@/utils/cn'
 import styles from './AuthSplitLayout.module.scss'
 
 export interface AuthSplitLayoutProps {
   imagePosition: 'left' | 'right'
+  imageData?: AuthImageData
   imageSrc?: string
   children: ReactNode
 }
@@ -23,18 +25,29 @@ export interface AuthSplitLayoutProps {
  */
 export const AuthSplitLayout = ({
   imagePosition,
-  imageSrc = AUTH_IMAGES.login,
+  imageData,
+  imageSrc,
   children,
 }: AuthSplitLayoutProps) => {
   const navigate = useNavigate()
   // Mobile (< 900px): BẮT BUỘC dùng useMediaQuery để tháo hoàn toàn cột ảnh
   const isDesktop = useMediaQuery('(min-width: 900px)')
+
+  // Xác định cấu hình ảnh hiện tại
+  const currentImage: AuthImageData = imageData || {
+    src: imageSrc || AUTH_IMAGES.login.src,
+    alt: AUTH_IMAGES.login.alt,
+    objectPosition: AUTH_IMAGES.login.objectPosition,
+  }
+
+  const [imageLoaded, setImageLoaded] = useState(false)
   const [imageFailed, setImageFailed] = useState(false)
 
-  // Đặt lại cờ lỗi khi imageSrc thay đổi
-  const [prevSrc, setPrevSrc] = useState(imageSrc)
-  if (prevSrc !== imageSrc) {
-    setPrevSrc(imageSrc)
+  // Đặt lại cờ lỗi và tải khi src thay đổi
+  const [prevSrc, setPrevSrc] = useState(currentImage.src)
+  if (prevSrc !== currentImage.src) {
+    setPrevSrc(currentImage.src)
+    setImageLoaded(false)
     setImageFailed(false)
   }
 
@@ -78,14 +91,8 @@ export const AuthSplitLayout = ({
       {isDesktop && (
         <aside className={styles.imagePanel} aria-hidden="true">
           <div className={styles.imageInner}>
-            {!imageFailed ? (
-              <img
-                src={imageSrc}
-                alt=""
-                className={styles.authImage}
-                onError={() => setImageFailed(true)}
-              />
-            ) : (
+            {/* Fallback card: hiển thị khi ảnh chưa tải xong hoặc khi tải ảnh thất bại */}
+            {(!imageLoaded || imageFailed) && (
               <div className={styles.brandFallback}>
                 <div className={styles.brandFallbackFrame}>
                   <span className={styles.brandMonogram}>{BRAND_NAME}</span>
@@ -95,6 +102,26 @@ export const AuthSplitLayout = ({
                   <span className={styles.brandSeason}>THU / ĐÔNG 2026</span>
                 </div>
               </div>
+            )}
+
+            {!imageFailed && (
+              <>
+                <img
+                  src={currentImage.src}
+                  alt={currentImage.alt}
+                  width={765}
+                  height={1024}
+                  loading="eager"
+                  fetchPriority="high"
+                  style={{ objectPosition: currentImage.objectPosition }}
+                  className={cn(styles.authImage, imageLoaded && styles.authImageLoaded)}
+                  onLoad={() => setImageLoaded(true)}
+                  onError={() => setImageFailed(true)}
+                />
+                {imageLoaded && (
+                  <div className={styles.imageOverlay} aria-hidden="true" />
+                )}
+              </>
             )}
           </div>
         </aside>
