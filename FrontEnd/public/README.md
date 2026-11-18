@@ -1,4 +1,4 @@
-# Cấu trúc và Quy chuẩn Tài nguyên Tĩnh (Static Media Assets) - MODE STUDIO
+# Cấu trúc và Quy chuẩn Tài nguyên Tĩnh (Static Media Assets) - OMBRE
 
 Tài liệu hướng dẫn cấu trúc thư mục, quy tắc đặt tên và thông số kỹ thuật khuyến nghị cho các tài nguyên đa phương tiện tĩnh (hình ảnh, biểu ngữ, video) tại thư mục `FrontEnd/public`.
 

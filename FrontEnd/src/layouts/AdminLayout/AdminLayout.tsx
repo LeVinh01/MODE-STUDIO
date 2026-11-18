@@ -19,6 +19,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { toggleAdminSidebar, setAdminSidebarOpen } from '@/store/slices/uiSlice'
 import { resetAuth } from '@/store/slices/authSlice'
 import { authService } from '@/services/api/authService'
+import { BRAND_NAME } from '@/config/brand'
 import styles from './AdminLayout.module.scss'
 
 interface BreadcrumbItem {
@@ -281,7 +282,7 @@ export const AdminLayout: React.FC = () => {
           {/* 1. Brand Logo & Quiet Luxury Subtitle */}
           <div className={styles.brand}>
             <Link to="/admin" className={styles.brandLink} onClick={handleNavClick}>
-              <span className={styles.brandTitle}>MODE STUDIO</span>
+              <span className={styles.brandTitle}>{BRAND_NAME}</span>
               <span className={styles.brandSubtitle}>QUẢN TRỊ</span>
             </Link>
           </div>

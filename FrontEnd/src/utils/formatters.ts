@@ -1,5 +1,5 @@
 /**
- * Utility functions for formatting values across MODE STUDIO
+ * Utility functions for formatting values across OMBRE
  */
 
 /**

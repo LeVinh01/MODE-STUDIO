@@ -22,6 +22,7 @@ import {
   clearNoticeMessage,
 } from '@/store/slices/cartSlice'
 import { STORE_POLICIES } from '@/config/store'
+import { BRAND_NAME } from '@/config/brand'
 import { formatCurrency } from '@/utils/formatters'
 import styles from './CartPage.module.scss'
 
@@ -232,7 +233,7 @@ export const CartPage = () => {
           <EmptyState
             icon={<ShoppingBag size={48} strokeWidth={1} />}
             title="Túi mua sắm đang trống"
-            description="Quý khách chưa có sản phẩm nào trong túi mua sắm. Khám phá các thiết kế mới nhất của MODE STUDIO ngay hôm nay."
+            description={`Quý khách chưa có sản phẩm nào trong túi mua sắm. Khám phá các thiết kế mới nhất của ${BRAND_NAME} ngay hôm nay.`}
             action={
               <Button
                 variant="secondary"

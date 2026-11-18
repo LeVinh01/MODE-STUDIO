@@ -1,5 +1,6 @@
 import { NavLink, Link, useLocation } from 'react-router-dom'
 import { ChevronRight, User, Package, Search } from 'lucide-react'
+import { BRAND_NAME } from '@/config/brand'
 import { Drawer } from '@/components/feedback/Drawer'
 import { MAIN_NAVIGATION } from '@/config/navigation'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
@@ -29,7 +30,7 @@ export const MobileMenu = () => {
       onClose={handleClose}
       position="left"
       size="sm"
-      title="MODE STUDIO"
+      title={BRAND_NAME}
       footer={
         <div className={styles.footerActions}>
           {user ? (

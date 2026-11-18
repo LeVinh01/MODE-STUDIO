@@ -13,6 +13,7 @@ import { paymentService } from '@/services/api/paymentService'
 import type { ApiVnPayVerifyResponse } from '@/types/api'
 import { formatCurrency } from '@/utils/formatters'
 import { getApiErrorMessage } from '@/utils/apiError'
+import { BRAND_NAME } from '@/config/brand'
 import { Button } from '@/components/common'
 import { Spinner } from '@/components/feedback'
 import styles from './VnPayCallbackPage.module.scss'
@@ -184,8 +185,7 @@ export const VnPayCallbackPage = () => {
 
             <h1 className={styles.title}>Thanh Toán Thành Công!</h1>
             <p className={styles.subtitle}>
-              Giao dịch thanh toán trực tuyến qua VNPAY đã được ghi nhận thành công. MODE STUDIO đã
-              tiếp nhận đơn hàng và đang tiến hành xử lý đóng gói.
+              {`Giao dịch thanh toán trực tuyến qua VNPAY đã được ghi nhận thành công. ${BRAND_NAME} đã tiếp nhận đơn hàng và đang tiến hành xử lý đóng gói.`}
             </p>
 
             <div className={styles.detailsList}>
@@ -281,9 +281,7 @@ export const VnPayCallbackPage = () => {
               <div>
                 <strong>Cần hỗ trợ hoàn tiền thủ công:</strong>
                 <p style={{ margin: '4px 0 0 0' }}>
-                  Giao dịch đã được hệ thống ghi nhận đầy đủ. Quý khách vui lòng liên hệ bộ phận chăm
-                  sóc khách hàng của MODE STUDIO qua số điện thoại hoặc email hỗ trợ để được kiểm tra
-                  và hoàn lại số tiền nhanh chóng nhất.
+                  {`Giao dịch đã được hệ thống ghi nhận đầy đủ. Quý khách vui lòng liên hệ bộ phận chăm sóc khách hàng của ${BRAND_NAME} qua số điện thoại hoặc email hỗ trợ để được kiểm tra và hoàn lại số tiền nhanh chóng nhất.`}
                 </p>
               </div>
             </div>

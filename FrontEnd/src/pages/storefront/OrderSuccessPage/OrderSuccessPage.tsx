@@ -4,6 +4,7 @@ import { CheckCircle2, ShoppingBag } from 'lucide-react'
 import { orderService } from '@/services/api/orderService'
 import type { Order } from '@/types/order'
 import { ORDER_STATUS_CONFIG } from '@/config/orderStatus'
+import { BRAND_NAME } from '@/config/brand'
 import { formatCurrency, formatDateTime } from '@/utils/formatters'
 import { Button, Badge } from '@/components/common'
 import { EmptyState, Spinner } from '@/components/feedback'
@@ -92,7 +93,7 @@ export const OrderSuccessPage = () => {
 
           <h1 className={styles.title}>Cảm Ơn Quý Khách Đã Đặt Hàng!</h1>
           <p className={styles.subtitle}>
-            Đơn hàng của quý khách đã được tiếp nhận thành công và đang được bộ phận chuyên trách của MODE STUDIO chuẩn bị.
+            {`Đơn hàng của quý khách đã được tiếp nhận thành công và đang được bộ phận chuyên trách của ${BRAND_NAME} chuẩn bị.`}
           </p>
 
           <div className={styles.orderBadgeRow}>

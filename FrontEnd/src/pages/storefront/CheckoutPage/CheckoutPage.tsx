@@ -31,6 +31,7 @@ import type {
 } from '@/types/api'
 import { formatCurrency } from '@/utils/formatters'
 import { STORE_POLICIES } from '@/config/store'
+import { BRAND_NAME } from '@/config/brand'
 import { Input, Textarea, Button, Badge } from '@/components/common'
 import { Breadcrumbs } from '@/components/navigation'
 import { Spinner } from '@/components/feedback'
@@ -749,7 +750,7 @@ export const CheckoutPage = () => {
                     >
                       Chính sách đổi trả
                     </Link>{' '}
-                    của MODE STUDIO.
+                    {`của ${BRAND_NAME}.`}
                   </p>
 
                   <div className={styles.securityFooter}>

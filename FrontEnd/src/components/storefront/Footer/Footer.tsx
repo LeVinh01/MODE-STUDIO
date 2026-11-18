@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { MapPin, Phone, Mail, Clock } from 'lucide-react'
 import { FOOTER_SECTIONS, SOCIAL_LINKS } from '@/config/navigation'
 import { STORE_INFO } from '@/config/store'
+import { BRAND_NAME } from '@/config/brand'
 import { Input, Button } from '@/components/common'
 import { cn } from '@/utils/cn'
 import styles from './Footer.module.scss'
@@ -33,7 +34,7 @@ export const Footer = () => {
 
     // Success simulation (UI only, no API call)
     setStatus('success')
-    setStatusMessage('Cảm ơn bạn đã đăng ký! Bạn sẽ sớm nhận được bản tin độc quyền từ MODE STUDIO.')
+    setStatusMessage(`Cảm ơn bạn đã đăng ký! Bạn sẽ sớm nhận được bản tin độc quyền từ ${BRAND_NAME}.`)
     setEmail('')
   }
 
@@ -45,7 +46,7 @@ export const Footer = () => {
           <>
             <section className={styles.newsletterSection} aria-labelledby="newsletter-heading">
               <h2 id="newsletter-heading" className={styles.newsletterTitle}>
-                Gia Nhập Thế Giới MODE STUDIO
+                Gia Nhập Thế Giới {BRAND_NAME}
               </h2>
               <p className={styles.newsletterDesc}>
                 Đón nhận các bộ sưu tập may đo giới hạn, bản tin xu hướng mùa mới và lời mời tham dự sự kiện thời trang độc quyền.
@@ -95,7 +96,7 @@ export const Footer = () => {
           {/* Brand Info Column */}
           <div className={styles.brandColumn}>
             <Link to="/" className={styles.brandLogo}>
-              MODE STUDIO
+              {BRAND_NAME}
             </Link>
             <p className={styles.brandSlogan}>
               Nền tảng thương mại điện tử thời trang may đo và thiết kế tối giản, tôn vinh vẻ đẹp thanh lịch vượt thời gian.
@@ -166,7 +167,7 @@ export const Footer = () => {
           )}
 
           <p className={styles.copyright}>
-            © {new Date().getFullYear()} MODE STUDIO. All rights reserved. Khóa luận tốt nghiệp Thương mại điện tử Thời trang Cao cấp.
+            © {new Date().getFullYear()} {BRAND_NAME}. All rights reserved. Khóa luận tốt nghiệp Thương mại điện tử Thời trang Cao cấp.
           </p>
         </div>
       </div>

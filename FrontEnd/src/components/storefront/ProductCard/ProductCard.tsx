@@ -6,6 +6,7 @@ import { Badge } from '@/components/common/Badge'
 import { formatCurrency } from '@/utils/formatters'
 import { cn } from '@/utils/cn'
 import { isProductNew } from '@/services/api/mappers'
+import { BRAND_NAME } from '@/config/brand'
 import styles from './ProductCard.module.scss'
 
 export interface ProductCardProps extends HTMLAttributes<HTMLElement> {
@@ -94,7 +95,7 @@ export const ProductCard = ({
           />
         ) : (
           <div className={styles.imagePlaceholder} aria-hidden="true">
-            <span className={styles.placeholderBrand}>MODE STUDIO</span>
+            <span className={styles.placeholderBrand}>{BRAND_NAME}</span>
             <span className={styles.placeholderLabel}>{product.category.name}</span>
           </div>
         )}

@@ -1,10 +1,10 @@
 
-# MODE STUDIO
+# OMBRE
 
 Fashion E-commerce Website
 
 ## Giới thiệu
-MODE STUDIO là website thương mại điện tử thời trang với phong cách Minimalist, Modern Luxury và Editorial.
+OMBRE là website thương mại điện tử thời trang với phong cách Minimalist, Modern Luxury và Editorial.
 
 ## Công nghệ sử dụng
 - Frontend: React, TypeScript, SCSS

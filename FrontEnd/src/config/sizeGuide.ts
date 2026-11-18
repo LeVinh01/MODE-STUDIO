@@ -1,5 +1,7 @@
+import { BRAND_NAME } from './brand'
+
 /**
- * Bảng thông số quy đổi kích cỡ chuẩn MODE STUDIO
+ * Bảng thông số quy đổi kích cỡ chuẩn OMBRE
  * Nguồn chân lý duy nhất (Single Source of Truth) phục vụ Modal Size Guide trên PDP và trang /size-guide
  */
 
@@ -51,5 +53,5 @@ export const SIZE_MEASUREMENT_TIPS = [
   'Vòng ngực: Đo quanh điểm nở nang nhất của ngực, giữ thước dây ngang bằng phẳng phía sau lưng.',
   'Vòng eo: Đo quanh phần hẹp nhất của vòng eo, thường cách rốn khoảng 2-3 cm phía trên.',
   'Vòng mông: Khép hai chân đứng thẳng, đo quanh điểm nở nang nhất của vòng mông.',
-  'Gợi ý từ xưởng may: Nếu số đo của bạn nằm ở khoảng giao giữa hai kích cỡ, MODE STUDIO khuyên bạn nên chọn kích cỡ lớn hơn để có trải nghiệm vừa vặn, thanh lịch nhất.',
+  `Gợi ý từ xưởng may: Nếu số đo của bạn nằm ở khoảng giao giữa hai kích cỡ, ${BRAND_NAME} khuyên bạn nên chọn kích cỡ lớn hơn để có trải nghiệm vừa vặn, thanh lịch nhất.`,
 ]

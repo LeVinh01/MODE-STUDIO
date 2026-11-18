@@ -6,6 +6,7 @@ import { Button } from '@/components/common/Button'
 import { productService } from '@/services/api/productService'
 import type { Product, ProductSuggestion } from '@/types/product'
 import { formatCurrency } from '@/utils/formatters'
+import { formatPageTitle } from '@/config/brand'
 import { cn } from '@/utils/cn'
 import styles from './SearchPage.module.scss'
 
@@ -50,9 +51,9 @@ export const SearchPage = () => {
   // 2. Tự động focus vào ô tìm kiếm khi vào trang & đặt title
   useEffect(() => {
     inputRef.current?.focus()
-    document.title = 'Tìm kiếm | MODE STUDIO'
+    document.title = formatPageTitle('Tìm kiếm')
     return () => {
-      document.title = 'MODE STUDIO'
+      document.title = formatPageTitle()
     }
   }, [])
 
