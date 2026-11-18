@@ -5,6 +5,8 @@ import type {
   AdminCustomerListItem,
   ApiAdminCustomerDetailResponse,
   ApiAdminCustomerListItem,
+  ApiUpdateCustomerStatusResponse,
+  UpdateCustomerStatusPayload,
 } from '@/types/adminCustomer'
 import type { ApiPaginatedResponse, ApiPaginationMeta } from '@/types/api'
 import type { OrderStatus, PaymentMethod, PaymentStatus } from '@/types/order'
@@ -16,6 +18,7 @@ export const adminCustomerService = {
   ): Promise<{ customers: AdminCustomerListItem[]; meta: ApiPaginationMeta }> {
     const cleanParams: Record<string, string | number> = {}
     if (params?.search?.trim()) cleanParams.search = params.search.trim()
+    if (params?.status && params.status !== 'all') cleanParams.status = params.status
     if (params?.page) cleanParams.page = params.page
     if (params?.per_page) cleanParams.per_page = params.per_page
 
@@ -29,6 +32,7 @@ export const adminCustomerService = {
       fullName: item.full_name,
       email: item.email,
       phone: item.phone,
+      status: (item.status as 'active' | 'locked') || 'active',
       createdAt: item.created_at,
       ordersCount: item.orders_count,
       totalSpent: item.total_spent,
@@ -58,6 +62,9 @@ export const adminCustomerService = {
         fullName: d.customer.full_name,
         email: d.customer.email,
         phone: d.customer.phone,
+        status: (d.customer.status as 'active' | 'locked') || 'active',
+        lockedAt: d.customer.locked_at ?? null,
+        lockReason: d.customer.lock_reason ?? null,
         createdAt: d.customer.created_at,
       },
       stats: {
@@ -79,5 +86,22 @@ export const adminCustomerService = {
         createdAt: o.created_at,
       })),
     }
+  },
+
+  /**
+   * Cập nhật trạng thái tài khoản khách hàng (khóa / mở khóa)
+   * PATCH /api/admin/customers/{id}/status
+   */
+  async updateCustomerStatus(
+    id: number,
+    payload: UpdateCustomerStatusPayload,
+    signal?: AbortSignal,
+  ): Promise<ApiUpdateCustomerStatusResponse> {
+    const res = await apiClient.patch<ApiUpdateCustomerStatusResponse>(
+      `/admin/customers/${id}/status`,
+      payload,
+      { signal },
+    )
+    return res.data
   },
 }

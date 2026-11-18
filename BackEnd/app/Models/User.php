@@ -21,6 +21,8 @@ class User extends Authenticatable
         'status',
         'email_verified_at',
         'last_login_at',
+        'locked_at',
+        'lock_reason',
     ];
 
     protected $hidden = ['password'];
@@ -29,6 +31,7 @@ class User extends Authenticatable
         'status'            => UserStatus::class,
         'email_verified_at' => 'datetime',
         'last_login_at'     => 'datetime',
+        'locked_at'         => 'datetime',
         'password'          => 'hashed',
     ];
 
