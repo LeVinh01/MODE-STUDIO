@@ -4,7 +4,7 @@ import axios from 'axios'
 import { Button, PasswordInput, FloatingInput } from '@/components/common'
 import { AuthLoadingScreen } from '@/components/auth/AuthLoadingScreen'
 import { authService } from '@/services/api/authService'
-import { BRAND_NAME } from '@/config/brand'
+import { BRAND_NAME, BRAND_LOGOS } from '@/config/brand'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import {
   setUser,
@@ -45,6 +45,7 @@ export const RegisterPage = () => {
   const [generalError, setGeneralError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [retryCountdown, setRetryCountdown] = useState<number | null>(null)
+  const [logoError, setLogoError] = useState(false)
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -197,7 +198,18 @@ export const RegisterPage = () => {
       {/* 1. Logo thương hiệu quay về trang chủ */}
       <div className={styles.logoWrapper}>
         <Link to="/" className={styles.brandLogo} aria-label={`${BRAND_NAME} - Về trang chủ`}>
-          {BRAND_NAME}
+          {!logoError ? (
+            <img
+              src={BRAND_LOGOS.burgundy}
+              alt={BRAND_NAME}
+              width={110}
+              height={70}
+              className={styles.brandLogoImg}
+              onError={() => setLogoError(true)}
+            />
+          ) : (
+            <span>{BRAND_NAME}</span>
+          )}
         </Link>
       </div>
 

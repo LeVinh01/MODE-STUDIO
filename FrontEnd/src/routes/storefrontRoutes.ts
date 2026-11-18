@@ -10,6 +10,20 @@ export const storefrontRoutes: RouteObject[] = [
     },
   },
   {
+    path: 'nu',
+    lazy: async () => {
+      const { HomePage } = await import('@/pages/storefront/HomePage/HomePage')
+      return { Component: HomePage }
+    },
+  },
+  {
+    path: 'nam',
+    lazy: async () => {
+      const { HomePage } = await import('@/pages/storefront/HomePage/HomePage')
+      return { Component: HomePage }
+    },
+  },
+  {
     path: 'products',
     lazy: async () => {
       const { ProductListingPage } = await import(

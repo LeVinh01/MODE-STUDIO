@@ -16,8 +16,7 @@
 }
 
 .brandLogo {
-  display: block;
-  width: 100%;
+  display: inline-block;
   font-family: $font-serif;
   font-size: clamp(2.4rem, 4.5vw, 3.8rem); // Lớn nhất ở phần form
   font-weight: $font-weight-regular;
@@ -41,6 +40,14 @@
     font-size: clamp(2rem, 7.5vw, 2.5rem);
     letter-spacing: 0.04em;
   }
+}
+
+.brandLogoImg {
+  height: 60px;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 // 2. Tiêu đề trang: Lớn hơn rõ rệt so với nhãn (20-22px, nhẹ, in hoa co giãn chữ)
