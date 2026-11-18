@@ -25,6 +25,8 @@ class UserResource extends JsonResource
             'phone'             => $this->phone,
             'role'              => $this->role->name,
             'status'            => $this->status instanceof UserStatus ? $this->status->value : (string) $this->status,
+            'locked_at'         => $this->locked_at?->toISOString(),
+            'lock_reason'       => $this->lock_reason,
             'email_verified_at' => $this->email_verified_at?->toISOString(),
             'last_login_at'     => $this->last_login_at?->toISOString(),
         ];

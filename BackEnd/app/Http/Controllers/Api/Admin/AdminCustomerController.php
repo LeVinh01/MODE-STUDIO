@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Enums\OrderStatus;
+use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\User;
@@ -13,7 +14,7 @@ use Illuminate\Http\Request;
 class AdminCustomerController extends Controller
 {
     /**
-     * Danh sách khách hàng kèm phân trang, tìm kiếm và thống kê đơn hàng
+     * Danh sách khách hàng kèm phân trang, tìm kiếm, lọc trạng thái và thống kê đơn hàng
      * GET /api/admin/customers
      */
     public function index(Request $request): JsonResponse
@@ -25,7 +26,7 @@ class AdminCustomerController extends Controller
 
         $query = User::query()
             ->whereHas('role', fn ($q) => $q->where('name', 'customer'))
-            ->select(['id', 'full_name', 'email', 'phone', 'created_at']);
+            ->select(['id', 'full_name', 'email', 'phone', 'status', 'created_at']);
 
         // Tìm kiếm theo tên, email hoặc số điện thoại (escape an toàn chuẩn SQL)
         if ($request->filled('search')) {
@@ -38,6 +39,11 @@ class AdminCustomerController extends Controller
                   ->orWhereRaw("email LIKE ? ESCAPE '!'", [$pattern])
                   ->orWhereRaw("phone LIKE ? ESCAPE '!'", [$pattern]);
             });
+        }
+
+        // Lọc theo trạng thái tài khoản (active / locked)
+        if ($request->filled('status') && $request->input('status') !== 'all') {
+            $query->where('status', $request->input('status'));
         }
 
         // Tích hợp subquery tính tổng số đơn, tổng chi tiêu (các đơn delivered) và ngày đặt đơn gần nhất
@@ -59,6 +65,7 @@ class AdminCustomerController extends Controller
                 'full_name'     => $u->full_name,
                 'email'         => $u->email,
                 'phone'         => $u->phone,
+                'status'        => $u->status instanceof UserStatus ? $u->status->value : (string) $u->status,
                 'created_at'    => $u->created_at?->toISOString(),
                 'orders_count'  => (int) $u->orders_count,
                 'total_spent'   => (int) ($u->total_spent ?? 0),
@@ -122,11 +129,14 @@ class AdminCustomerController extends Controller
 
         return response()->json([
             'customer' => [
-                'id'         => $customer->id,
-                'full_name'  => $customer->full_name,
-                'email'      => $customer->email,
-                'phone'      => $customer->phone,
-                'created_at' => $customer->created_at?->toISOString(),
+                'id'          => $customer->id,
+                'full_name'   => $customer->full_name,
+                'email'       => $customer->email,
+                'phone'       => $customer->phone,
+                'status'      => $customer->status instanceof UserStatus ? $customer->status->value : (string) $customer->status,
+                'locked_at'   => $customer->locked_at?->toISOString(),
+                'lock_reason' => $customer->lock_reason,
+                'created_at'  => $customer->created_at?->toISOString(),
             ],
             'stats' => [
                 'orders_count'           => $ordersCount,
@@ -137,4 +147,87 @@ class AdminCustomerController extends Controller
             'recent_orders' => $recentOrders,
         ], 200);
     }
+
+    /**
+     * Thay đổi trạng thái tài khoản khách hàng (Khóa / Mở khóa)
+     * PATCH /api/admin/customers/{id}/status
+     */
+    public function updateStatus(Request $request, int $id): JsonResponse
+    {
+        $currentUser = $request->user();
+        if ($currentUser?->role?->name !== 'admin') {
+            return response()->json([
+                'message' => 'Bạn không có quyền thực hiện thao tác này.',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'status' => ['required', 'string', 'in:active,locked'],
+            'reason' => ['nullable', 'string', 'max:255'],
+        ], [
+            'status.required' => 'Trạng thái là bắt buộc.',
+            'status.in'       => 'Trạng thái phải là active hoặc locked.',
+            'reason.string'   => 'Lý do khóa tài khoản không hợp lệ.',
+            'reason.max'      => 'Lý do khóa tài khoản không được vượt quá 255 ký tự.',
+        ]);
+
+        $targetUser = User::with('role')->find($id);
+
+        if (!$targetUser) {
+            return response()->json([
+                'message' => 'Không tìm thấy thông tin khách hàng.',
+            ], 404);
+        }
+
+        if ($targetUser->role?->name !== 'customer') {
+            return response()->json([
+                'message' => 'Chỉ có thể thay đổi trạng thái của tài khoản khách hàng.',
+            ], 422);
+        }
+
+        if ((int) $currentUser->id === (int) $targetUser->id) {
+            return response()->json([
+                'message' => 'Bạn không thể tự khóa tài khoản của chính mình.',
+            ], 422);
+        }
+
+        $newStatus = UserStatus::from($validated['status']);
+        $reason = $request->filled('reason') ? trim((string) $request->input('reason')) : null;
+
+        if ($newStatus === UserStatus::Locked) {
+            $targetUser->update([
+                'status'      => UserStatus::Locked,
+                'locked_at'   => now(),
+                'lock_reason' => $reason,
+            ]);
+
+            // Thu hồi tất cả Sanctum tokens để người dùng bị đăng xuất ngay lập tức
+            $targetUser->tokens()->delete();
+
+            $message = 'Khóa tài khoản khách hàng thành công.';
+        } else {
+            $targetUser->update([
+                'status'      => UserStatus::Active,
+                'locked_at'   => null,
+                'lock_reason' => null,
+            ]);
+
+            $message = 'Mở khóa tài khoản khách hàng thành công.';
+        }
+
+        return response()->json([
+            'message'  => $message,
+            'customer' => [
+                'id'          => $targetUser->id,
+                'full_name'   => $targetUser->full_name,
+                'email'       => $targetUser->email,
+                'phone'       => $targetUser->phone,
+                'status'      => $targetUser->status instanceof UserStatus ? $targetUser->status->value : (string) $targetUser->status,
+                'locked_at'   => $targetUser->locked_at?->toISOString(),
+                'lock_reason' => $targetUser->lock_reason,
+                'created_at'  => $targetUser->created_at?->toISOString(),
+            ],
+        ], 200);
+    }
 }
+

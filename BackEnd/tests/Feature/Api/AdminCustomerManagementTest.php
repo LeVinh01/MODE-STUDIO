@@ -272,4 +272,216 @@ class AdminCustomerManagementTest extends TestCase
         $otherAdmin = $this->createAdmin();
         $this->getJson("/api/admin/customers/{$otherAdmin->id}")->assertStatus(404);
     }
+
+    public function test_admin_can_lock_and_unlock_customer(): void
+    {
+        $admin = $this->createAdmin();
+        $customer = $this->createCustomer(['status' => UserStatus::Active]);
+        Sanctum::actingAs($admin);
+
+        // Khóa tài khoản
+        $lockRes = $this->patchJson("/api/admin/customers/{$customer->id}/status", [
+            'status' => 'locked',
+            'reason' => 'Vi phạm chính sách đánh giá',
+        ]);
+
+        $lockRes->assertStatus(200)
+            ->assertJsonPath('customer.status', 'locked')
+            ->assertJsonPath('customer.lock_reason', 'Vi phạm chính sách đánh giá');
+
+        $customer->refresh();
+        $this->assertSame(UserStatus::Locked, $customer->status);
+        $this->assertNotNull($customer->locked_at);
+        $this->assertSame('Vi phạm chính sách đánh giá', $customer->lock_reason);
+
+        // Mở khóa tài khoản
+        $unlockRes = $this->patchJson("/api/admin/customers/{$customer->id}/status", [
+            'status' => 'active',
+        ]);
+
+        $unlockRes->assertStatus(200)
+            ->assertJsonPath('customer.status', 'active')
+            ->assertJsonPath('customer.lock_reason', null);
+
+        $customer->refresh();
+        $this->assertSame(UserStatus::Active, $customer->status);
+        $this->assertNull($customer->locked_at);
+        $this->assertNull($customer->lock_reason);
+    }
+
+    public function test_operator_and_customer_cannot_update_customer_status_returns_403(): void
+    {
+        $customer = $this->createCustomer();
+        $otherCustomer = $this->createCustomer();
+        $operator = $this->createOperator();
+
+        // Customer gọi -> 403
+        Sanctum::actingAs($customer);
+        $this->patchJson("/api/admin/customers/{$otherCustomer->id}/status", [
+            'status' => 'locked',
+        ])->assertStatus(403);
+
+        // Operator gọi -> 403
+        Sanctum::actingAs($operator);
+        $this->patchJson("/api/admin/customers/{$otherCustomer->id}/status", [
+            'status' => 'locked',
+        ])->assertStatus(403);
+    }
+
+    public function test_locking_admin_or_operator_returns_422(): void
+    {
+        $admin = $this->createAdmin();
+        $otherAdmin = $this->createAdmin();
+        $operator = $this->createOperator();
+
+        Sanctum::actingAs($admin);
+
+        // Cố khóa admin khác -> 422
+        $this->patchJson("/api/admin/customers/{$otherAdmin->id}/status", [
+            'status' => 'locked',
+        ])->assertStatus(422)
+          ->assertJsonPath('message', 'Chỉ có thể thay đổi trạng thái của tài khoản khách hàng.');
+
+        // Cố khóa operator -> 422
+        $this->patchJson("/api/admin/customers/{$operator->id}/status", [
+            'status' => 'locked',
+        ])->assertStatus(422)
+          ->assertJsonPath('message', 'Chỉ có thể thay đổi trạng thái của tài khoản khách hàng.');
+    }
+
+    public function test_admin_cannot_lock_self_returns_422(): void
+    {
+        $admin = $this->createAdmin();
+        Sanctum::actingAs($admin);
+
+        $this->patchJson("/api/admin/customers/{$admin->id}/status", [
+            'status' => 'locked',
+        ])->assertStatus(422);
+    }
+
+    public function test_locking_revokes_tokens_and_locked_user_login_fails(): void
+    {
+        $admin = $this->createAdmin();
+        $customer = $this->createCustomer(['password' => Hash::make('Secret123!')]);
+
+        // Tạo 2 token cho customer
+        $token1 = $customer->createToken('token_1')->plainTextToken;
+        $token2 = $customer->createToken('token_2')->plainTextToken;
+        $this->assertCount(2, $customer->tokens);
+
+        // Admin khóa customer
+        Sanctum::actingAs($admin);
+        $this->patchJson("/api/admin/customers/{$customer->id}/status", [
+            'status' => 'locked',
+            'reason' => 'Spam tài khoản',
+        ])->assertStatus(200);
+
+        // Tất cả token phải bị thu hồi (xóa khỏi database)
+        $this->assertCount(0, $customer->fresh()->tokens);
+
+        // Khách hàng đăng nhập lại phải nhận 403 với thông báo tiếng Việt
+        $loginRes = $this->postJson('/api/auth/login', [
+            'email'    => $customer->email,
+            'password' => 'Secret123!',
+        ]);
+
+        $loginRes->assertStatus(403)
+            ->assertJsonPath('message', 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.');
+    }
+
+    public function test_unlocking_restores_login(): void
+    {
+        $admin = $this->createAdmin();
+        $customer = $this->createCustomer([
+            'status'   => UserStatus::Locked,
+            'password' => Hash::make('Secret123!'),
+        ]);
+
+        // Đang bị khóa -> đăng nhập bị chặn
+        $this->postJson('/api/auth/login', [
+            'email'    => $customer->email,
+            'password' => 'Secret123!',
+        ])->assertStatus(403);
+
+        // Admin mở khóa
+        Sanctum::actingAs($admin);
+        $this->patchJson("/api/admin/customers/{$customer->id}/status", [
+            'status' => 'active',
+        ])->assertStatus(200);
+
+        // Đăng nhập lại thành công
+        $loginRes = $this->postJson('/api/auth/login', [
+            'email'    => $customer->email,
+            'password' => 'Secret123!',
+        ]);
+
+        $loginRes->assertStatus(200)
+            ->assertJsonPath('user.status', 'active');
+    }
+
+    public function test_active_middleware_blocks_locked_user_on_checkout_and_cart_merge(): void
+    {
+        $customer = $this->createCustomer(['status' => UserStatus::Locked]);
+        Sanctum::actingAs($customer);
+
+        // Thử checkout (POST /api/orders) -> bị active middleware chặn 403
+        $this->postJson('/api/orders', [
+            'recipient_name'   => 'Test Name',
+            'recipient_phone'  => '0901234567',
+            'shipping_address' => 'Test Address',
+            'payment_method'   => 'cod',
+        ])->assertStatus(403)
+          ->assertJsonPath('message', 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.');
+
+        // Thử merge cart (POST /api/cart/merge) -> bị active middleware chặn 403
+        $this->postJson('/api/cart/merge', [
+            'items' => [],
+        ])->assertStatus(403)
+          ->assertJsonPath('message', 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.');
+    }
+
+    public function test_existing_orders_remain_unchanged_when_customer_is_locked(): void
+    {
+        $admin = $this->createAdmin();
+        $customer = $this->createCustomer();
+
+        $order1 = $this->createOrder($customer, ['status' => OrderStatus::Pending]);
+        $order2 = $this->createOrder($customer, ['status' => OrderStatus::Confirmed]);
+
+        Sanctum::actingAs($admin);
+        $this->patchJson("/api/admin/customers/{$customer->id}/status", [
+            'status' => 'locked',
+        ])->assertStatus(200);
+
+        // Trạng thái đơn hàng không bị thay đổi
+        $this->assertSame(OrderStatus::Pending, $order1->fresh()->status);
+        $this->assertSame(OrderStatus::Confirmed, $order2->fresh()->status);
+
+        // Admin vẫn tiếp tục xử lý đơn hàng bình thường
+        $this->patchJson("/api/admin/orders/{$order1->order_code}/status", [
+            'status' => 'confirmed',
+        ])->assertStatus(200);
+        $this->assertSame(OrderStatus::Confirmed, $order1->fresh()->status);
+    }
+
+    public function test_customer_list_can_filter_by_status(): void
+    {
+        $admin = $this->createAdmin();
+        $cActive = $this->createCustomer(['full_name' => 'Active Customer', 'status' => UserStatus::Active]);
+        $cLocked = $this->createCustomer(['full_name' => 'Locked Customer', 'status' => UserStatus::Locked]);
+
+        Sanctum::actingAs($admin);
+
+        // Lọc locked
+        $resLocked = $this->getJson('/api/admin/customers?status=locked')->assertStatus(200);
+        $lockedNames = collect($resLocked->json('data'))->pluck('full_name')->all();
+        $this->assertContains('Locked Customer', $lockedNames);
+        $this->assertNotContains('Active Customer', $lockedNames);
+
+        // Lọc active
+        $resActive = $this->getJson('/api/admin/customers?status=active')->assertStatus(200);
+        $activeNames = collect($resActive->json('data'))->pluck('full_name')->all();
+        $this->assertContains('Active Customer', $activeNames);
+        $this->assertNotContains('Locked Customer', $activeNames);
+    }
 }

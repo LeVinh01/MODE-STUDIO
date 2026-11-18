@@ -5,6 +5,7 @@ export interface AdminCustomerListItem {
   fullName: string
   email: string
   phone: string | null
+  status: 'active' | 'locked'
   createdAt: string
   ordersCount: number
   totalSpent: number
@@ -37,6 +38,9 @@ export interface AdminCustomerDetail {
     fullName: string
     email: string
     phone: string | null
+    status: 'active' | 'locked'
+    lockedAt?: string | null
+    lockReason?: string | null
     createdAt: string
   }
   stats: AdminCustomerStats
@@ -45,8 +49,28 @@ export interface AdminCustomerDetail {
 
 export interface AdminCustomerFilterParams {
   search?: string
+  status?: string
   page?: number
   per_page?: number
+}
+
+export interface UpdateCustomerStatusPayload {
+  status: 'active' | 'locked'
+  reason?: string
+}
+
+export interface ApiUpdateCustomerStatusResponse {
+  message: string
+  customer: {
+    id: number
+    full_name: string
+    email: string
+    phone: string | null
+    status: 'active' | 'locked'
+    locked_at?: string | null
+    lock_reason?: string | null
+    created_at: string
+  }
 }
 
 export interface ApiAdminCustomerListItem {
@@ -54,6 +78,7 @@ export interface ApiAdminCustomerListItem {
   full_name: string
   email: string
   phone: string | null
+  status: string
   created_at: string
   orders_count: number
   total_spent: number
@@ -66,6 +91,9 @@ export interface ApiAdminCustomerDetailResponse {
     full_name: string
     email: string
     phone: string | null
+    status: string
+    locked_at?: string | null
+    lock_reason?: string | null
     created_at: string
   }
   stats: {

@@ -135,6 +135,9 @@ Route::middleware(['auth:sanctum', 'active', 'role:admin'])->prefix('admin')->gr
     Route::match(['put', 'patch'], '/categories/{id}', [AdminCategoryController::class, 'update'])->whereNumber('id');
     Route::post('/categories/{id}/image', [AdminCategoryController::class, 'uploadImage'])->whereNumber('id');
     Route::delete('/categories/{id}/image', [AdminCategoryController::class, 'removeImage'])->whereNumber('id');
+
+    // Admin Only Customer Status (Lock / Unlock)
+    Route::patch('/customers/{id}/status', [AdminCustomerController::class, 'updateStatus'])->whereNumber('id');
 });
 
 // Public read-only API (không có prefix /v1)
