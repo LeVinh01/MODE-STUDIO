@@ -8,12 +8,12 @@ export const AuthLayout = () => {
 
   // Vị trí ảnh: Đăng nhập = 'right' (Form Trái, Ảnh Phải); Đăng ký = 'left' (Ảnh Trái, Form Phải)
   const imagePosition: 'left' | 'right' = isRegister ? 'left' : 'right'
-  const imageSrc = isRegister ? AUTH_IMAGES.register : AUTH_IMAGES.login
+  const imageData = isRegister ? AUTH_IMAGES.register : AUTH_IMAGES.login
 
   return (
     <AuthSplitLayout
       imagePosition={imagePosition}
-      imageSrc={imageSrc}
+      imageData={imageData}
     >
       <div key={location.pathname}>
         <Outlet />

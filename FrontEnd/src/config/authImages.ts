@@ -1,11 +1,26 @@
 /**
- * CẤU HÌNH ĐƯỜNG DẪN HÌNH ẢNH XÁC THỰC (ĐĂNG NHẬP / ĐĂNG KÝ)
+ * CẤU HÌNH HÌNH ẢNH XÁC THỰC (ĐĂNG NHẬP / ĐĂNG KÝ)
  *
  * Hình ảnh chính thức được đặt trong thư mục public/images/auth/.
- * Khi chưa có hình ảnh hoặc hình ảnh lỗi tải, AuthLayout tự động
- * hiển thị khung màu kem thương hiệu + chữ OMBRE chuẩn tối giản.
+ * Cấu hình bao gồm: đường dẫn (src), văn bản thay thế (alt) và tiêu điểm (objectPosition)
+ * giúp ảnh luôn giữ trọn vẹn khuôn mặt người mẫu trên mọi kích thước màn hình desktop.
  */
+
+export interface AuthImageData {
+  src: string
+  alt: string
+  objectPosition: string
+}
+
 export const AUTH_IMAGES = {
-  login: '/images/auth/login.jpg',
-  register: '/images/auth/register.jpg',
+  login: {
+    src: '/images/auth/login.webp',
+    alt: 'Bốn người mẫu OMBRE trong trang phục áo khoác dạ dáng dài tông đen thanh lịch',
+    objectPosition: '50% 15%',
+  },
+  register: {
+    src: '/images/auth/register.webp',
+    alt: 'Người mẫu nam OMBRE ngồi trên ghế tựa studio trong trang phục áo khoác da lộn và quần âu',
+    objectPosition: '50% 25%',
+  },
 } as const
