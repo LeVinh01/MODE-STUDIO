@@ -11,6 +11,7 @@ import {
   Truck,
   CreditCard,
   Package,
+  Printer,
 } from 'lucide-react'
 import axios from 'axios'
 import { adminOrderService } from '@/services/api/adminOrderService'
@@ -396,34 +397,45 @@ export const AdminOrderDetailPage = () => {
           </p>
         </div>
 
-        {/* NÚT THAO TÁC THEO MÁY TRẠNG THÁI */}
-        {availableActions.length > 0 && (
-          <div className={styles.actionsGroup}>
-            {availableActions.map((action) => {
-              const isUnpaidVnPay =
-                order.paymentMethod === 'vnpay' && order.paymentStatus !== 'paid'
-              const isCancel = Boolean(action.isCancel) || action.targetStatus === 'cancelled'
-              const isDisabled = isUnpaidVnPay && !isCancel
+        {/* NÚT THAO TÁC & IN HÓA ĐƠN */}
+        <div className={styles.headerRightActions}>
+          <Link
+            to={`/admin/orders/${encodeURIComponent(order.orderCode)}/invoice`}
+            className={styles.invoiceActionBtn}
+            aria-label={`Xem hoặc in hóa đơn cho đơn hàng ${order.orderCode}`}
+          >
+            <Printer size={16} aria-hidden="true" />
+            <span>Xem / In hóa đơn</span>
+          </Link>
 
-              return (
-                <Button
-                  key={action.targetStatus}
-                  variant={action.variant}
-                  size="md"
-                  disabled={isDisabled}
-                  title={
-                    isDisabled
-                      ? 'Đơn VNPay chưa thanh toán. Không thể xử lý đơn hàng.'
-                      : undefined
-                  }
-                  onClick={() => handleOpenActionModal(action)}
-                >
-                  {action.label}
-                </Button>
-              )
-            })}
-          </div>
-        )}
+          {availableActions.length > 0 && (
+            <div className={styles.actionsGroup}>
+              {availableActions.map((action) => {
+                const isUnpaidVnPay =
+                  order.paymentMethod === 'vnpay' && order.paymentStatus !== 'paid'
+                const isCancel = Boolean(action.isCancel) || action.targetStatus === 'cancelled'
+                const isDisabled = isUnpaidVnPay && !isCancel
+
+                return (
+                  <Button
+                    key={action.targetStatus}
+                    variant={action.variant}
+                    size="md"
+                    disabled={isDisabled}
+                    title={
+                      isDisabled
+                        ? 'Đơn VNPay chưa thanh toán. Không thể xử lý đơn hàng.'
+                        : undefined
+                    }
+                    onClick={() => handleOpenActionModal(action)}
+                  >
+                    {action.label}
+                  </Button>
+                )
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {order.paymentMethod === 'vnpay' &&

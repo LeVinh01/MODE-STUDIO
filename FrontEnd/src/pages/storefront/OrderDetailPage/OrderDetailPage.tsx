@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   Check,
   ShoppingBag,
+  Printer,
 } from 'lucide-react'
 import axios from 'axios'
 import { orderService } from '@/services/api/orderService'
@@ -313,6 +314,15 @@ export const OrderDetailPage = () => {
 
           {/* NÚT THAO TÁC ĐƠN HÀNG */}
           <div className={styles.headerActions}>
+            <Link
+              to={`/orders/${encodeURIComponent(order.orderCode)}/invoice`}
+              className={styles.invoiceActionBtn}
+              aria-label={`Xem hoặc in hóa đơn cho đơn hàng ${order.orderCode}`}
+            >
+              <Printer size={16} aria-hidden="true" />
+              <span>Xem / In hóa đơn</span>
+            </Link>
+
             {order.status === 'pending' &&
               order.paymentMethod === 'vnpay' &&
               (order.paymentStatus === 'unpaid' ||

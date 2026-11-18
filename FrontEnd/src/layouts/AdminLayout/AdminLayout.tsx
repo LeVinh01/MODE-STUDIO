@@ -108,7 +108,19 @@ const getPageMeta = (pathname: string): PageMeta => {
   }
 
   if (cleanPath.startsWith('/admin/orders/')) {
-    const code = cleanPath.replace('/admin/orders/', '')
+    const isInvoice = cleanPath.endsWith('/invoice')
+    const code = cleanPath.replace('/admin/orders/', '').replace('/invoice', '')
+    if (isInvoice) {
+      return {
+        title: `Hóa đơn đơn hàng #${code}`,
+        breadcrumbs: [
+          { label: 'Quản trị', to: '/admin' },
+          { label: 'Đơn hàng', to: '/admin/orders' },
+          { label: `#${code}`, to: `/admin/orders/${code}` },
+          { label: 'Hóa đơn' },
+        ],
+      }
+    }
     return {
       title: 'Chi tiết đơn hàng',
       breadcrumbs: [
