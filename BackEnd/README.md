@@ -699,7 +699,59 @@ Dành riêng cho người dùng có vai trò `admin` hoặc `operator`. Yêu c�
 
 ---
 
-## 14. Dừng Hệ Thống Docker
+## 14. Cấu Hình Gửi Email (Email Configuration)
+
+Hệ thống hỗ trợ gửi email xác nhận đơn hàng tự động cho khách hàng khi đặt hàng thành công (đơn COD) hoặc thanh toán thành công (đơn VNPay).
+
+### 1. Môi trường phát triển mặc định (`MAIL_MAILER=log`)
+Mặc định trong file `.env.example`, hệ thống sử dụng driver `log`:
+```ini
+MAIL_MAILER=log
+MAIL_FROM_ADDRESS="hello@ombre.test"
+MAIL_FROM_NAME="OMBRE"
+```
+Khi có email được gửi, toàn bộ tiêu đề, người nhận và nội dung HTML của email sẽ được ghi trực tiếp vào file nhật ký `storage/logs/laravel.log`.  
+Để theo dõi email gửi ra trong thời gian thực:
+```bash
+docker compose exec app tail -f storage/logs/laravel.log
+```
+
+### 2. Chuyển sang hộp thư kiểm thử Mailtrap
+Nếu muốn xem giao diện email trực quan trong hộp thư thử nghiệm, bạn có thể đăng ký tài khoản miễn phí tại [Mailtrap.io](https://mailtrap.io) và chỉnh sửa file `.env` cục bộ:
+```ini
+MAIL_MAILER=smtp
+MAIL_HOST=sandbox.smtp.mailtrap.io
+MAIL_PORT=2525
+MAIL_USERNAME=your_mailtrap_username
+MAIL_PASSWORD=your_mailtrap_password
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS="hello@ombre.test"
+MAIL_FROM_NAME="OMBRE"
+```
+
+### 3. Cấu hình gửi qua Gmail SMTP (App Password)
+Để gửi email thật qua dịch vụ Google Gmail:
+1. Bật xác thực 2 bước (2FA) cho tài khoản Google.
+2. Tạo **Mật khẩu ứng dụng (App Password)** dành cho "Thư" (Mail).
+3. Cập nhật file `.env` cục bộ:
+```ini
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your_email@gmail.com
+MAIL_PASSWORD=your_app_password
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS="your_email@gmail.com"
+MAIL_FROM_NAME="OMBRE"
+```
+
+> ⚠️ **LƯU Ý BẢO MẬT QUAN TRỌNG**:
+> - Tuyệt đối **KHÔNG commit** mật khẩu hay thông tin credentials thực tế lên repository.
+> - Mọi thông tin cấu hình nhạy cảm chỉ được lưu trong file `.env` cá nhân trên máy của bạn (file này đã được đưa vào `.gitignore`).
+
+---
+
+## 15. Dừng Hệ Thống Docker
 
 - Dừng containers:
   ```bash
