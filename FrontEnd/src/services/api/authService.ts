@@ -135,6 +135,48 @@ export const authService = {
 
     return response.data
   },
+
+  /**
+   * Yêu cầu đặt lại mật khẩu (Gửi email)
+   */
+  async forgotPassword(
+    email: string,
+    signal?: AbortSignal,
+  ): Promise<{ message: string }> {
+    const response = await apiClient.post<{ message: string }>(
+      '/auth/forgot-password',
+      { email },
+      { signal },
+    )
+
+    return response.data
+  },
+
+  /**
+   * Đặt lại mật khẩu với token và email
+   */
+  async resetPassword(
+    payload: {
+      email: string
+      token: string
+      password: string
+      passwordConfirmation: string
+    },
+    signal?: AbortSignal,
+  ): Promise<{ message: string }> {
+    const response = await apiClient.post<{ message: string }>(
+      '/auth/reset-password',
+      {
+        email: payload.email,
+        token: payload.token,
+        password: payload.password,
+        password_confirmation: payload.passwordConfirmation,
+      },
+      { signal },
+    )
+
+    return response.data
+  },
 }
 
 export default authService

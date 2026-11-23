@@ -269,6 +269,52 @@ Accept: application/json
   }
   ```
 
+#### 5. Quên mật khẩu (`POST /api/auth/forgot-password`)
+- **Mục đích**: Gửi email hướng dẫn đặt lại mật khẩu cho tài khoản người dùng (khách hàng, nhân viên, quản trị viên).
+- **Giới hạn tốc độ (Rate Limit)**: Tối đa 5 lần / phút theo cặp Email + IP.
+- **Bảo mật chống dò tài khoản (Anti User-Enumeration)**: Luôn trả về HTTP 200 cùng một thông báo chung cho dù email có tồn tại hay không. Nếu tài khoản bị khóa (`status=locked`), email sẽ không được gửi nhưng vẫn trả về phản hồi chuẩn 200.
+- **Request Body (JSON)**:
+  ```json
+  {
+    "email": "customer@mode-studio.test"
+  }
+  ```
+- **Response (HTTP 200)**:
+  ```json
+  {
+    "message": "Nếu email tồn tại trong hệ thống, chúng tôi đã gửi hướng dẫn đặt lại mật khẩu."
+  }
+  ```
+
+#### 6. Đặt lại mật khẩu (`POST /api/auth/reset-password`)
+- **Mục đích**: Thiết lập mật khẩu mới sử dụng token nhận được từ liên kết trong email.
+- **Giới hạn tốc độ (Rate Limit)**: Tối đa 5 lần / phút theo cặp Email + IP.
+- **Xử lý bảo mật**:
+  - Token có hiệu lực 60 phút và chỉ dùng được 1 lần (tự động xóa sau khi đặt lại thành công).
+  - Khi đặt lại thành công, **toàn bộ Sanctum tokens của người dùng bị thu hồi** (đăng xuất khỏi tất cả các thiết bị).
+  - Tài khoản đang bị khóa sẽ tiếp tục ở trạng thái khóa sau khi đổi mật khẩu (không tự ý mở khóa).
+- **Request Body (JSON)**:
+  ```json
+  {
+    "email": "customer@mode-studio.test",
+    "token": "d54d1936e76839a9c40315cf...",
+    "password": "NewPassword123!",
+    "password_confirmation": "NewPassword123!"
+  }
+  ```
+- **Response thành công (HTTP 200)**:
+  ```json
+  {
+    "message": "Đặt lại mật khẩu thành công. Vui lòng đăng nhập bằng mật khẩu mới."
+  }
+  ```
+- **Response thất bại (HTTP 422 - Token sai hoặc hết hạn)**:
+  ```json
+  {
+    "message": "Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn."
+  }
+  ```
+
 ### Middleware Phân Quyền (Role-based Authorization)
 - Đăng ký alias `role` trong `bootstrap/app.php`: `role:admin`, `role:operator,admin`, `role:customer`.
 - Khi người dùng không đủ quyền hoặc tài khoản bị khóa (`status=locked`), API luôn trả về HTTP 403 Forbidden JSON kèm thông điệp tiếng Việt.
@@ -701,7 +747,9 @@ Dành riêng cho người dùng có vai trò `admin` hoặc `operator`. Yêu c�
 
 ## 14. Cấu Hình Gửi Email (Email Configuration)
 
-Hệ thống hỗ trợ gửi email xác nhận đơn hàng tự động cho khách hàng khi đặt hàng thành công (đơn COD) hoặc thanh toán thành công (đơn VNPay).
+Hệ thống hỗ trợ gửi email tự động cho các luồng:
+1. **Xác nhận đơn hàng (Order Confirmation Mail)**: gửi tự động cho khách hàng khi đặt hàng COD hoặc thanh toán thành công VNPay.
+2. **Quên mật khẩu (Password Reset Mail)**: gửi liên kết đặt lại mật khẩu kèm token có thời hạn 60 phút.
 
 ### 1. Môi trường phát triển mặc định (`MAIL_MAILER=log`)
 Mặc định trong file `.env.example`, hệ thống sử dụng driver `log`:
@@ -710,11 +758,14 @@ MAIL_MAILER=log
 MAIL_FROM_ADDRESS="hello@ombre.test"
 MAIL_FROM_NAME="OMBRE"
 ```
-Khi có email được gửi, toàn bộ tiêu đề, người nhận và nội dung HTML của email sẽ được ghi trực tiếp vào file nhật ký `storage/logs/laravel.log`.  
-Để theo dõi email gửi ra trong thời gian thực:
+Khi có email được gửi (đặt hàng hoặc yêu cầu quên mật khẩu), toàn bộ tiêu đề, người nhận và nội dung HTML của email (bao gồm liên kết đặt lại mật khẩu) sẽ được ghi trực tiếp vào file nhật ký `storage/logs/laravel.log`.  
+
+Để theo dõi email gửi ra và lấy link đặt lại mật khẩu trong thời gian thực:
 ```bash
 docker compose exec app tail -f storage/logs/laravel.log
 ```
+Khi gọi API `POST /api/auth/forgot-password`, tìm dòng chứa đường dẫn dạng:
+`http://localhost:5173/reset-password?token=...&email=...` trong file log để tiến hành kiểm thử cục bộ.
 
 ### 2. Chuyển sang hộp thư kiểm thử Mailtrap
 Nếu muốn xem giao diện email trực quan trong hộp thư thử nghiệm, bạn có thể đăng ký tài khoản miễn phí tại [Mailtrap.io](https://mailtrap.io) và chỉnh sửa file `.env` cục bộ:

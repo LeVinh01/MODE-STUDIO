@@ -63,6 +63,17 @@ export interface UpdatePasswordPayload {
   passwordConfirmation: string
 }
 
+export interface ForgotPasswordPayload {
+  email: string
+}
+
+export interface ResetPasswordPayload {
+  email: string
+  token: string
+  password: string
+  passwordConfirmation: string
+}
+
 export interface ApiValidationErrorResponse {
   message: string
   errors?: Record<string, string[]>

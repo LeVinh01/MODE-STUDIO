@@ -77,6 +77,47 @@
   line-height: 1.4;
 }
 
+.successAlert {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-6);
+  background-color: #f0fdf4;
+  border-left: 2px solid #16a34a;
+  border-radius: 0;
+  font-family: $font-sans;
+  font-size: 0.8125rem;
+  color: #15803d;
+  line-height: 1.4;
+}
+
+.forgotPasswordWrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -14px;
+  margin-bottom: -6px;
+}
+
+.forgotPasswordLink {
+  font-family: $font-sans;
+  font-size: 0.8125rem; // ~13px
+  color: #666666;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color $transition-fast;
+
+  &:hover {
+    color: #111111;
+  }
+
+  &:focus-visible {
+    outline: none;
+    color: #111111;
+    text-decoration: underline;
+  }
+}
+
 .errorDot {
   width: 5px;
   height: 5px;
