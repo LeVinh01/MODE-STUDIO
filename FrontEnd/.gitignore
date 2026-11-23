@@ -27,3 +27,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Generated CSS from SCSS compiler extensions (e.g. Live Sass Compiler)
+src/**/*.module.css
+src/**/*.module.css.map
+src/styles/*.css
+src/styles/*.css.map
+
