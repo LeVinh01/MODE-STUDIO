@@ -1,32 +1,66 @@
 // =============================================================================
-// ADMIN DESIGN TOKENS (Quiet Luxury / Editorial)
-// Scoped to the admin layout only.
+// OMBRE ADMIN DESIGN TOKENS (Technical Minimalist / Editorial)
+// Strictly scoped to the admin layout (.layoutAdmin).
+// Dual theme: Light (default) & Dark, neutral greys, no beige/brown.
 // =============================================================================
 
-$admin-bg-page: #F8F7F4;
-$admin-bg-sidebar: #111111;
+// Typography: IBM Plex Sans & IBM Plex Mono
+$admin-font-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+$admin-font-mono: 'IBM Plex Mono', 'SF Mono', Menlo, Monaco, Consolas, monospace;
+
+// Typography Scale Tokens
+$admin-font-size-ui: 12px;       // Sidebar & Top Header Bar
+$admin-font-size-body: 13px;     // Main content area base: toolbar, cards, tables, inputs
+$admin-font-size-title: 20px;    // Page Titles
+$admin-font-size-section: 15px;  // Card / Section Titles
+$admin-font-size-kpi: 24px;      // KPI Big Number Value
+
+// Shapes: Sharp technical borders
+$admin-radius: 2px;
+
+// --- Light Theme Palette (Default) ---
+$admin-bg-page: #F4F4F6;
+$admin-bg-sidebar: #121214;
 $admin-bg-card: #FFFFFF;
-$admin-text-primary: #171614;
-$admin-text-secondary: #81786F;
-$admin-border: #E9E3DB;
-$admin-border-subtle: #F0ECE6;
-$admin-border-strong: #D5CDC3;
-$admin-accent: #A18A70;
-$admin-accent-hover: #8e785f;
-$admin-warning: #b57324;
-$admin-warning-bg: rgba(181, 115, 36, 0.08);
-$admin-warning-border: rgba(181, 115, 36, 0.25);
-$admin-error: #a83232;
-$admin-error-bg: rgba(168, 50, 50, 0.08);
-$admin-error-border: rgba(168, 50, 50, 0.25);
+$admin-text-primary: #111113;
+$admin-text-secondary: #52525B;
+$admin-text-muted: #71717A;
+$admin-border: #E4E4E7;
+$admin-border-subtle: #F4F4F5;
+$admin-border-strong: #D4D4D8;
+$admin-accent: #18181B;
+$admin-accent-hover: #27272A;
+$admin-warning: #B45309;
+$admin-warning-bg: rgba(180, 83, 9, 0.08);
+$admin-warning-border: rgba(180, 83, 9, 0.25);
+$admin-error: #DC2626;
+$admin-error-bg: rgba(220, 38, 38, 0.08);
+$admin-error-border: rgba(220, 38, 38, 0.25);
+$admin-success: #16A34A;
 
-// Sidebar scoped color tokens (WCAG AA compliant against #111111)
-$admin-sidebar-text: #D5CDC3; // 12.00:1 contrast against #111111 (WCAG AAA)
-$admin-sidebar-text-muted: #A89F93; // 7.23:1 contrast against #111111 (WCAG AAA)
-$admin-sidebar-card-bg: #1C1C1C; // Charcoal user card background (17.04:1 with white text)
-$admin-sidebar-hover-bg: rgba(255, 255, 255, 0.04);
-$admin-sidebar-active-bg: rgba(161, 138, 112, 0.14);
+// Sidebar Scoped (Always dark background for high technical contrast)
+$admin-sidebar-text: #D4D4D8;
+$admin-sidebar-text-muted: #71717A;
+$admin-sidebar-card-bg: #18181B;
+$admin-sidebar-hover-bg: rgba(255, 255, 255, 0.05);
+$admin-sidebar-active-bg: transparent;
 
-// Typography Stacks (Reusing existing fonts, no new font files)
-$admin-font-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
-$admin-font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+// --- Dark Theme Palette ---
+$admin-dark-bg-page: #0C0C0E;
+$admin-dark-bg-card: #18181B;
+$admin-dark-bg-sidebar: #101012;
+$admin-dark-text-primary: #F4F4F5;
+$admin-dark-text-secondary: #A1A1AA;
+$admin-dark-text-muted: #71717A;
+$admin-dark-border: #27272A;
+$admin-dark-border-subtle: #1F1F23;
+$admin-dark-border-strong: #3F3F46;
+$admin-dark-accent: #FAFAFA;
+$admin-dark-accent-hover: #E4E4E7;
+$admin-dark-warning: #F59E0B;
+$admin-dark-warning-bg: rgba(245, 158, 11, 0.12);
+$admin-dark-warning-border: rgba(245, 158, 11, 0.3);
+$admin-dark-error: #EF4444;
+$admin-dark-error-bg: rgba(239, 68, 68, 0.12);
+$admin-dark-error-border: rgba(239, 68, 68, 0.3);
+$admin-dark-success: #22C55E;

@@ -1,138 +1,167 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import axios from 'axios'
-import type {
-  AdminDashboardRevenueData,
-  AdminDashboardSummaryData,
-  AdminDashboardTopProductItem,
-} from '@/types/adminDashboard'
+import type { AdminUnifiedDashboardData, DashboardRange } from '@/types/adminDashboard'
 import adminDashboardService from '@/services/api/adminDashboardService'
-import { getTodayVn, getDaysAgoVn } from '@/utils/formatters'
 import { getApiErrorMessage } from '@/utils/apiError'
 import { Skeleton } from '@/components/feedback'
-import DateRangeFilter from './components/DateRangeFilter/DateRangeFilter'
-import KpiCards from './components/KpiCards/KpiCards'
-import RevenueChart from './components/RevenueChart/RevenueChart'
-import OrderStatusChart from './components/OrderStatusChart/OrderStatusChart'
-import TopProductsTable from './components/TopProductsTable/TopProductsTable'
+import { DashboardToolbar } from './components/DashboardToolbar/DashboardToolbar'
+import { DashboardKpiCards } from './components/DashboardKpiCards/DashboardKpiCards'
+import { DashboardRevenueChart } from './components/DashboardRevenueChart/DashboardRevenueChart'
+import { DashboardTopProducts } from './components/DashboardTopProducts/DashboardTopProducts'
+import { DashboardOrderStatusDonut } from './components/DashboardOrderStatusDonut/DashboardOrderStatusDonut'
+import { DashboardCategoryRevenue } from './components/DashboardCategoryRevenue/DashboardCategoryRevenue'
+import { DashboardAlerts } from './components/DashboardAlerts/DashboardAlerts'
+import { DashboardItemPerformancePanel } from './components/DashboardItemPerformancePanel/DashboardItemPerformancePanel'
 import styles from './DashboardPage.module.scss'
+
+const VALID_RANGES: DashboardRange[] = [
+  '7d',
+  '30d',
+  '90d',
+  'this_month',
+  'this_quarter',
+  'this_year',
+  'custom',
+]
+
+// Strict date format validator (YYYY-MM-DD)
+const isValidDateString = (s: string): boolean =>
+  /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(Date.parse(s))
 
 export const DashboardPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams()
 
-  // Default range: 30 days (inclusive)
-  const defaultFrom = getDaysAgoVn(29)
-  const defaultTo = getTodayVn()
+  const rawRange = searchParams.get('range')
+  const rawFrom = searchParams.get('from') || ''
+  const rawTo = searchParams.get('to') || ''
 
-  const fromParam = searchParams.get('from') || defaultFrom
-  const toParam = searchParams.get('to') || defaultTo
+  // Sanitize and resolve currentRange and custom dates with safe fallback to '30d'
+  let currentRange: DashboardRange = '30d'
+  let customFrom = ''
+  let customTo = ''
 
-  const [groupBy, setGroupBy] = useState<'day' | 'month'>('day')
-  const [summary, setSummary] = useState<AdminDashboardSummaryData | null>(null)
-  const [revenue, setRevenue] = useState<AdminDashboardRevenueData | null>(null)
-  const [topProducts, setTopProducts] = useState<AdminDashboardTopProductItem[]>([])
-
-  const [isLoading, setIsLoading] = useState<boolean>(true)
-  const [isRevenueLoading, setIsRevenueLoading] = useState<boolean>(false)
-  const [error, setError] = useState<string | null>(null)
-
-  // Fetch all dashboard data with AbortController
-  const fetchData = useCallback(
-    (from: string, to: string, currentGroupBy: 'day' | 'month') => {
-      const controller = new AbortController()
-
-      Promise.all([
-        adminDashboardService.getSummary({ from, to }, controller.signal),
-        adminDashboardService.getRevenue({ from, to, group_by: currentGroupBy }, controller.signal),
-        adminDashboardService.getTopProducts({ from, to, limit: 5 }, controller.signal),
-      ])
-        .then(([summaryRes, revenueRes, topProductsRes]) => {
-          setSummary(summaryRes)
-          setRevenue(revenueRes)
-          setTopProducts(topProductsRes)
-          setIsLoading(false)
-        })
-        .catch((err) => {
-          if (axios.isCancel(err) || (err instanceof DOMException && err.name === 'AbortError')) {
-            return
-          }
-          setError(getApiErrorMessage(err))
-          setIsLoading(false)
-        })
-
-      return () => controller.abort()
-    },
-    [],
-  )
-
-  // Fetch only revenue when group_by changes
-  const handleGroupByChange = async (newGroupBy: 'day' | 'month') => {
-    if (newGroupBy === groupBy) return
-    setGroupBy(newGroupBy)
-    setIsRevenueLoading(true)
-
-    try {
-      const res = await adminDashboardService.getRevenue({
-        from: fromParam,
-        to: toParam,
-        group_by: newGroupBy,
-      })
-      setRevenue(res)
-    } catch (err) {
-      if (!axios.isCancel(err)) {
-        setError(getApiErrorMessage(err))
-      }
-    } finally {
-      setIsRevenueLoading(false)
+  if (rawRange === 'custom') {
+    if (isValidDateString(rawFrom) && isValidDateString(rawTo) && rawFrom <= rawTo) {
+      currentRange = 'custom'
+      customFrom = rawFrom
+      customTo = rawTo
+    } else {
+      // Fallback: missing or invalid custom dates -> fall back to 30d
+      currentRange = '30d'
     }
+  } else if (rawRange && VALID_RANGES.includes(rawRange as DashboardRange)) {
+    currentRange = rawRange as DashboardRange
+  } else if (!rawRange && isValidDateString(rawFrom) && isValidDateString(rawTo) && rawFrom <= rawTo) {
+    // Backward-compatibility: URL with only ?from=...&to=... (direct or legacy navigation)
+    currentRange = 'custom'
+    customFrom = rawFrom
+    customTo = rawTo
+  } else {
+    currentRange = '30d'
   }
 
-  // Update URL search parameters when date range changes
-  const handleRangeChange = (newFrom: string, newTo: string) => {
+  const [dashboardData, setDashboardData] = useState<AdminUnifiedDashboardData | null>(null)
+  const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Normalize URL search params if someone lands on broken /admin?range=custom without dates
+  useEffect(() => {
+    if (rawRange === 'custom' && (!isValidDateString(rawFrom) || !isValidDateString(rawTo) || rawFrom > rawTo)) {
+      setSearchParams({ range: '30d' }, { replace: true })
+    }
+  }, [rawRange, rawFrom, rawTo, setSearchParams])
+
+  useEffect(() => {
+    let ignore = false
+    const controller = new AbortController()
+
+    adminDashboardService
+      .getDashboard(
+        currentRange,
+        currentRange === 'custom' ? customFrom : undefined,
+        currentRange === 'custom' ? customTo : undefined,
+        controller.signal,
+      )
+      .then((res) => {
+        if (!ignore) {
+          setDashboardData(res)
+          setIsLoading(false)
+        }
+      })
+      .catch((err) => {
+        if (!ignore) {
+          if (!axios.isCancel(err) && !(err instanceof DOMException && err.name === 'AbortError')) {
+            setError(getApiErrorMessage(err))
+          }
+          setIsLoading(false)
+        }
+      })
+
+    return () => {
+      ignore = true
+      controller.abort()
+    }
+  }, [currentRange, customFrom, customTo])
+
+  const handleRangeChange = (newRange: DashboardRange, from?: string, to?: string) => {
     setIsLoading(true)
     setError(null)
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev)
-        next.set('from', newFrom)
-        next.set('to', newTo)
-        return next
-      },
-      { replace: true },
-    )
+    const next = new URLSearchParams()
+    if (newRange === 'custom' && from && to) {
+      next.set('range', 'custom')
+      next.set('from', from)
+      next.set('to', to)
+    } else {
+      next.set('range', newRange)
+    }
+    setSearchParams(next, { replace: true })
   }
 
   const handleRefresh = () => {
     setIsLoading(true)
     setError(null)
-    fetchData(fromParam, toParam, groupBy)
+    adminDashboardService
+      .getDashboard(
+        currentRange,
+        currentRange === 'custom' ? customFrom : undefined,
+        currentRange === 'custom' ? customTo : undefined,
+      )
+      .then((res) => {
+        setDashboardData(res)
+        setIsLoading(false)
+      })
+      .catch((err) => {
+        if (!axios.isCancel(err) && !(err instanceof DOMException && err.name === 'AbortError')) {
+          setError(getApiErrorMessage(err))
+        }
+        setIsLoading(false)
+      })
   }
-
-  useEffect(() => {
-    const cancel = fetchData(fromParam, toParam, groupBy)
-    return cancel
-  }, [fromParam, toParam, groupBy, fetchData])
 
   return (
     <section className={styles.pageContainer}>
-      <div className={styles.header}>
-        <h2 className={styles.pageTitle}>Tổng quan kinh doanh</h2>
+      <header className={styles.header}>
+        <h2 className={styles.pageTitle}>Tổng quan kinh doanh OMBRE</h2>
         <p className={styles.pageSubtitle}>
-          Báo cáo doanh số bán hàng, phân tích đơn hàng và hiệu suất sản phẩm
+          Báo cáo số liệu hiệu suất kinh doanh, xu hướng doanh thu và cảnh báo vận hành
         </p>
-      </div>
+      </header>
 
-      <DateRangeFilter
-        key={`${fromParam}_${toParam}`}
-        from={fromParam}
-        to={toParam}
+      {/* 1. TOOLBAR: RESTORED ORIGINAL UX + PRESETS & DATE RANGE FORM */}
+      <DashboardToolbar
+        key={`${currentRange}_${customFrom}_${customTo}_${dashboardData?.current_period?.from || ''}_${dashboardData?.current_period?.to || ''}`}
+        currentRange={currentRange}
+        periodInfo={dashboardData?.current_period}
+        customFrom={customFrom}
+        customTo={customTo}
         onRangeChange={handleRangeChange}
         onRefresh={handleRefresh}
         isLoading={isLoading}
       />
 
       {error && (
-        <div className={styles.errorBanner}>
+        <div className={styles.errorBanner} role="alert">
           <span>{error}</span>
           <button type="button" className={styles.retryBtn} onClick={handleRefresh}>
             Thử lại
@@ -140,51 +169,57 @@ export const DashboardPage: React.FC = () => {
         </div>
       )}
 
-      {/* Skeletons khi tải lần đầu */}
-      {isLoading && !summary && (
-        <>
-          <div className={styles.skeletonKpiGrid}>
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className={styles.skeletonKpiCard}>
-                <Skeleton variant="text" width="60%" height={16} />
-                <Skeleton variant="text" width="80%" height={28} />
-                <Skeleton variant="text" width="40%" height={14} />
+      {/* Initial loading skeletons */}
+      {isLoading && !dashboardData && (
+        <div className={styles.skeletonContainer}>
+          <div className={styles.skeletonGrid}>
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className={styles.skeletonCard}>
+                <Skeleton variant="text" width="50%" height={14} />
+                <Skeleton variant="text" width="80%" height={26} />
+                <Skeleton variant="text" width="60%" height={12} />
               </div>
             ))}
           </div>
-          <div className={styles.chartsRow}>
-            <div className={styles.skeletonChartCard}>
-              <Skeleton variant="rectangular" width="100%" height="100%" borderRadius={8} />
-            </div>
-            <div className={styles.skeletonChartCard}>
-              <Skeleton variant="rectangular" width="100%" height="100%" borderRadius={8} />
-            </div>
+          <div className={styles.skeletonChart}>
+            <Skeleton variant="rectangular" width="100%" height={260} />
           </div>
-          <div className={styles.skeletonTableCard}>
-            <Skeleton variant="rectangular" width="100%" height="100%" borderRadius={8} />
-          </div>
-        </>
+        </div>
       )}
 
-      {/* Dữ liệu thật khi đã tải xong */}
-      {summary && (
+      {dashboardData && (
         <>
-          <KpiCards summary={summary} />
+          {/* 2. 4 KPI CARDS */}
+          <DashboardKpiCards
+            currentKpis={dashboardData.current}
+            deltaPercent={dashboardData.delta_percent}
+            range={dashboardData.range}
+          />
 
-          <div className={styles.chartsRow}>
-            {revenue && (
-              <RevenueChart
-                data={revenue}
-                groupBy={groupBy}
-                onGroupByChange={handleGroupByChange}
-                isLoading={isRevenueLoading}
-              />
-            )}
+          {/* 3. REVENUE STRAIGHT LINE CHART */}
+          <DashboardRevenueChart
+            timeSeries={dashboardData.revenue_time_series}
+            isLoading={isLoading}
+          />
 
-            <OrderStatusChart ordersByStatus={summary.orders_by_status} />
+          {/* 4. TWO COLUMNS: TOP PRODUCTS & ORDER STATUS DONUT */}
+          <div className={styles.twoColumns}>
+            <div className={styles.colLeft}>
+              <DashboardTopProducts data={dashboardData.top_products} />
+            </div>
+            <div className={styles.colRight}>
+              <DashboardOrderStatusDonut breakdown={dashboardData.order_status_breakdown} />
+            </div>
           </div>
 
-          <TopProductsTable products={topProducts} isLoading={isLoading} />
+          {/* 5. REVENUE BY CATEGORY RANKED TABLE */}
+          <DashboardCategoryRevenue categoryData={dashboardData.revenue_by_category} />
+
+          {/* 6. PRODUCT / CATEGORY PERFORMANCE PANEL */}
+          <DashboardItemPerformancePanel />
+
+          {/* 7. OPERATIONAL ALERTS (RESTORED 3-CARD SIDE-BY-SIDE PRESENTATION) */}
+          <DashboardAlerts alerts={dashboardData.alerts} />
         </>
       )}
     </section>

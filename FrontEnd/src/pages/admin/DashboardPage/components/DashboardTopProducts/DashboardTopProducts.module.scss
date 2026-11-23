@@ -1,0 +1,186 @@
+@use '@/styles/abstracts/admin-tokens' as *;
+
+.card {
+  background: var(--admin-bg-card);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius, 2px);
+  padding: 20px 22px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.title {
+  font-family: var(--admin-font-sans);
+  font-size: var(--admin-font-size-section, 15px);
+  font-weight: 600;
+  color: var(--admin-text-primary);
+  margin: 0 0 4px 0;
+}
+
+.subtitle {
+  font-family: var(--admin-font-sans);
+  font-size: var(--admin-font-size-ui, 12px);
+  color: var(--admin-text-secondary);
+  margin: 0;
+}
+
+.tabGroup {
+  display: inline-flex;
+  background: var(--admin-border-subtle);
+  border: 1px solid var(--admin-border);
+  padding: 2px;
+  border-radius: var(--admin-radius, 2px);
+  gap: 2px;
+}
+
+.tabBtn {
+  background: transparent;
+  border: none;
+  padding: 3px 8px;
+  font-family: var(--admin-font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--admin-text-secondary);
+  border-radius: 1px;
+  cursor: pointer;
+  transition: all 120ms ease;
+
+  &:hover {
+    color: var(--admin-text-primary);
+  }
+
+  &.active {
+    background: var(--admin-bg-card);
+    color: var(--admin-text-primary);
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  }
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+}
+
+.itemRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rankBadge {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--admin-radius, 2px);
+  background: var(--admin-border-subtle);
+  border: 1px solid var(--admin-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--admin-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--admin-text-secondary);
+  flex-shrink: 0;
+}
+
+.imageCol {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--admin-radius, 2px);
+  overflow: hidden;
+  background: var(--admin-border-subtle);
+  border: 1px solid var(--admin-border);
+  flex-shrink: 0;
+}
+
+.productImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.imgPlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--admin-text-muted);
+  font-size: 12px;
+}
+
+.contentCol {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.productName {
+  font-family: var(--admin-font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--admin-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.valLabel {
+  font-family: var(--admin-font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--admin-text-primary);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.barTrack {
+  width: 100%;
+  height: 4px;
+  background: var(--admin-border-subtle);
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  background: var(--admin-text-primary);
+  border-radius: 1px;
+  transition: width 200ms ease;
+}
+
+.subInfo {
+  font-family: var(--admin-font-mono);
+  font-size: 10px;
+  color: var(--admin-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--admin-text-secondary);
+  font-family: var(--admin-font-sans);
+  font-size: 12px;
+}

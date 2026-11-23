@@ -1,0 +1,277 @@
+@use '@/styles/abstracts/admin-tokens' as *;
+
+.comboboxContainer {
+  position: relative;
+  width: 100%;
+}
+
+.triggerBox {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--admin-bg-card);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius, 2px);
+  padding: 6px 10px;
+  min-height: 34px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 120ms ease;
+
+  &:hover:not(.disabled) {
+    border-color: var(--admin-border-strong);
+  }
+
+  &.focused {
+    border-color: var(--admin-text-primary);
+    outline: 2px solid var(--admin-accent);
+    outline-offset: -1px;
+  }
+
+  &.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: var(--admin-border-subtle);
+  }
+}
+
+.triggerIcon {
+  color: var(--admin-text-secondary);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.selectedLabel {
+  flex: 1;
+  font-family: var(--admin-font-sans);
+  font-size: var(--admin-font-size-body, 13px);
+  font-weight: 500;
+  color: var(--admin-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &.placeholder {
+    color: var(--admin-text-muted);
+    font-weight: 400;
+  }
+}
+
+.triggerActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.clearBtn {
+  background: transparent;
+  border: none;
+  color: var(--admin-text-muted);
+  padding: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  border-radius: 1px;
+  transition: color 100ms ease;
+
+  &:hover {
+    color: var(--admin-text-primary);
+  }
+}
+
+.chevronIcon {
+  color: var(--admin-text-secondary);
+  display: flex;
+  align-items: center;
+  transition: transform 150ms ease;
+
+  &.rotated {
+    transform: rotate(180deg);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Floating Portal Dropdown List
+// -----------------------------------------------------------------------------
+.dropdownPortal {
+  position: absolute;
+  z-index: 9999;
+  background: var(--admin-bg-card);
+  border: 1px solid var(--admin-border-strong);
+  border-radius: var(--admin-radius, 2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16);
+  display: flex;
+  flex-direction: column;
+  max-height: 380px;
+  overflow: hidden;
+  animation: fadeIn 100ms ease-out;
+}
+
+.searchBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--admin-border);
+  background: var(--admin-border-subtle);
+}
+
+.searchIcon {
+  color: var(--admin-text-secondary);
+  flex-shrink: 0;
+}
+
+.searchInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-family: var(--admin-font-sans);
+  font-size: var(--admin-font-size-body, 13px);
+  color: var(--admin-text-primary);
+  outline: none;
+
+  &::placeholder {
+    color: var(--admin-text-muted);
+  }
+}
+
+.clearSearchBtn {
+  background: transparent;
+  border: none;
+  color: var(--admin-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+
+  &:hover {
+    color: var(--admin-text-primary);
+  }
+}
+
+.optionsList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+  max-height: 280px;
+
+  scrollbar-width: thin;
+  scrollbar-color: var(--admin-border-strong) transparent;
+}
+
+.optionItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 80ms ease;
+
+  &.highlighted {
+    background-color: var(--admin-border-subtle);
+  }
+
+  &.selected {
+    background-color: var(--admin-border-subtle);
+    font-weight: 600;
+
+    .optionName {
+      color: var(--admin-accent);
+      font-weight: 600;
+    }
+  }
+
+  // Root Category Group
+  &.rootGroup {
+    font-weight: 600;
+    border-top: 1px solid var(--admin-border-subtle);
+
+    &:first-child {
+      border-top: none;
+    }
+  }
+
+  // Leaf Category Indentation
+  &.indented {
+    padding-left: 28px;
+    font-size: 12px;
+  }
+}
+
+.optionMain {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.storeIcon {
+  color: #16A34A;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.optionName {
+  font-family: var(--admin-font-sans);
+  font-size: var(--admin-font-size-body, 13px);
+  color: var(--admin-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.optionSub {
+  font-family: var(--admin-font-sans);
+  font-size: var(--admin-font-size-ui, 12px);
+  color: var(--admin-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+}
+
+.countBadge {
+  font-family: var(--admin-font-mono);
+  font-size: 11px;
+  color: var(--admin-text-muted);
+  background: var(--admin-border-subtle);
+  border: 1px solid var(--admin-border);
+  padding: 1px 6px;
+  border-radius: var(--admin-radius, 2px);
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.statusMessage {
+  padding: 16px;
+  text-align: center;
+  font-family: var(--admin-font-sans);
+  font-size: var(--admin-font-size-ui, 12px);
+  color: var(--admin-text-muted);
+}
+
+.footerHint {
+  padding: 6px 12px;
+  background: var(--admin-border-subtle);
+  border-top: 1px solid var(--admin-border);
+  font-family: var(--admin-font-sans);
+  font-size: 11px;
+  color: var(--admin-text-secondary);
+  text-align: center;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -1,0 +1,177 @@
+@use '@/styles/abstracts/admin-tokens' as *;
+
+.card {
+  background: var(--admin-bg-card);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius, 2px);
+  padding: 20px 22px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  margin-bottom: 16px;
+}
+
+.title {
+  font-family: var(--admin-font-sans);
+  font-size: var(--admin-font-size-section, 15px);
+  font-weight: 600;
+  color: var(--admin-text-primary);
+  margin: 0 0 4px 0;
+}
+
+.subtitle {
+  font-family: var(--admin-font-sans);
+  font-size: var(--admin-font-size-ui, 12px);
+  color: var(--admin-text-secondary);
+  margin: 0;
+}
+
+.body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex: 1;
+
+  @media (max-width: 900px) {
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+  }
+}
+
+.chartWrapper {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  flex-shrink: 0;
+  margin: 0 auto;
+}
+
+.segment {
+  cursor: pointer;
+  outline: none;
+  transition: opacity 120ms ease, stroke-width 120ms ease;
+
+  &:hover,
+  &:focus-visible {
+    opacity: 0.85;
+    stroke-width: 26;
+  }
+}
+
+.donutCenter {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  text-align: center;
+}
+
+.centerNumber {
+  font-family: var(--admin-font-mono);
+  font-size: var(--admin-font-size-kpi, 24px);
+  font-weight: 600;
+  color: var(--admin-text-primary);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.centerLabel {
+  font-family: var(--admin-font-sans);
+  font-size: 10px;
+  color: var(--admin-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 2px;
+}
+
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 35%;
+  min-width: 180px;
+  flex-shrink: 0;
+
+  @media (max-width: 900px) {
+    width: 100%;
+    min-width: unset;
+  }
+}
+
+.legendRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: var(--admin-radius, 2px);
+  cursor: pointer;
+  transition: background-color 100ms ease;
+
+  &:hover,
+  &.active {
+    background-color: var(--admin-border-subtle);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--admin-accent);
+    outline-offset: 1px;
+  }
+}
+
+.legendLeft {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.legendDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+
+.legendLabel {
+  font-family: var(--admin-font-sans);
+  font-size: var(--admin-font-size-body, 13px);
+  color: var(--admin-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.legendRight {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.legendCount {
+  font-family: var(--admin-font-mono);
+  font-size: var(--admin-font-size-body, 13px);
+  font-weight: 500;
+  color: var(--admin-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.legendPercent {
+  font-family: var(--admin-font-mono);
+  font-size: var(--admin-font-size-ui, 12px);
+  color: var(--admin-text-secondary);
+  font-variant-numeric: tabular-nums;
+  width: 34px;
+  text-align: right;
+}

@@ -102,4 +102,16 @@ export const getStartOfMonthVn = (): string => {
   return `${year}-${month}-01`
 }
 
+/**
+ * Loại bỏ dấu tiếng Việt để phục vụ tìm kiếm không phân biệt dấu
+ */
+export const removeVietnameseTones = (str: string): string => {
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .toLowerCase()
+}
+
 
