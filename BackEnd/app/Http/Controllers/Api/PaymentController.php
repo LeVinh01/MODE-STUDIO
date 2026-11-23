@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderStatusHistory;
 use App\Models\Payment;
+use App\Services\OrderMailService;
 use App\Services\VnPayService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -84,7 +85,7 @@ class PaymentController extends Controller
      * Xác thực kết quả giao dịch từ Return URL của VNPay (Public endpoint)
      * POST /api/payment/vnpay/verify
      */
-    public function verifyVnPayReturn(Request $request, VnPayService $vnPayService): JsonResponse
+    public function verifyVnPayReturn(Request $request, VnPayService $vnPayService, OrderMailService $orderMailService): JsonResponse
     {
         $params = $request->all();
 
@@ -131,7 +132,7 @@ class PaymentController extends Controller
         }
 
         // 2. Chạy toàn bộ quá trình kiểm tra và cập nhật trong DB transaction có lockForUpdate
-        return DB::transaction(function () use (
+        [$response, $orderToSendMail] = DB::transaction(function () use (
             $vnpTxnRef,
             $vnpAmount,
             $vnpResponseCode,
@@ -144,19 +145,19 @@ class PaymentController extends Controller
             $payment = Payment::where('txn_ref', $vnpTxnRef)->lockForUpdate()->first();
 
             if (!$payment) {
-                return response()->json([
+                return [response()->json([
                     'status'  => 'not_found',
                     'message' => 'Giao dịch không tồn tại trên hệ thống.',
-                ], 404);
+                ], 404), null];
             }
 
             $order = Order::where('id', $payment->order_id)->lockForUpdate()->first();
 
             if (!$order) {
-                return response()->json([
+                return [response()->json([
                     'status'  => 'not_found',
                     'message' => 'Đơn hàng liên kết với giao dịch không tồn tại.',
-                ], 404);
+                ], 404), null];
             }
 
             // Kiểm tra số tiền khớp CẢ payments.amount LẪN orders.total_amount (nhân 100 theo quy định VNPay)
@@ -169,29 +170,29 @@ class PaymentController extends Controller
                     'raw_response' => $params,
                 ]);
 
-                return response()->json([
+                return [response()->json([
                     'status'  => 'amount_mismatch',
                     'message' => 'Số tiền giao dịch không khớp với đơn hàng.',
-                ], 422);
+                ], 422), null];
             }
 
             // IDEMPOTENCY: Kiểm tra lại trạng thái SAU KHI KHÓA (chống double-call do React StrictMode hoặc người dùng F5)
             if ($payment->status === 'success') {
-                return response()->json([
+                return [response()->json([
                     'status'     => 'success',
                     'order_code' => $order->order_code,
                     'message'    => 'Giao dịch đã được xác nhận thành công trước đó.',
-                ], 200);
+                ], 200), null];
             }
 
             if ($payment->status === 'failed' || $payment->status === 'cancelled') {
                 if ($vnpResponseCode !== '00' || $vnpTransactionStatus !== '00') {
-                    return response()->json([
+                    return [response()->json([
                         'status'        => 'failed',
                         'order_code'    => $order->order_code,
                         'response_code' => $vnpResponseCode,
                         'message'       => $this->getVnPayErrorMessage($vnpResponseCode),
-                    ], 200);
+                    ], 200), null];
                 }
             }
 
@@ -233,12 +234,12 @@ class PaymentController extends Controller
                         'created_at'  => now(),
                     ]);
 
-                    return response()->json([
+                    return [response()->json([
                         'status'                  => 'success_abnormal',
                         'order_code'              => $order->order_code,
                         'provider_transaction_no' => $vnpTransactionNo,
                         'message'                 => 'Giao dịch thành công nhưng đơn hàng đã bị hủy trước đó. Cần hoàn tiền thủ công.',
-                    ], 200);
+                    ], 200), null];
                 }
 
                 if ($order->payment_status === PaymentStatus::Paid) {
@@ -251,12 +252,12 @@ class PaymentController extends Controller
                         'created_at'  => now(),
                     ]);
 
-                    return response()->json([
+                    return [response()->json([
                         'status'                  => 'success_abnormal',
                         'order_code'              => $order->order_code,
                         'provider_transaction_no' => $vnpTransactionNo,
                         'message'                 => 'Giao dịch thành công nhưng đơn hàng đã được thanh toán trước đó (trùng giao dịch). Cần hoàn tiền thủ công.',
-                    ], 200);
+                    ], 200), null];
                 }
 
                 // Giao dịch thông thường hợp lệ: Cập nhật đơn hàng thành Paid
@@ -274,14 +275,14 @@ class PaymentController extends Controller
                     'created_at'  => now(),
                 ]);
 
-                return response()->json([
+                return [response()->json([
                     'status'                  => 'success',
                     'order_code'              => $order->order_code,
                     'amount'                  => (int) $order->total_amount,
                     'bank_code'               => $vnpBankCode,
                     'provider_transaction_no' => $vnpTransactionNo,
                     'message'                 => 'Thanh toán đơn hàng thành công.',
-                ], 200);
+                ], 200), $order];
             }
 
             // Giao dịch không thành công hoặc bị khách hủy
@@ -319,13 +320,20 @@ class PaymentController extends Controller
                 ]);
             }
 
-            return response()->json([
+            return [response()->json([
                 'status'        => 'failed',
                 'order_code'    => $order->order_code,
                 'response_code' => $vnpResponseCode,
                 'message'       => $this->getVnPayErrorMessage($vnpResponseCode),
-            ], 200);
+            ], 200), null];
         });
+
+        // Gửi email xác nhận sau khi transaction thanh toán VNPay đã commit thành công
+        if ($orderToSendMail instanceof Order) {
+            $orderMailService->sendOrderConfirmation($orderToSendMail);
+        }
+
+        return $response;
     }
 
     private function getVnPayErrorMessage(string $responseCode): string

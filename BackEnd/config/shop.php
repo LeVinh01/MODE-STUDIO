@@ -4,6 +4,9 @@ return [
     // Tên thương hiệu hiển thị (Single Source of Truth cho toàn bộ backend)
     'brand_name' => env('APP_NAME', 'OMBRE'),
 
+    // Địa chỉ base của giao diện người dùng (Storefront)
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
+
     'cart' => [
         // Giới hạn số lượng tối đa cho mỗi dòng sản phẩm trong giỏ hàng
         'max_item_quantity' => (int) env('CART_MAX_ITEM_QUANTITY', 20),

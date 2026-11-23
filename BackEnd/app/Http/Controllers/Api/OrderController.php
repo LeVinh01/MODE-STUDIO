@@ -16,6 +16,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderStatusHistory;
 use App\Models\ProductVariant;
+use App\Services\OrderMailService;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
@@ -74,7 +75,7 @@ class OrderController extends Controller
     /**
      * Tạo đơn hàng mới từ giỏ hàng của người dùng (Checkout COD)
      */
-    public function store(OrderStoreRequest $request): JsonResponse
+    public function store(OrderStoreRequest $request, OrderMailService $orderMailService): JsonResponse
     {
         $user = $request->user();
         $validated = $request->validated();
@@ -258,6 +259,11 @@ class OrderController extends Controller
         }, attempts: 3);
 
         $order->load(['items', 'latestPayment']);
+
+        // Gửi email xác nhận ngay sau khi giao dịch tạo đơn hàng COD đã COMMIT thành công
+        if ($order->payment_method === PaymentMethod::Cod) {
+            $orderMailService->sendOrderConfirmation($order);
+        }
 
         return response()->json([
             'message' => 'Đặt hàng thành công.',
