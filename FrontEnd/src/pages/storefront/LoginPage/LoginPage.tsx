@@ -4,7 +4,7 @@ import axios from 'axios'
 import { Button, PasswordInput, FloatingInput } from '@/components/common'
 import { AuthLoadingScreen } from '@/components/auth/AuthLoadingScreen'
 import { authService } from '@/services/api/authService'
-import { BRAND_NAME, BRAND_LOGOS } from '@/config/brand'
+import { BRAND_NAME, BRAND_LOGOS, formatPageTitle } from '@/config/brand'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import {
   setUser,
@@ -39,6 +39,14 @@ export const LoginPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [retryCountdown, setRetryCountdown] = useState<number | null>(null)
   const [logoError, setLogoError] = useState(false)
+
+  const successNotice = (
+    location.state as { successNotice?: string; message?: string } | undefined
+  )?.successNotice || (location.state as { message?: string } | undefined)?.message
+
+  useEffect(() => {
+    document.title = formatPageTitle('Đăng nhập')
+  }, [])
 
   // Redirect if already authenticated (chờ auth khởi tạo xong)
   useEffect(() => {
@@ -181,6 +189,13 @@ export const LoginPage = () => {
       {/* 2. Tiêu đề form */}
       <h1 className={styles.tagline}>ĐĂNG NHẬP</h1>
 
+      {/* Thông báo thành công từ chuyển hướng (ví dụ: sau khi đặt lại mật khẩu) */}
+      {successNotice && !generalError && (
+        <div className={styles.successAlert} role="status">
+          <span>{successNotice}</span>
+        </div>
+      )}
+
       {/* 3. Cảnh báo lỗi chung */}
       {generalError && (
         <div className={styles.errorAlert} role="alert" aria-live="polite">
@@ -225,6 +240,12 @@ export const LoginPage = () => {
           fullWidth
           disabled={isSubmitting}
         />
+
+        <div className={styles.forgotPasswordWrapper}>
+          <Link to="/forgot-password" className={styles.forgotPasswordLink}>
+            Quên mật khẩu?
+          </Link>
+        </div>
 
         <Button
           type="submit"

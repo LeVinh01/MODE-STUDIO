@@ -69,5 +69,15 @@ class AppServiceProvider extends ServiceProvider
                 ], 429, $headers);
             });
         });
+
+        // Rate limiter cho quên và đặt lại mật khẩu: 5 lần/phút theo cặp email + IP
+        RateLimiter::for('password-reset', function (Request $request) {
+            $email = strtolower(trim((string) $request->input('email', '')));
+            return Limit::perMinute(5)->by($email . '|' . $request->ip())->response(function (Request $request, array $headers) {
+                return response()->json([
+                    'message' => 'Bạn đã gửi yêu cầu quá nhiều lần. Vui lòng thử lại sau 1 phút.',
+                ], 429, $headers);
+            });
+        });
     }
 }

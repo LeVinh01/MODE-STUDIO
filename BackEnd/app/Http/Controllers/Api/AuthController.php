@@ -4,16 +4,20 @@ namespace App\Http\Controllers\Api;
 
 use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ForgotPasswordRequest;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
+use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Requests\UpdatePasswordRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Resources\UserResource;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\PasswordResetMailService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 
 class AuthController extends Controller
 {
@@ -163,5 +167,82 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'Đổi mật khẩu thành công.',
         ], 200);
+    }
+
+    /**
+     * Yêu cầu đặt lại mật khẩu (Gửi email chứa liên kết đặt lại mật khẩu)
+     * POST /api/auth/forgot-password
+     */
+    public function forgotPassword(ForgotPasswordRequest $request, PasswordResetMailService $mailService): JsonResponse
+    {
+        $email = $request->validated('email');
+
+        // Phản hồi chung giống hệt nhau để chống user enumeration
+        $genericResponse = response()->json([
+            'message' => 'Nếu email tồn tại trong hệ thống, chúng tôi đã gửi hướng dẫn đặt lại mật khẩu.',
+        ], 200);
+
+        $user = User::where('email', $email)->first();
+
+        if (!$user) {
+            return $genericResponse;
+        }
+
+        // Không gửi mail tới tài khoản khách hàng đang bị khóa (locked)
+        $userStatus = $user->status instanceof UserStatus ? $user->status->value : (string) $user->status;
+        if ($userStatus === 'locked') {
+            return $genericResponse;
+        }
+
+        // Tạo token đặt lại mật khẩu qua Password broker của Laravel (thời hạn 60 phút theo config/auth.php)
+        $token = Password::broker()->createToken($user);
+
+        // Tạo đường dẫn liên kết đặt lại mật khẩu cho storefront
+        $frontendUrl = (string) config('shop.frontend_url', 'http://localhost:5173');
+        $resetUrl = rtrim($frontendUrl, '/') . '/reset-password?token=' . urlencode($token) . '&email=' . urlencode($user->email);
+
+        // Gửi mail đồng bộ (synchronous) trong try/catch an toàn
+        $mailService->sendPasswordResetMail($user, $token, $resetUrl);
+
+        return $genericResponse;
+    }
+
+    /**
+     * Xác thực token và đặt lại mật khẩu mới
+     * POST /api/auth/reset-password
+     */
+    public function resetPassword(ResetPasswordRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+
+        $credentials = [
+            'email'                 => $validated['email'],
+            'password'              => $validated['password'],
+            'password_confirmation' => $validated['password_confirmation'],
+            'token'                 => $validated['token'],
+        ];
+
+        $status = Password::broker()->reset(
+            $credentials,
+            function (User $user, string $password) {
+                // Cập nhật mật khẩu mới (tự động hashed)
+                $user->forceFill([
+                    'password' => $password,
+                ])->save();
+
+                // Thu hồi tất cả Sanctum tokens của người dùng này (mọi thiết bị đều bị đăng xuất)
+                $user->tokens()->delete();
+            }
+        );
+
+        if ($status === Password::PASSWORD_RESET) {
+            return response()->json([
+                'message' => 'Đặt lại mật khẩu thành công. Vui lòng đăng nhập bằng mật khẩu mới.',
+            ], 200);
+        }
+
+        return response()->json([
+            'message' => 'Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.',
+        ], 422);
     }
 }
