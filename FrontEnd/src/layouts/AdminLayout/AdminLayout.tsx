@@ -1,5 +1,10 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import '@fontsource/ibm-plex-sans/400.css'
+import '@fontsource/ibm-plex-sans/500.css'
+import '@fontsource/ibm-plex-sans/600.css'
+import '@fontsource/ibm-plex-mono/400.css'
+import '@fontsource/ibm-plex-mono/500.css'
 import {
   LayoutDashboard,
   Package,
@@ -14,6 +19,8 @@ import {
   ChevronRight,
   Calendar,
   ChevronsUpDown,
+  Sun,
+  Moon,
 } from 'lucide-react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { toggleAdminSidebar, setAdminSidebarOpen } from '@/store/slices/uiSlice'
@@ -255,6 +262,26 @@ export const AdminLayout: React.FC = () => {
   const isAdminSidebarOpen = useAppSelector((state) => state.ui.isAdminSidebarOpen)
   const user = useAppSelector((state) => state.auth.user)
 
+  // Accessible Dark/Light theme state persisted in localStorage
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    try {
+      const saved = localStorage.getItem('ombre_admin_theme')
+      return saved === 'dark' ? 'dark' : 'light'
+    } catch {
+      return 'light'
+    }
+  })
+
+  const toggleTheme = () => {
+    const next = theme === 'light' ? 'dark' : 'light'
+    setTheme(next)
+    try {
+      localStorage.setItem('ombre_admin_theme', next)
+    } catch {
+      // Ignored
+    }
+  }
+
   const pageMeta = getPageMeta(location.pathname)
   const todayVn = getTodayVnFormatted()
   const roleLabel = getRoleLabel(user?.role)
@@ -278,7 +305,7 @@ export const AdminLayout: React.FC = () => {
   }
 
   return (
-    <div className={styles.layoutAdmin}>
+    <div className={styles.layoutAdmin} data-theme={theme}>
       {/* Mobile Drawer Backdrop */}
       {isAdminSidebarOpen && (
         <div
@@ -288,18 +315,18 @@ export const AdminLayout: React.FC = () => {
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar: 12px font, tight spacing, 2px underline active indicator */}
       {isAdminSidebarOpen && (
         <aside className={styles.sidebar}>
-          {/* 1. Brand Logo & Quiet Luxury Subtitle */}
+          {/* Brand Logo & Minimalist Subtitle */}
           <div className={styles.brand}>
             <Link to="/admin" className={styles.brandLink} onClick={handleNavClick}>
               <span className={styles.brandTitle}>{BRAND_NAME}</span>
-              <span className={styles.brandSubtitle}>QUẢN TRỊ</span>
+              <span className={styles.brandSubtitle}>QUẢN TRỊ HỆ THỐNG</span>
             </Link>
           </div>
 
-          {/* 2. Grouped Navigation with small muted labels */}
+          {/* Grouped Navigation */}
           <nav className={styles.nav} aria-label="Menu quản trị">
             {NAV_GROUPS.map((group) => (
               <div key={group.label} className={styles.navGroup}>
@@ -316,7 +343,7 @@ export const AdminLayout: React.FC = () => {
                         isActive ? `${styles.navItem} ${styles.active}` : styles.navItem
                       }
                     >
-                      <Icon size={18} />
+                      <Icon size={15} />
                       <span>{item.label}</span>
                     </NavLink>
                   )
@@ -325,7 +352,7 @@ export const AdminLayout: React.FC = () => {
             ))}
           </nav>
 
-          {/* 3. Account / Logout controls at bottom */}
+          {/* Account / Logout controls at bottom */}
           <div className={styles.sidebarFooter}>
             <div className={styles.userCard}>
               <div className={styles.userAvatar}>{userInitial}</div>
@@ -340,7 +367,7 @@ export const AdminLayout: React.FC = () => {
 
             <div className={styles.footerLinks}>
               <Link to="/" className={styles.backLink} onClick={handleNavClick}>
-                <Store size={16} />
+                <Store size={14} />
                 <span>Xem cửa hàng</span>
               </Link>
               <button
@@ -348,7 +375,7 @@ export const AdminLayout: React.FC = () => {
                 className={styles.logoutButton}
                 onClick={handleLogout}
               >
-                <LogOut size={16} />
+                <LogOut size={14} />
                 <span>Đăng xuất</span>
               </button>
             </div>
@@ -356,7 +383,7 @@ export const AdminLayout: React.FC = () => {
         </aside>
       )}
 
-      {/* Content wrapper with Editorial Header */}
+      {/* Content wrapper with Minimalist Header */}
       <div className={styles.contentWrapper}>
         <header className={styles.header}>
           <div className={styles.headerLeft}>
@@ -367,14 +394,14 @@ export const AdminLayout: React.FC = () => {
               aria-label={isAdminSidebarOpen ? 'Thu gọn menu' : 'Mở rộng menu'}
               title={isAdminSidebarOpen ? 'Thu gọn menu' : 'Mở rộng menu'}
             >
-              <Menu size={18} />
+              <Menu size={16} />
             </button>
 
             <div className={styles.headerTitleBlock}>
               <nav aria-label="Đường dẫn trang" className={styles.breadcrumbs}>
                 {pageMeta.breadcrumbs.map((crumb, idx) => (
                   <React.Fragment key={crumb.label}>
-                    {idx > 0 && <ChevronRight size={12} className={styles.crumbSeparator} />}
+                    {idx > 0 && <ChevronRight size={11} className={styles.crumbSeparator} />}
                     {crumb.to ? (
                       <Link to={crumb.to} className={styles.crumbLink}>
                         {crumb.label}
@@ -390,8 +417,19 @@ export const AdminLayout: React.FC = () => {
           </div>
 
           <div className={styles.headerRight}>
+            {/* Theme Toggle Button */}
+            <button
+              type="button"
+              className={styles.themeToggleBtn}
+              onClick={toggleTheme}
+              aria-label={theme === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}
+              title={theme === 'dark' ? 'Giao diện sáng' : 'Giao diện tối'}
+            >
+              {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+            </button>
+
             <div className={styles.dateBadge} title="Ngày làm việc hôm nay">
-              <Calendar size={14} className={styles.dateIcon} />
+              <Calendar size={13} className={styles.dateIcon} />
               <span>{todayVn}</span>
             </div>
 

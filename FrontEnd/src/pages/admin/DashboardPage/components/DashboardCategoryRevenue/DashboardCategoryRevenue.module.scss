@@ -1,0 +1,217 @@
+@use '@/styles/abstracts/admin-tokens' as *;
+
+.card {
+  background: var(--admin-bg-card);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius, 2px);
+  padding: 20px 22px;
+  margin-bottom: 24px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.title {
+  font-family: var(--admin-font-sans);
+  font-size: var(--admin-font-size-section, 15px);
+  font-weight: 600;
+  color: var(--admin-text-primary);
+  margin: 0 0 4px 0;
+}
+
+.subtitle {
+  font-family: var(--admin-font-sans);
+  font-size: var(--admin-font-size-ui, 12px);
+  color: var(--admin-text-secondary);
+  margin: 0;
+}
+
+.toggleGroup {
+  display: inline-flex;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius, 2px);
+  background: var(--admin-border-subtle);
+  padding: 2px;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.toggleBtn {
+  background: transparent;
+  border: none;
+  font-family: var(--admin-font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--admin-text-secondary);
+  padding: 4px 10px;
+  border-radius: 1px;
+  cursor: pointer;
+  transition: all 120ms ease;
+  white-space: nowrap;
+
+  &:hover {
+    color: var(--admin-text-primary);
+  }
+
+  &.active {
+    background: var(--admin-bg-card);
+    color: var(--admin-text-primary);
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--admin-accent);
+    outline-offset: 1px;
+  }
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  border: 1px solid var(--admin-border-subtle);
+  border-radius: var(--admin-radius, 2px);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--admin-font-size-body, 13px);
+  text-align: left;
+
+  th {
+    background: var(--admin-border-subtle);
+    color: var(--admin-text-secondary);
+    font-family: var(--admin-font-sans);
+    font-size: var(--admin-font-size-ui, 12px);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--admin-border);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--admin-border-subtle);
+    color: var(--admin-text-primary);
+    font-family: var(--admin-font-sans);
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  tr:hover td {
+    background-color: rgba(0, 0, 0, 0.015);
+  }
+}
+
+.colRank {
+  width: 45px;
+  text-align: center;
+}
+
+.colName {
+  min-width: 160px;
+  font-weight: 500;
+}
+
+.colUnits {
+  width: 90px;
+  text-align: right;
+  font-family: var(--admin-font-mono) !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.colRevenue {
+  width: 140px;
+  text-align: right;
+  font-family: var(--admin-font-mono) !important;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.colShare {
+  width: 160px;
+}
+
+.rankBadge {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+  border-radius: 2px;
+  text-align: center;
+  font-family: var(--admin-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--admin-border-subtle);
+  color: var(--admin-text-secondary);
+}
+
+.topRank {
+  background: var(--admin-text-primary);
+  color: var(--admin-bg-card);
+}
+
+.shareCell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shareTrack {
+  flex: 1;
+  height: 6px;
+  background: var(--admin-border-subtle);
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.shareFill {
+  height: 100%;
+  background: var(--admin-text-primary);
+  border-radius: 1px;
+  transition: width 200ms ease;
+}
+
+.shareText {
+  font-family: var(--admin-font-mono);
+  font-size: 11px;
+  color: var(--admin-text-secondary);
+  font-variant-numeric: tabular-nums;
+  width: 40px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.tableFooter {
+  background: var(--admin-border-subtle);
+  border-top: 2px solid var(--admin-border);
+  font-weight: 600;
+
+  td {
+    font-weight: 600;
+    padding: 10px 12px;
+    border-bottom: none;
+  }
+}
+
+.empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--admin-text-secondary);
+  font-family: var(--admin-font-sans);
+  font-size: 12px;
+}

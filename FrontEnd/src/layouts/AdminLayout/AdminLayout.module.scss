@@ -2,25 +2,27 @@
 
 // =============================================================================
 // ADMIN DESIGN TOKENS (Scoped strictly to .layoutAdmin)
-// Values:
-// - Page background: #F8F7F4
-// - Sidebar: #111111
-// - Card: #FFFFFF
-// - Primary text: #171614
-// - Secondary text: #81786F
-// - Border: #E9E3DB
-// - Accent: #A18A70
-// - Warning: muted amber (#b57324)
-// - Error: muted red (#a83232)
+// Dual theme: Light (default) & Dark, neutral greys, no beige/brown.
 // =============================================================================
 
 .layoutAdmin {
-  // Scoped Custom Properties
+  // Scoped Custom Properties - Light Theme (Default)
+  --admin-font-sans: #{$admin-font-sans};
+  --admin-font-mono: #{$admin-font-mono};
+  --admin-radius: #{$admin-radius};
+
+  --admin-font-size-ui: #{$admin-font-size-ui};
+  --admin-font-size-body: #{$admin-font-size-body};
+  --admin-font-size-title: #{$admin-font-size-title};
+  --admin-font-size-section: #{$admin-font-size-section};
+  --admin-font-size-kpi: #{$admin-font-size-kpi};
+
   --admin-bg-page: #{$admin-bg-page};
   --admin-bg-sidebar: #{$admin-bg-sidebar};
   --admin-bg-card: #{$admin-bg-card};
   --admin-text-primary: #{$admin-text-primary};
   --admin-text-secondary: #{$admin-text-secondary};
+  --admin-text-muted: #{$admin-text-muted};
   --admin-border: #{$admin-border};
   --admin-border-subtle: #{$admin-border-subtle};
   --admin-border-strong: #{$admin-border-strong};
@@ -32,28 +34,36 @@
   --admin-error: #{$admin-error};
   --admin-error-bg: #{$admin-error-bg};
   --admin-error-border: #{$admin-error-border};
+  --admin-success: #{$admin-success};
+
   --admin-sidebar-text: #{$admin-sidebar-text};
   --admin-sidebar-text-muted: #{$admin-sidebar-text-muted};
   --admin-sidebar-card-bg: #{$admin-sidebar-card-bg};
   --admin-sidebar-hover-bg: #{$admin-sidebar-hover-bg};
   --admin-sidebar-active-bg: #{$admin-sidebar-active-bg};
 
+  // Border radius: 0-2px everywhere in admin
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+  --radius-full: 2px;
+
   // Map to common theme tokens within Admin shell
   --color-bg-primary: var(--admin-bg-page);
   --color-bg-secondary: var(--admin-bg-page);
   --color-gray-50: var(--admin-bg-page);
-  --color-gray-100: #F3EFEA;
+  --color-gray-100: var(--admin-border-subtle);
   --color-gray-200: var(--admin-border);
-  --color-gray-300: #DDD5CA;
+  --color-gray-300: var(--admin-border-strong);
   --color-surface: var(--admin-bg-card);
-  --color-surface-hover: #FAF9F6;
+  --color-surface-hover: var(--admin-border-subtle);
   --color-white: #FFFFFF;
-  --color-black: #171614;
+  --color-black: #111113;
   --color-text-primary: var(--admin-text-primary);
   --color-text-secondary: var(--admin-text-secondary);
-  --color-text-muted: var(--admin-text-secondary);
+  --color-text-muted: var(--admin-text-muted);
   --color-border: var(--admin-border);
-  --color-border-subtle: var(--admin-border);
+  --color-border-subtle: var(--admin-border-subtle);
   --color-border-primary: var(--admin-border);
   --color-border-secondary: var(--admin-border);
   --color-border-strong: var(--admin-border-strong);
@@ -65,9 +75,38 @@
   min-height: 100vh;
   background-color: var(--admin-bg-page);
   color: var(--admin-text-primary);
-  font-family: $admin-font-sans;
+  font-family: var(--admin-font-sans);
   font-variant-numeric: tabular-nums;
   position: relative;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+// Dark theme overrides
+.layoutAdmin[data-theme="dark"] {
+  --admin-bg-page: #{$admin-dark-bg-page};
+  --admin-bg-sidebar: #{$admin-dark-bg-sidebar};
+  --admin-bg-card: #{$admin-dark-bg-card};
+  --admin-text-primary: #{$admin-dark-text-primary};
+  --admin-text-secondary: #{$admin-dark-text-secondary};
+  --admin-text-muted: #{$admin-dark-text-muted};
+  --admin-border: #{$admin-dark-border};
+  --admin-border-subtle: #{$admin-dark-border-subtle};
+  --admin-border-strong: #{$admin-dark-border-strong};
+  --admin-accent: #{$admin-dark-accent};
+  --admin-accent-hover: #{$admin-dark-accent-hover};
+  --admin-warning: #{$admin-dark-warning};
+  --admin-warning-bg: #{$admin-dark-warning-bg};
+  --admin-warning-border: #{$admin-dark-warning-border};
+  --admin-error: #{$admin-dark-error};
+  --admin-error-bg: #{$admin-dark-error-bg};
+  --admin-error-border: #{$admin-dark-error-border};
+  --admin-success: #{$admin-dark-success};
+
+  --color-surface-hover: #222226;
+  --color-white: #18181B;
+  --color-black: #F4F4F5;
+
+  color-scheme: dark;
 }
 
 // Ensure cards inside admin main content inherit token styling seamlessly
@@ -78,6 +117,7 @@
   background-color: var(--admin-bg-card);
   border-color: var(--admin-border);
   color: var(--admin-text-primary);
+  border-radius: var(--admin-radius);
 }
 
 // Backdrop on mobile when drawer is open
@@ -88,7 +128,7 @@
     display: block;
     position: fixed;
     inset: 0;
-    background-color: rgba(17, 17, 17, 0.6);
+    background-color: rgba(0, 0, 0, 0.65);
     z-index: calc(#{$z-drawer} - 1);
     backdrop-filter: blur(2px);
   }
@@ -98,7 +138,7 @@
 // Sidebar
 // -----------------------------------------------------------------------------
 .sidebar {
-  width: 260px;
+  width: 250px;
   height: 100vh;
   position: sticky;
   top: 0;
@@ -106,17 +146,17 @@
   overflow-y: auto;
   overflow-x: hidden;
   background-color: var(--admin-bg-sidebar);
-  color: #F8F7F4;
-  padding: var(--space-6) var(--space-4);
+  color: #F4F4F5;
+  padding: 18px 14px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: 20px;
   flex-shrink: 0;
-  border-right: 1px solid rgba(233, 227, 219, 0.08);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
 
-  // Custom sleek scrollbar for sidebar
+  // Sleek scrollbar
   scrollbar-width: thin;
-  scrollbar-color: rgba(233, 227, 219, 0.2) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 
   &::-webkit-scrollbar {
     width: 4px;
@@ -125,11 +165,11 @@
     background: transparent;
   }
   &::-webkit-scrollbar-thumb {
-    background: rgba(233, 227, 219, 0.2);
-    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
 
     &:hover {
-      background: rgba(233, 227, 219, 0.35);
+      background: rgba(255, 255, 255, 0.35);
     }
   }
 
@@ -140,114 +180,116 @@
     left: 0;
     height: 100vh;
     z-index: $z-drawer;
-    width: 270px;
-    box-shadow: 6px 0 24px rgba(0, 0, 0, 0.5);
-    padding: var(--space-5) var(--space-4);
+    width: 260px;
+    box-shadow: 6px 0 24px rgba(0, 0, 0, 0.6);
+    padding: 16px 12px;
     overflow-y: auto;
   }
 }
 
 // Brand Text
 .brand {
-  padding: 0 var(--space-2) var(--space-4);
-  border-bottom: 1px solid rgba(233, 227, 219, 0.08);
+  padding: 0 4px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   flex-shrink: 0;
 }
 
 .brandLink {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   text-decoration: none;
 }
 
 .brandTitle {
-  font-family: $admin-font-serif;
-  font-size: 1.125rem;
-  font-weight: $font-weight-regular;
-  letter-spacing: 0.16em;
+  font-family: var(--admin-font-sans);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
   color: #FFFFFF;
   line-height: 1.2;
 }
 
 .brandSubtitle {
-  font-family: $admin-font-sans;
+  font-family: var(--admin-font-mono);
   font-size: 0.625rem;
-  font-weight: $font-weight-medium;
-  letter-spacing: 0.32em;
+  font-weight: 500;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--admin-accent);
+  color: var(--admin-sidebar-text-muted);
 }
 
-// Navigation
+// Navigation: 12px, tighter spacing & tracking, 2px underline indicator
 .nav {
   display: flex;
   flex-direction: column;
-  gap: 26px;
+  gap: 18px;
   flex-shrink: 0;
 }
 
 .navGroup {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .groupLabel {
-  font-size: 0.6875rem;
-  font-weight: $font-weight-semibold;
-  letter-spacing: 1.8px;
+  font-family: var(--admin-font-sans);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--admin-sidebar-text-muted);
-  padding: 0 var(--space-3) 6px;
+  padding: 0 8px 4px;
 }
 
 .navItem {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: 10px;
   color: var(--admin-sidebar-text);
-  min-height: 44px;
-  padding: 0.625rem var(--space-3);
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  border-left: 3px solid transparent;
-  font-size: 0.875rem;
-  font-weight: $font-weight-regular;
-  letter-spacing: 0.01em;
+  min-height: 34px;
+  padding: 6px 8px;
+  border-radius: 0;
+  border-left: none;
+  border-bottom: 2px solid transparent;
+  font-size: var(--admin-font-size-ui, 12px);
+  font-weight: 400;
+  letter-spacing: 0.02em;
   text-decoration: none;
   transition: all $transition-fast;
 
   svg {
     color: var(--admin-sidebar-text-muted);
-    width: 18px;
-    height: 18px;
+    width: 15px;
+    height: 15px;
     flex-shrink: 0;
     transition: color $transition-fast;
   }
 
   &:hover {
     color: #FFFFFF;
-    background-color: var(--admin-sidebar-hover-bg, rgba(255, 255, 255, 0.04));
+    background-color: var(--admin-sidebar-hover-bg);
 
     svg {
       color: #FFFFFF;
     }
   }
 
-  // Active state: prominent left indicator & highlighted text, clearly distinguishable from inactive
+  // Active state: subtle underline, NO filled pill
   &.active {
     color: #FFFFFF;
-    font-weight: $font-weight-medium;
-    border-left-color: var(--admin-accent);
-    background-color: var(--admin-sidebar-active-bg, rgba(161, 138, 112, 0.14));
+    font-weight: 500;
+    background-color: transparent;
+    border-bottom-color: #FFFFFF;
 
     svg {
-      color: var(--admin-accent);
+      color: #FFFFFF;
     }
   }
 
   &:focus-visible {
-    outline: 2px solid var(--admin-accent);
+    outline: 2px solid #FFFFFF;
     outline-offset: -2px;
   }
 }
@@ -255,39 +297,38 @@
 // Sidebar Footer: Account & Logout
 .sidebarFooter {
   margin-top: auto;
-  border-top: 1px solid rgba(233, 227, 219, 0.08);
-  padding-top: var(--space-4);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: 8px;
   flex-shrink: 0;
 }
 
 .userCard {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  min-height: 52px;
-  border-radius: var(--radius-sm);
-  background-color: var(--admin-sidebar-card-bg, #1C1C1C);
-  border: 1px solid rgba(233, 227, 219, 0.12);
-  transition: border-color $transition-fast;
+  gap: 8px;
+  padding: 6px 10px;
+  min-height: 44px;
+  border-radius: var(--admin-radius);
+  background-color: var(--admin-sidebar-card-bg);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .userAvatar {
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius-full);
-  background-color: #111111;
-  border: 1px solid var(--admin-accent);
-  color: var(--admin-accent);
+  width: 28px;
+  height: 28px;
+  border-radius: var(--admin-radius);
+  background-color: #0C0C0E;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: $admin-font-serif;
-  font-size: 0.875rem;
-  font-weight: $font-weight-medium;
+  font-family: var(--admin-font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
   flex-shrink: 0;
 }
 
@@ -299,29 +340,27 @@
 }
 
 .userName {
-  font-size: 0.875rem;
-  font-weight: $font-weight-medium;
+  font-size: var(--admin-font-size-ui, 12px);
+  font-weight: 500;
   color: #FFFFFF;
+  line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.3;
 }
 
 .userRole {
-  font-size: 0.6875rem;
-  font-weight: $font-weight-regular;
+  font-family: var(--admin-font-mono);
+  font-size: 0.625rem;
   color: var(--admin-sidebar-text-muted);
-  letter-spacing: 0.05em;
   text-transform: uppercase;
-  line-height: 1.3;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
 }
 
 .userChevron {
   color: var(--admin-sidebar-text-muted);
-  margin-left: auto;
   flex-shrink: 0;
-  opacity: 0.7;
 }
 
 .footerLinks {
@@ -334,102 +373,89 @@
 .logoutButton {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  color: var(--admin-sidebar-text);
-  min-height: 38px;
-  padding: 0.5rem var(--space-3);
-  font-size: 0.8125rem;
-  letter-spacing: 0.02em;
+  gap: 8px;
+  padding: 6px 8px;
+  font-size: var(--admin-font-size-ui, 12px);
+  border-radius: var(--admin-radius);
   text-decoration: none;
-  background: none;
+  background: transparent;
   border: none;
   cursor: pointer;
-  border-radius: var(--radius-sm);
-  transition: all $transition-fast;
   width: 100%;
   text-align: left;
+  transition: all $transition-fast;
+}
 
-  svg {
-    color: var(--admin-sidebar-text);
-    flex-shrink: 0;
-    transition: color $transition-fast;
-  }
+.backLink {
+  color: var(--admin-sidebar-text);
 
   &:hover {
     color: #FFFFFF;
-    background-color: var(--admin-sidebar-hover-bg, rgba(255, 255, 255, 0.04));
-
-    svg {
-      color: #FFFFFF;
-    }
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--admin-accent);
-    outline-offset: -2px;
+    background-color: var(--admin-sidebar-hover-bg);
   }
 }
 
-.logoutButton:hover {
-  color: #E57373;
+.logoutButton {
+  color: #EF4444;
 
-  svg {
-    color: #E57373;
+  &:hover {
+    background-color: rgba(239, 68, 68, 0.1);
   }
 }
 
 // -----------------------------------------------------------------------------
-// Content Wrapper & Header
+// Content Layout & Header
 // -----------------------------------------------------------------------------
 .contentWrapper {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 100vh;
 }
 
 .header {
+  height: 56px;
   background-color: var(--admin-bg-card);
   border-bottom: 1px solid var(--admin-border);
-  padding: var(--space-3) var(--space-6);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-4);
-  min-height: 64px;
+  padding: 0 var(--space-6);
   position: sticky;
   top: 0;
-  z-index: $z-sticky;
+  z-index: 20;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 
-  @include respond-to('md') {
-    padding: var(--space-3) var(--space-8);
+  @media (max-width: 768px) {
+    padding: 0 var(--space-4);
   }
 }
 
 .headerLeft {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  gap: var(--space-3);
   min-width: 0;
 }
 
 .menuToggleBtn {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   background-color: transparent;
   border: 1px solid var(--admin-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--admin-radius);
   color: var(--admin-text-primary);
   cursor: pointer;
   transition: all $transition-fast;
   flex-shrink: 0;
 
   &:hover {
-    background-color: var(--admin-bg-page);
-    border-color: var(--admin-accent);
+    background-color: var(--admin-border-subtle);
+    border-color: var(--admin-border-strong);
   }
 }
 
@@ -443,7 +469,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.75rem;
+  font-size: var(--admin-font-size-ui, 12px);
   color: var(--admin-text-secondary);
   line-height: 1.2;
 }
@@ -459,22 +485,22 @@
 }
 
 .crumbSeparator {
-  color: var(--admin-border-strong);
+  color: var(--admin-text-muted);
   flex-shrink: 0;
 }
 
 .crumbCurrent {
-  color: var(--admin-accent);
-  font-weight: $font-weight-medium;
+  color: var(--admin-text-primary);
+  font-weight: 500;
 }
 
 .headerPageTitle {
-  font-family: $admin-font-serif;
-  font-size: 1.25rem;
-  font-weight: $font-weight-regular;
+  font-family: var(--admin-font-sans);
+  font-size: 1.0625rem;
+  font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--admin-text-primary);
-  margin: 2px 0 0;
+  margin: 1px 0 0;
   line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
@@ -484,17 +510,43 @@
 .headerRight {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  gap: var(--space-3);
   flex-shrink: 0;
+}
+
+.themeToggleBtn {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius);
+  color: var(--admin-text-secondary);
+  cursor: pointer;
+  transition: all $transition-fast;
+  flex-shrink: 0;
+
+  &:hover {
+    color: var(--admin-text-primary);
+    background-color: var(--admin-border-subtle);
+    border-color: var(--admin-border-strong);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--admin-accent);
+    outline-offset: 1px;
+  }
 }
 
 .dateBadge {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.8125rem;
+  font-family: var(--admin-font-mono);
+  font-size: var(--admin-font-size-ui, 12px);
   color: var(--admin-text-secondary);
-  font-variant-numeric: tabular-nums;
 
   @media (max-width: 640px) {
     display: none;
@@ -502,13 +554,13 @@
 }
 
 .dateIcon {
-  color: var(--admin-accent);
+  color: var(--admin-text-muted);
   flex-shrink: 0;
 }
 
 .headerDivider {
   width: 1px;
-  height: 24px;
+  height: 20px;
   background-color: var(--admin-border);
 
   @media (max-width: 640px) {
@@ -523,18 +575,18 @@
 }
 
 .headerAvatar {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-full);
-  background-color: var(--admin-bg-page);
+  width: 30px;
+  height: 30px;
+  border-radius: var(--admin-radius);
+  background-color: var(--admin-border-subtle);
   border: 1px solid var(--admin-border);
   color: var(--admin-text-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: $admin-font-serif;
-  font-size: 0.8125rem;
-  font-weight: $font-weight-medium;
+  font-family: var(--admin-font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
   flex-shrink: 0;
 }
 
@@ -548,17 +600,18 @@
 }
 
 .headerUserName {
-  font-size: 0.8125rem;
-  font-weight: $font-weight-medium;
+  font-size: var(--admin-font-size-ui, 12px);
+  font-weight: 500;
   color: var(--admin-text-primary);
   line-height: 1.2;
 }
 
 .headerUserRole {
-  font-size: 0.6875rem;
+  font-family: var(--admin-font-mono);
+  font-size: 0.625rem;
   color: var(--admin-text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   line-height: 1.2;
 }
 
@@ -566,6 +619,7 @@
 .mainBody {
   padding: var(--space-6);
   flex: 1;
+  font-size: var(--admin-font-size-body, 13px);
 
   @include respond-to('md') {
     padding: var(--space-8);

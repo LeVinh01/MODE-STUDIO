@@ -5,16 +5,92 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminDashboardFilterRequest;
+use App\Http\Requests\Admin\AdminDashboardItemPerformanceRequest;
+use App\Http\Requests\Admin\AdminDashboardUnifiedRequest;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\ProductVariant;
 use App\Models\User;
+use App\Services\DashboardMetricsService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
 class AdminDashboardController extends Controller
 {
+    /**
+     * Dữ liệu bảng điều khiển tổng hợp (Unified Dashboard Redesign)
+     * GET /api/admin/dashboard
+     */
+    public function index(AdminDashboardUnifiedRequest $request, DashboardMetricsService $metricsService): JsonResponse
+    {
+        $rangeKey = (string) $request->input('range', '30d');
+        $from = $request->input('from');
+        $to = $request->input('to');
+        $dateRanges = $metricsService->resolveDateRanges($rangeKey, $from, $to);
+
+        $currentPeriod = $dateRanges['current'];
+        $previousPeriod = $dateRanges['previous'];
+
+        $currentKpis = $metricsService->getKpisForPeriod($currentPeriod);
+        $previousKpis = $metricsService->getKpisForPeriod($previousPeriod);
+
+        $cancellationDelta = $previousKpis['total_orders_count'] > 0
+            ? (float) round($currentKpis['cancellation_rate'] - $previousKpis['cancellation_rate'], 1)
+            : null;
+
+        $deltaPercent = [
+            'revenue'             => $metricsService->calculateDelta($currentKpis['revenue'], $previousKpis['revenue']),
+            'orders_count'        => $metricsService->calculateDelta($currentKpis['orders_count'], $previousKpis['orders_count']),
+            'average_order_value' => $metricsService->calculateDelta($currentKpis['average_order_value'], $previousKpis['average_order_value']),
+            'cancellation_rate'   => $cancellationDelta,
+        ];
+
+        $timeSeries = $metricsService->getRevenueTimeSeries($currentPeriod);
+        $topProducts = $metricsService->getTopProducts($currentPeriod);
+        $revenueByCategory = $metricsService->getRevenueByCategory($currentPeriod);
+        $orderStatusBreakdown = $metricsService->getOrderStatusBreakdown($currentPeriod);
+        $paymentMethodSplit = $metricsService->getPaymentMethodSplit($currentPeriod);
+        $alerts = $metricsService->getOperationalAlerts();
+
+        return response()->json([
+            'data' => [
+                'range'                  => $dateRanges['range'],
+                'current_period'         => $currentPeriod,
+                'previous_period'        => $previousPeriod,
+                'current'                => $currentKpis,
+                'previous'               => $previousKpis,
+                'delta_percent'          => $deltaPercent,
+                'revenue_time_series'    => $timeSeries,
+                'top_products'           => $topProducts,
+                'revenue_by_category'    => $revenueByCategory,
+                'order_status_breakdown' => $orderStatusBreakdown,
+                'payment_method_split'   => $paymentMethodSplit,
+                'alerts'                 => $alerts,
+            ],
+        ], 200);
+    }
+
+    /**
+     * Hiệu suất theo mặt hàng (Product / Category Performance)
+     * GET /api/admin/dashboard/item-performance
+     */
+    public function itemPerformance(AdminDashboardItemPerformanceRequest $request, DashboardMetricsService $metricsService): JsonResponse
+    {
+        $targetType = (string) $request->input('target_type');
+        $targetId = (int) $request->input('target_id');
+        $rangeKey = (string) $request->input('range', '30d');
+        $from = $request->input('from');
+        $to = $request->input('to');
+        $granularity = $request->input('granularity');
+
+        $dateRanges = $metricsService->resolveDateRanges($rangeKey, $from, $to);
+        $data = $metricsService->getItemPerformance($targetType, $targetId, $dateRanges, $granularity);
+
+        return response()->json([
+            'data' => $data,
+        ], 200);
+    }
     /**
      * Tổng quan chỉ số KPI và phân bổ trạng thái đơn hàng
      * GET /api/admin/dashboard/summary

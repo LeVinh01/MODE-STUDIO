@@ -104,10 +104,12 @@ Route::middleware(['auth:sanctum', 'active', 'role:admin,operator'])->prefix('ad
     Route::get('/customers/{id}', [AdminCustomerController::class, 'show'])->whereNumber('id');
 
     // Admin & Operator Dashboard API
+    Route::get('/dashboard', [AdminDashboardController::class, 'index']);
     Route::prefix('dashboard')->group(function () {
         Route::get('/summary', [AdminDashboardController::class, 'summary']);
         Route::get('/revenue', [AdminDashboardController::class, 'revenue']);
         Route::get('/top-products', [AdminDashboardController::class, 'topProducts']);
+        Route::get('/item-performance', [AdminDashboardController::class, 'itemPerformance']);
     });
 });
 

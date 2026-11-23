@@ -1,0 +1,170 @@
+@use '@/styles/abstracts/admin-tokens' as *;
+
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  background: var(--admin-bg-card);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius, 2px);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: none;
+  transition: border-color 120ms ease;
+
+  &:hover {
+    border-color: var(--admin-border-strong);
+  }
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.label {
+  font-family: var(--admin-font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--admin-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.tooltipContainer {
+  position: relative;
+  display: inline-flex;
+}
+
+.infoBtn {
+  background: transparent;
+  border: none;
+  padding: 2px;
+  color: var(--admin-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  border-radius: 2px;
+  transition: color 120ms ease;
+
+  &:hover {
+    color: var(--admin-text-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--admin-accent);
+    outline-offset: 1px;
+  }
+}
+
+.tooltipBubble {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 100;
+  width: 260px;
+  background: var(--admin-bg-card);
+  color: var(--admin-text-primary);
+  border: 1px solid var(--admin-border-strong);
+  padding: 10px 12px;
+  border-radius: 2px;
+  font-family: var(--admin-font-sans);
+  font-size: 11px;
+  line-height: 1.5;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+}
+
+.tooltipTitle {
+  font-weight: 600;
+  color: var(--admin-text-primary);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+}
+
+.iconCircle {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--admin-radius, 2px);
+  background: var(--admin-border-subtle);
+  border: 1px solid var(--admin-border);
+  color: var(--admin-text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bigValue {
+  font-family: var(--admin-font-mono);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--admin-text-primary);
+  margin-bottom: 10px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.cardFooter {
+  border-top: 1px solid var(--admin-border-subtle);
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.deltaRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--admin-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.deltaArrow {
+  font-size: 10px;
+}
+
+.deltaPositive {
+  color: #16A34A; // Semantic green
+}
+
+.deltaNegative {
+  color: #DC2626; // Semantic red
+}
+
+.deltaNeutral {
+  color: var(--admin-text-secondary);
+}
+
+.subtext {
+  font-family: var(--admin-font-sans);
+  font-size: 11px;
+  color: var(--admin-text-secondary);
+  line-height: 1.4;
+}
