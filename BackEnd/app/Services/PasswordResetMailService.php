@@ -11,17 +11,19 @@ use Throwable;
 class PasswordResetMailService
 {
     /**
-     * Gửi email đặt lại mật khẩu đồng bộ (synchronously) và an toàn
-     * (bắt toàn bộ ngoại lệ trong try/catch để lỗi gửi mail không bao giờ làm gián đoạn response)
+     * Gửi email đặt lại mật khẩu qua hàng đợi (queue) an toàn và không gây lỗi response
      */
     public function sendPasswordResetMail(User $user, string $token, string $resetUrl): bool
     {
         try {
-            Mail::to($user->email)->send(new PasswordResetMail($user, $token, $resetUrl));
+            $mailable = (new PasswordResetMail($user, $token, $resetUrl))->afterCommit();
+
+            Mail::to($user->email)->queue($mailable);
 
             return true;
         } catch (Throwable $e) {
-            Log::warning('Failed to send password reset email', [
+            report($e);
+            Log::warning('Failed to enqueue password reset email', [
                 'user_id' => $user->id,
                 'email'   => $user->email,
                 'error'   => $e->getMessage(),

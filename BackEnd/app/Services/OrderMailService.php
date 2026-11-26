@@ -11,7 +11,7 @@ use Throwable;
 class OrderMailService
 {
     /**
-     * Gửi email xác nhận đơn hàng đồng bộ (synchronously) và an toàn (không ném ngoại lệ làm gián đoạn luồng chính)
+     * Gửi email xác nhận đơn hàng qua hàng đợi (queue) an toàn và không gây lỗi luồng chính
      */
     public function sendOrderConfirmation(Order $order): bool
     {
@@ -28,11 +28,14 @@ class OrderMailService
                 return false;
             }
 
-            Mail::to($recipientEmail)->send(new OrderConfirmationMail($order));
+            $mailable = (new OrderConfirmationMail($order))->afterCommit();
+
+            Mail::to($recipientEmail)->queue($mailable);
 
             return true;
         } catch (Throwable $e) {
-            Log::warning('Failed to send order confirmation email', [
+            report($e);
+            Log::warning('Failed to enqueue order confirmation email', [
                 'order_code' => $order->order_code,
                 'error'      => $e->getMessage(),
             ]);
