@@ -802,7 +802,59 @@ MAIL_FROM_NAME="OMBRE"
 
 ---
 
-## 15. Dừng Hệ Thống Docker
+## 15. Hàng Đợi Xử Lý Email & Tác Vụ Nền (Queue Worker)
+
+Hệ thống sử dụng cơ chế hàng đợi (**Laravel Queue** với driver `database`) cho toàn bộ email giao dịch (**OrderConfirmationMail**, **PasswordResetMail**).
+
+### 1. Lợi ích & Cơ chế hoạt động
+- **Không chặn luồng HTTP**: Khi khách hàng đặt hàng (COD / VNPay) hoặc gửi yêu cầu quên mật khẩu, request API phản hồi ngay lập tức (`HTTP 200/201`) mà không phải chờ kết nối mạng đến máy chủ gửi mail.
+- **An toàn giao dịch CSDL (`afterCommit`)**: Email chỉ được đẩy vào hàng đợi SAU KHI transaction CSDL đã commit thành công (`$this->afterCommit()`). Nếu transaction tạo đơn bị rollback, không có email nào bị gửi nhầm.
+- **Tự động thử lại khi lỗi**: Cấu hình tự động thử lại tối đa 3 lần (`$tries = 3`) với thời gian giãn cách tăng dần (`$backoff = [10, 60, 300]` giây). Sau 3 lần thất bại, công việc chuyển sang bảng `failed_jobs`.
+- **Chống sập tiến trình khi model bị xóa**: Thuộc tính `$deleteWhenMissingModels = true` đảm bảo nếu bản ghi (User hoặc Order) bị xóa trước khi queue xử lý, job sẽ tự động bị loại bỏ mà không làm crash worker.
+
+### 2. Vận hành Queue Worker trong Docker
+Dịch vụ worker được định nghĩa sẵn trong `BackEnd/docker-compose.yml` với tên container `mode_studio_queue`:
+- Lệnh chạy: `php artisan queue:work --tries=3 --sleep=3 --max-time=3600`
+- Tự động chạy nền cùng cụm container khi gọi `docker compose up -d`.
+
+**Kiểm tra trạng thái & theo dõi nhật ký hoạt động của worker:**
+```bash
+# Xem logs tiến trình worker xử lý jobs
+docker compose exec queue tail -f storage/logs/laravel.log
+
+# Hoặc xem logs từ Docker container
+docker compose logs -f queue
+```
+
+### 3. Quản lý tác vụ thất bại (Failed Jobs)
+Khi quá trình gửi mail gặp sự cố quá 3 lần (mất kết nối SMTP, mail server từ chối...), thông tin job được lưu lại trong bảng `failed_jobs`:
+
+```bash
+# Xem danh sách các job thất bại
+docker compose exec app php artisan queue:failed
+
+# Thử lại toàn bộ các job thất bại
+docker compose exec app php artisan queue:retry all
+
+# Thử lại 1 job cụ thể theo UUID
+docker compose exec app php artisan queue:retry <UUID>
+
+# Xóa toàn bộ các job thất bại khỏi danh sách
+docker compose exec app php artisan queue:flush
+```
+
+> ⚡ **LƯU Ý QUAN TRỌNG KHI THAY ĐỔI CODE (RESTART WORKER)**:  
+> Lệnh `php artisan queue:work` là một tiến trình chạy liên tục (daemon) và tải toàn bộ mã nguồn vào bộ nhớ RAM khi khởi động.  
+> **Mỗi khi có thay đổi trong mã nguồn PHP** (đặc biệt là các class Mail, Service, Model liên quan đến queue), **BẮT BUỘC phải khởi động lại worker** để nạp code mới:
+> ```bash
+> docker compose restart queue
+> # hoặc chạy từ ngoài thư mục gốc:
+> docker compose -f BackEnd/docker-compose.yml restart queue
+> ```
+
+---
+
+## 16. Dừng Hệ Thống Docker
 
 - Dừng containers:
   ```bash

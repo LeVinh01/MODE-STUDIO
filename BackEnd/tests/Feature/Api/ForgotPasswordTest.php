@@ -57,9 +57,10 @@ class ForgotPasswordTest extends TestCase
                 'message' => 'Nếu email tồn tại trong hệ thống, chúng tôi đã gửi hướng dẫn đặt lại mật khẩu.',
             ]);
 
-        Mail::assertSent(PasswordResetMail::class, function ($mail) use ($user) {
+        Mail::assertQueued(PasswordResetMail::class, function ($mail) use ($user) {
             return $mail->hasTo('valid@example.com');
         });
+        Mail::assertNotSent(PasswordResetMail::class);
     }
 
     public function test_forgot_password_returns_same_generic_response_for_non_existing_email(): void
@@ -75,6 +76,7 @@ class ForgotPasswordTest extends TestCase
                 'message' => 'Nếu email tồn tại trong hệ thống, chúng tôi đã gửi hướng dẫn đặt lại mật khẩu.',
             ]);
 
+        Mail::assertNothingQueued();
         Mail::assertNothingSent();
     }
 
@@ -92,7 +94,7 @@ class ForgotPasswordTest extends TestCase
 
         $response->assertStatus(200);
 
-        Mail::assertSent(PasswordResetMail::class, function ($mail) use ($user) {
+        Mail::assertQueued(PasswordResetMail::class, function ($mail) use ($user) {
             $envelope = $mail->envelope();
             $subject = $envelope->subject;
 
@@ -106,6 +108,7 @@ class ForgotPasswordTest extends TestCase
 
             return $hasOmbreSubject && $hasFrontendUrl && $hasToken && $hasEmail;
         });
+        Mail::assertNotSent(PasswordResetMail::class);
     }
 
     public function test_forgot_password_does_not_send_mail_to_locked_user(): void
@@ -127,6 +130,7 @@ class ForgotPasswordTest extends TestCase
             ]);
 
         // No mail sent
+        Mail::assertNothingQueued();
         Mail::assertNothingSent();
     }
 
@@ -134,8 +138,8 @@ class ForgotPasswordTest extends TestCase
     {
         $this->createCustomer(['email' => 'failmail@example.com']);
 
-        // Mock mail failure
-        Mail::shouldReceive('to->send')->andThrow(new \RuntimeException('Connection to mail server failed'));
+        // Mock mail failure (queue connection fails)
+        Mail::shouldReceive('to->queue')->andThrow(new \RuntimeException('Connection to mail queue failed'));
 
         $response = $this->postJson('/api/auth/forgot-password', [
             'email' => 'failmail@example.com',

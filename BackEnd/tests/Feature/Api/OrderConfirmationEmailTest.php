@@ -163,7 +163,7 @@ class OrderConfirmationEmailTest extends TestCase
         $response->assertStatus(201);
         $orderCode = $response->json('order.order_code');
 
-        Mail::assertSent(OrderConfirmationMail::class, function (OrderConfirmationMail $mail) use ($user, $orderCode) {
+        Mail::assertQueued(OrderConfirmationMail::class, function (OrderConfirmationMail $mail) use ($user, $orderCode) {
             $isCorrectRecipient = $mail->hasTo($user->email);
             $isCorrectOrderCode = $mail->order->order_code === $orderCode;
             $rendered = $mail->render();
@@ -175,7 +175,8 @@ class OrderConfirmationEmailTest extends TestCase
             return $isCorrectRecipient && $isCorrectOrderCode && $containsOrderCode && $containsBrand && $containsTotal;
         });
 
-        Mail::assertSent(OrderConfirmationMail::class, 1);
+        Mail::assertQueued(OrderConfirmationMail::class, 1);
+        Mail::assertNotSent(OrderConfirmationMail::class);
     }
 
     // =========================================================================
@@ -202,6 +203,7 @@ class OrderConfirmationEmailTest extends TestCase
         $this->assertEquals('unpaid', $response->json('order.payment_status'));
 
         Mail::assertNothingSent();
+        Mail::assertNothingQueued();
     }
 
     // =========================================================================
@@ -238,12 +240,13 @@ class OrderConfirmationEmailTest extends TestCase
         $response->assertStatus(200)
             ->assertJsonPath('status', 'success');
 
-        Mail::assertSent(OrderConfirmationMail::class, function (OrderConfirmationMail $mail) use ($user, $order) {
+        Mail::assertQueued(OrderConfirmationMail::class, function (OrderConfirmationMail $mail) use ($user, $order) {
             return $mail->hasTo($user->email)
                 && $mail->order->order_code === $order->order_code;
         });
 
-        Mail::assertSent(OrderConfirmationMail::class, 1);
+        Mail::assertQueued(OrderConfirmationMail::class, 1);
+        Mail::assertNotSent(OrderConfirmationMail::class);
     }
 
     // =========================================================================
@@ -278,12 +281,13 @@ class OrderConfirmationEmailTest extends TestCase
         // Lần 1: Xác nhận thành công -> gửi 1 email
         $firstResponse = $this->postJson('/api/payment/vnpay/verify', $payload);
         $firstResponse->assertStatus(200)->assertJsonPath('status', 'success');
-        Mail::assertSent(OrderConfirmationMail::class, 1);
+        Mail::assertQueued(OrderConfirmationMail::class, 1);
 
         // Lần 2: Callback trùng lặp -> không gửi thêm email nào
         $secondResponse = $this->postJson('/api/payment/vnpay/verify', $payload);
         $secondResponse->assertStatus(200)->assertJsonPath('status', 'success');
-        Mail::assertSent(OrderConfirmationMail::class, 1);
+        Mail::assertQueued(OrderConfirmationMail::class, 1);
+        Mail::assertNotSent(OrderConfirmationMail::class);
     }
 
     // =========================================================================
@@ -322,6 +326,7 @@ class OrderConfirmationEmailTest extends TestCase
             ->assertJsonPath('status', 'failed');
 
         Mail::assertNothingSent();
+        Mail::assertNothingQueued();
     }
 
     // =========================================================================
@@ -360,6 +365,7 @@ class OrderConfirmationEmailTest extends TestCase
             ->assertJsonPath('status', 'success_abnormal');
 
         Mail::assertNothingSent();
+        Mail::assertNothingQueued();
     }
 
     // =========================================================================
@@ -445,14 +451,14 @@ class OrderConfirmationEmailTest extends TestCase
     }
 
     // =========================================================================
-    // 9. TEST NỘI TẠI CỦA ORDERMAILSERVICE: BẮT EXCEPTION THẬT SỰ TỪ MAIL::SEND
+    // 9. TEST NỘI TẠI CỦA ORDERMAILSERVICE: BẮT EXCEPTION THẬT SỰ TỪ MAIL::QUEUE
     // =========================================================================
 
     public function test_order_mail_service_catches_mailer_exception_and_logs_warning(): void
     {
-        Mail::shouldReceive('to->send')
+        Mail::shouldReceive('to->queue')
             ->once()
-            ->andThrow(new Exception('Connection to SMTP server timed out.'));
+            ->andThrow(new Exception('Connection to queue server timed out.'));
 
         $user = $this->createCustomer(['email' => 'real_exception@example.com']);
         $order = $this->createOrder($user);
@@ -462,5 +468,56 @@ class OrderConfirmationEmailTest extends TestCase
 
         // Dịch vụ bắt ngoại lệ an toàn và trả về false, không throw ra ngoài
         $this->assertFalse($result);
+    }
+
+    // =========================================================================
+    // 10. TRANSACTION ROLLBACK: KHÔNG ĐẨY JOB VÀO HÀNG ĐỢI
+    // =========================================================================
+
+    public function test_mail_is_not_queued_when_order_creation_transaction_rolls_back(): void
+    {
+        Mail::fake();
+
+        $user = $this->createCustomer(['email' => 'rollback_user@example.com']);
+        $variant = ProductVariant::where('is_active', true)->where('stock_quantity', '>=', 1)->firstOrFail();
+        // Giỏ hàng vượt quá số lượng tồn kho thực tế -> validation/transaction ném 422 và rollback
+        CartItem::create(['user_id' => $user->id, 'variant_id' => $variant->id, 'quantity' => 99999]);
+
+        $response = $this->actingAs($user, 'sanctum')->postJson('/api/orders', [
+            'payment_method'   => 'cod',
+            'recipient_name'   => 'Rollback Recipient',
+            'recipient_phone'  => '0912345678',
+            'shipping_address' => '999 Rollback Blvd',
+        ]);
+
+        $response->assertStatus(422);
+
+        Mail::assertNothingQueued();
+        Mail::assertNothingSent();
+    }
+
+    // =========================================================================
+    // 11. HÀNG ĐỢI GẶP LỖI: CHECKOUT VẪN HOÀN TẤT VÀ TRẢ VỀ 201 CHO KHÁCH HÀNG
+    // =========================================================================
+
+    public function test_failed_enqueue_does_not_break_checkout(): void
+    {
+        Mail::shouldReceive('to->queue')
+            ->once()
+            ->andThrow(new Exception('Queue connection failed unexpectedly'));
+
+        $user = $this->createCustomer(['email' => 'enqueue_fail_user@example.com']);
+        $variant = ProductVariant::where('is_active', true)->where('stock_quantity', '>=', 5)->firstOrFail();
+        CartItem::create(['user_id' => $user->id, 'variant_id' => $variant->id, 'quantity' => 1]);
+
+        $response = $this->actingAs($user, 'sanctum')->postJson('/api/orders', [
+            'payment_method'   => 'cod',
+            'recipient_name'   => 'Nguyen Van Enqueue Fail',
+            'recipient_phone'  => '0912345678',
+            'shipping_address' => '123 Enqueue Fail Street',
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('message', 'Đặt hàng thành công.');
     }
 }

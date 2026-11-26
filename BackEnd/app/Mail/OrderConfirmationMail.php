@@ -7,18 +7,36 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\Order;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class OrderConfirmationMail extends Mailable
+class OrderConfirmationMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
+    /**
+     * Số lần thử lại tối đa khi job gửi mail thất bại
+     */
+    public int $tries = 3;
+
+    /**
+     * Thời gian chờ giữa các lần thử lại (10s, 60s, 300s)
+     */
+    public array $backoff = [10, 60, 300];
+
+    /**
+     * Tự động hủy job an toàn nếu bản ghi Order đã bị xóa khỏi cơ sở dữ liệu
+     */
+    public bool $deleteWhenMissingModels = true;
+
     public function __construct(
         public Order $order
-    ) {}
+    ) {
+        $this->afterCommit();
+    }
 
     public function envelope(): Envelope
     {
@@ -31,6 +49,8 @@ class OrderConfirmationMail extends Mailable
 
     public function content(): Content
     {
+        $this->order->loadMissing(['user', 'items']);
+
         $frontendUrl = (string) config('shop.frontend_url', 'http://localhost:5173');
         $orderUrl = rtrim($frontendUrl, '/') . '/orders/' . $this->order->order_code;
         $brandName = (string) config('shop.brand_name', 'OMBRE');
